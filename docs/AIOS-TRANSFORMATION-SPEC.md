@@ -942,7 +942,7 @@ The Admin Super Control Centre is a dedicated, access-controlled internal platfo
 | Front end | 15 static pages, shared design system, `nf-polish.css` product layer, new logo/brand palette platform-wide | Yes — carries forward |
 | Wallet & ledger | `nf-wallet.js` (client) + gateway file-store wallet (`/v1/wallet*`) with idempotency, welcome grant, 402 enforcement | P0: migrate store to Postgres |
 | Pricing law | Capital-bracket engine in both client (`NF.bracket/costFor`) and gateway (`bracketFactor/meterAcu`), 12 passing smoke tests | Yes — port tests to CI |
-| AI gateway | `gateway/` Node ESM, provider failover, `/v1/generate`, `/v1/estimate`, `/v1/health`, `/v1/models` | P0: deploy + auth + rate limits |
+| AI gateway | `backend/gateway/` Node ESM, provider failover, `/v1/generate`, `/v1/estimate`, `/v1/health`, `/v1/models` | P0: deploy + auth + rate limits |
 | Scoring | Deterministic PRS/CS/PSS + BPS breakthrough rank, enforced in prompts and client rendering | Yes — move to server-side scoring service in P1 |
 | Admin | Super Admin OS (command overview, platform ops, SEO war room, governance) on localStorage | P1: bind to real APIs |
 | Government Mode | Venture Demand Observatory with k-anonymity posture, per-country datasets | P2: real aggregation pipeline |

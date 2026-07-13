@@ -5,14 +5,19 @@
 (function () {
   'use strict';
 
-  var PACKAGES = [
+  /* Canonical constants live in shared/nf-economy.js (single source of truth
+     for client + gateway). The literals below are a byte-identical fallback so
+     standalone copies of this file — e.g. published artifact demos — still work. */
+  var ECO = globalThis.NF_ECONOMY || null;
+
+  var PACKAGES = ECO ? ECO.PACKAGES : [
     { id: 'starter_5',   name: 'Starter',  priceGBP: 5,  acus: 500,  bonus: 0,   total: 500,  desc: 'Enough for 4 niche searches.' },
     { id: 'builder_10',  name: 'Builder',  priceGBP: 10, acus: 1000, bonus: 100, total: 1100, desc: 'Deeper exploration and early project building.', recommended: true },
     { id: 'founder_20',  name: 'Founder',  priceGBP: 20, acus: 2000, bonus: 400, total: 2400, desc: 'Serious project building and financial outputs.' },
     { id: 'investor_50', name: 'Investor', priceGBP: 50, acus: 5000, bonus: 1500, total: 6500, desc: 'Full investor packages across multiple ventures.' }
   ];
 
-  var COSTS = {
+  var COSTS = ECO ? ECO.COSTS : {
     niche_search: 125,
     unlock: 150,
     export_pdf: 100,
@@ -41,7 +46,7 @@
     investor_multiplier: 1.4
   };
 
-  var WELCOME_FREE = 100;
+  var WELCOME_FREE = ECO ? ECO.WELCOME_FREE : 100;
 
   /* ---------- capital-bracket pricing ----------
      The COSTS table above is priced for the standard ≤ £10k capital class,
@@ -50,18 +55,18 @@
        bracket 1 · £0–£10k        → ×1  (3–10× provider cost)
        bracket 2 · £10,001–£20k   → ×2  (6–20×)
        bracket 3 · £20,001–£30k   → ×4  (12–40×)  …and so on. */
-  function bracketFor(amount) {
+  var bracketFor = ECO ? ECO.bracketFor : function (amount) {
     var a = Number(amount);
     if (!Number.isFinite(a) || a <= 10000) return { tier: 1, factor: 1, band: '3–10×' };
     var tier = Math.min(Math.ceil(a / 10000), 11); // factor caps at ×1024
     var f = Math.pow(2, tier - 1);
     return { tier: tier, factor: f, band: (3 * f) + '–' + (10 * f) + '×' };
-  }
-  function costFor(actionKey, capitalAmount) {
+  };
+  var costFor = ECO ? ECO.costFor : function (actionKey, capitalAmount) {
     var base = COSTS[actionKey];
     if (base == null) return null;
     return Math.round(base * bracketFor(capitalAmount).factor);
-  }
+  };
 
   function loadWallet() {
     try {

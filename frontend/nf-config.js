@@ -3,7 +3,7 @@
    demo dataset and the ACU wallet lives in this browser's localStorage.
 
    To go live:
-   1. Deploy the gateway (see gateway/README.md) with your provider API keys set
+   1. Deploy the gateway (see backend/gateway/README.md) with your provider API keys set
       as environment variables — keys never belong in this repo.
    2. Put its public URL below, e.g. 'https://gateway.nichefinderhq.com'.
    Search then runs against live AI (claude → gemini → openai failover) and the

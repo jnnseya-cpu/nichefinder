@@ -2,11 +2,12 @@
    Network-first for HTML so updates land immediately; cache-first for shared
    assets. Never caches gateway/API calls or non-GET requests, so the wallet
    and live-AI paths always hit the network. */
-const VERSION = 'nf-v1';
+const VERSION = 'nf-v2';
 const SHELL = [
   'index.html', 'search.html', 'project.html', 'dashboard.html', 'asset.html',
   'nf-config.js', 'nf-wallet.js', 'nf-support.js', 'nf-consent.js',
-  'page.css', 'icon.svg', 'manifest.webmanifest'
+  'page.css', 'nf-polish.css', 'icon.svg', 'manifest.webmanifest',
+  '../shared/nf-economy.js' // canonical economy — shared with the backend gateway
 ];
 
 self.addEventListener('install', (e) => {

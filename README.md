@@ -2,6 +2,31 @@
 
 Niche Finder is a venture infrastructure operating system, designed to help entrepreneurs find, validate, and build fundable business ideas with data-driven confidence.
 
+## Repository structure
+
+```
+frontend/   The OS surface — all pages (Search Canvas, Command Center, Deep-Dive,
+            Super Admin OS, Comms Engine, Government Mode, public + legal pages),
+            the design system (page.css, nf-polish.css), the client wallet
+            (nf-wallet.js), support concierge, consent layer, and the PWA shell
+            (manifest, sw.js, icon).
+backend/    The AI gateway (backend/gateway) — zero-framework Node service with
+            claude → gemini → openai failover, ACU metering, and the wallet
+            system of record (file store today, Postgres in P1). Wallet store is
+            AES-256-GCM encrypted at rest when WALLET_STORE_KEY is set.
+shared/     Single source of truth used by BOTH sides:
+            nf-economy.js — the canonical ACU economy (packages, action prices,
+              capital-bracket law). The client displays what the server enforces,
+              from the same file.
+            nf-crypto.js — AES-256-GCM encryption module (WebCrypto, runs in
+              browser and Node) implementing the end-to-end encryption law.
+docs/       Architecture + the production-grade AI-OS transformation spec.
+```
+
+Run the backend: `cd backend/gateway && npm start` · Tests: `node test/smoke.js`
+Serve the frontend from the repo root (so `frontend/` pages can load `../shared/`):
+`python3 -m http.server` → http://localhost:8000/frontend/
+
 ## Our Mission
 
 Our mission is to eliminate the primary cause of startup failure: building a product for a market that doesn't exist. We empower founders, builders, and investors with an OS that systematically uncovers high-potential niches, validates their commercial viability, and accelerates the path from idea to investor-ready venture.

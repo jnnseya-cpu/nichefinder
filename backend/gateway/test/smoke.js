@@ -96,5 +96,20 @@ check('bracket factor caps at 1024', bracketFactor(500000) === 1024);
 check('meterAcu doubles in bracket 2', meterAcu('claude', { inputTokens: 10000, outputTokens: 2000 }, false, 15000) === 20);
 check('investor mode stacks on bracket', meterAcu('claude', { inputTokens: 10000, outputTokens: 2000 }, true, 15000) === 28);
 
+// shared economy module: gateway and client enforce identical constants
+const ECONOMY = globalThis.NF_ECONOMY;
+check('shared economy loaded', ECONOMY && ECONOMY.PACKAGES.length === 4 && ECONOMY.COSTS.niche_search === 125);
+check('gateway bracket law delegates to shared module', bracketFactor(45000) === ECONOMY.bracketFor(45000).factor);
+
+// encryption at rest (E2EE law): AES-256-GCM roundtrip + tamper evidence
+const { encryptStore, decryptStore } = await import('../src/wallet.js');
+const testKey = Buffer.from('a'.repeat(64), 'hex');
+const envelope = encryptStore('{"wallets":{"u1":{"paid":500}}}', testKey);
+check('store encrypts to NFE1 envelope', envelope.startsWith('NFE1:'));
+check('store decrypts to original JSON', decryptStore(envelope, testKey) === '{"wallets":{"u1":{"paid":500}}}');
+let tampered = false;
+try { decryptStore(envelope.slice(0, -8) + 'AAAAAAAA', testKey); } catch { tampered = true; }
+check('tampered ciphertext is rejected (GCM auth)', tampered);
+
 console.log(failures === 0 ? '\nAll smoke tests passed.' : `\n${failures} test(s) FAILED.`);
 process.exit(failures === 0 ? 0 : 1);

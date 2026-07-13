@@ -4,27 +4,65 @@
 // through an in-memory queue, so balances never race.
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { GatewayError } from './errors.js';
+import '../../../shared/nf-economy.js'; // canonical economy → globalThis.NF_ECONOMY
 
+const ECONOMY = globalThis.NF_ECONOMY;
 const STORE_PATH = process.env.WALLET_STORE || path.join(process.cwd(), 'data', 'wallets.json');
-const WELCOME_FREE = 100;
+const WELCOME_FREE = ECONOMY.WELCOME_FREE;
 const LEDGER_CAP = 500;
 
-// Mirrors nf-wallet.js — the client displays what the server enforces.
-export const PACKAGES = {
-  starter_5: { name: 'Starter', priceGBP: 5, acus: 500, bonus: 0 },
-  builder_10: { name: 'Builder', priceGBP: 10, acus: 1000, bonus: 100 },
-  founder_20: { name: 'Founder', priceGBP: 20, acus: 2000, bonus: 400 },
-  investor_50: { name: 'Investor', priceGBP: 50, acus: 5000, bonus: 1500 },
-};
+/* ---- encryption at rest (E2EE law, Addendum A) ----
+   Set WALLET_STORE_KEY to a 64-char hex string (32 bytes) and the store is
+   written as an AES-256-GCM envelope ("NFE1:iv:tag:ct"), tamper-evident by
+   GCM authentication. The key lives in the environment — never beside the
+   data. Without the key the store falls back to plaintext JSON and logs a
+   warning so a misconfigured production deploy is loud, not silent. */
+const STORE_KEY = (() => {
+  const hex = process.env.WALLET_STORE_KEY || '';
+  if (!hex) return null;
+  if (!/^[0-9a-fA-F]{64}$/.test(hex)) {
+    console.error('[gateway] WALLET_STORE_KEY must be 64 hex chars (32 bytes) — store encryption DISABLED');
+    return null;
+  }
+  return Buffer.from(hex, 'hex');
+})();
+if (!STORE_KEY) console.warn('[gateway] WALLET_STORE_KEY not set — wallet store is NOT encrypted at rest');
+
+export function encryptStore(json, key = STORE_KEY) {
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+  const ct = Buffer.concat([cipher.update(json, 'utf8'), cipher.final()]);
+  return `NFE1:${iv.toString('base64')}:${cipher.getAuthTag().toString('base64')}:${ct.toString('base64')}`;
+}
+
+export function decryptStore(envelope, key = STORE_KEY) {
+  const [magic, ivB64, tagB64, ctB64] = envelope.split(':');
+  if (magic !== 'NFE1') throw new Error('not an NFE1 envelope');
+  const decipher = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(ivB64, 'base64'));
+  decipher.setAuthTag(Buffer.from(tagB64, 'base64'));
+  return Buffer.concat([decipher.update(Buffer.from(ctB64, 'base64')), decipher.final()]).toString('utf8');
+}
+
+// Derived from shared/nf-economy.js — the client displays what the server enforces.
+export const PACKAGES = Object.fromEntries(
+  ECONOMY.PACKAGES.map((p) => [p.id, { name: p.name, priceGBP: p.priceGBP, acus: p.acus, bonus: p.bonus }])
+);
 
 let store = load();
 let persistTimer = null;
 
 function load() {
   try {
-    return JSON.parse(fs.readFileSync(STORE_PATH, 'utf8'));
-  } catch {
+    const raw = fs.readFileSync(STORE_PATH, 'utf8');
+    if (raw.startsWith('NFE1:')) {
+      if (!STORE_KEY) throw new Error('store is encrypted but WALLET_STORE_KEY is not set');
+      return JSON.parse(decryptStore(raw));
+    }
+    return JSON.parse(raw);
+  } catch (err) {
+    if (String(err.message).includes('WALLET_STORE_KEY')) throw err; // loud: never silently reset an encrypted store
     return { wallets: {}, idempotency: {} };
   }
 }
@@ -35,7 +73,8 @@ function persist() {
   persistTimer = setTimeout(() => {
     fs.mkdirSync(path.dirname(STORE_PATH), { recursive: true });
     const tmp = `${STORE_PATH}.tmp`;
-    fs.writeFileSync(tmp, JSON.stringify(store));
+    const json = JSON.stringify(store);
+    fs.writeFileSync(tmp, STORE_KEY ? encryptStore(json) : json);
     fs.renameSync(tmp, STORE_PATH);
   }, 50);
 }

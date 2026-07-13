@@ -240,7 +240,7 @@ Clients (Web/PWA · Mobile wrapper · WhatsApp/USSD · Partner embeds)
    Event bus (Pub/Sub) ── platform_events, wallet events, agent tasks
         │
  ┌──────┴───────────────┐        ┌──────────────────────────────┐
- │ Data layer           │        │ AI Gateway (exists: gateway/) │
+ │ Data layer           │        │ AI Gateway (backend/gateway) │
  │  Postgres (system of │        │  claude → gemini → openai     │
  │  record: wallets,    │        │  failover · structured output │
  │  ledger, users,      │        │  · reserve/settle ACU hooks   │

@@ -4,6 +4,7 @@ import * as claude from './providers/claude.js';
 import * as gemini from './providers/gemini.js';
 import * as openai from './providers/openai.js';
 import * as mock from './providers/mock.js';
+import '../../../shared/nf-economy.js'; // canonical economy → globalThis.NF_ECONOMY
 
 const PROVIDERS = { claude, gemini, openai, mock };
 
@@ -41,10 +42,8 @@ function resolveChain(requested) {
    bracket above doubles the band — £10,001-£20k is 6x-20x (factor 2),
    £20,001-£30k is 12x-40x (factor 4), and so on: factor = 2^(bracket - 1). */
 export function bracketFactor(capitalGBP) {
-  const amount = Number(capitalGBP);
-  if (!Number.isFinite(amount) || amount <= 10000) return 1;
-  const bracket = Math.ceil(amount / 10000);
-  return Math.pow(2, Math.min(bracket, 11) - 1); // clamp: factor caps at 1024 (£110k+)
+  // Single source of truth: shared/nf-economy.js — the same law the client enforces.
+  return globalThis.NF_ECONOMY.bracketFor(capitalGBP).factor;
 }
 
 export function meterAcu(provider, usage, investorMode = false, capitalGBP = 0) {
