@@ -678,6 +678,62 @@ The Niche Finder AI-OS is built on a cloud-native, event-driven, microservices a
 
 Action prices are then charged from the canonical schedule (search 125, unlock 150, …, full investor package 1,500) multiplied by the capital-bracket factor and Investor Mode ×1.4 where active — so revenue per action, and therefore margin, scales with venture capital class while the package table stays flat.
 
+### 11.3 Subscription Plan Architecture
+
+*Conformance notes: the welcome grant is **100 ACUs, one-time, read-only** (browse/preview only — they never fund generation, so the Free tier is preview-only, not search). Monthly plan allowances are grants of **paid-class ACUs** credited to the wallet on each billing cycle; they spend against the same canonical action schedule and bracket law as top-up ACUs. Subscriptions layer on top of the package economy — they do not change the £1 = 100 ACU anchor or any action price.*
+
+| Plan | Price | Included ACUs/Month | Key Features | Target User |
+|---|---|---|---|---|
+| Free | £0/month | 100 Welcome ACUs (one-time, read-only) | Browse and preview scored results; no generation | Acquisition & trial |
+| Starter | £19/month | 200 ACUs/month rollover | Unlock + validation within allowance | Solo entrepreneurs |
+| Professional | £49/month | 600 ACUs/month rollover | All document types + comparison mode + priority generation | Active founders |
+| Growth | £99/month | 1,500 ACUs/month rollover | Bulk generation + API access (1000 calls/month) + team seats (3) | Agencies & investors |
+| Enterprise | £499+/month | Custom ACU pool | White-label option + SSO + dedicated support + SLA + compliance reports | Incubators & VCs |
+
+### 11.4 ACU Cost Per Agent Action
+
+*Conformance (standing rule): the draft's action prices and margin table were conformed to the canonical schedule and the capital-bracket margin law. At £1 = 100 ACU, revenue per action is ACU × £0.01; the law fixes provider cost between 1/10 and 1/3 of the charge at bracket 1 (3–10× band), i.e. **structural gross margin 67–90%**, doubling in headroom with every £10k bracket.*
+
+| Agent Action | ACU Cost (bracket 1) | Revenue | Provider-cost band (3–10× law) | Gross margin |
+|---|---|---|---|---|
+| Opportunity Discovery Search | 125 ACU | £1.25 | £0.125 – £0.42 | 67–90% |
+| Deep-Dive Analysis Unlock | 150 ACU | £1.50 | £0.15 – £0.50 | 67–90% |
+| Market Validation Report | 250 ACU | £2.50 | £0.25 – £0.83 | 67–90% |
+| 3-Year Financial Model (forecast) | 250 ACU | £2.50 | £0.25 – £0.83 | 67–90% |
+| Excel Financial Model | 350 ACU | £3.50 | £0.35 – £1.17 | 67–90% |
+| Business Plan (PDF + DOCX) | 500 ACU (+150 PDF) | £5.00 | £0.50 – £1.67 | 67–90% |
+| Investor Pitch Deck (PPTX) | 500 / 650 / 850 ACU | £5.00 – £8.50 | £0.50 – £2.83 | 67–90% |
+| Full Investor Package | 1,500 ACU | £15.00 | £1.50 – £5.00 | 67–90% |
+
+At bracket 2 (£10,001–£20,000) every figure in the ACU and revenue columns doubles while provider cost stays flat — the margin band widens to 6–20×, and so on per bracket. Investor Mode adds ×1.4 on top.
+
+---
+
+# SECTION 12 — SECURITY, COMPLIANCE & RISK
+
+## 12. Security, Compliance & Risk Architecture
+
+### 12.1 Regulatory Compliance Framework
+
+| Regulation | Applicable Scope | Niche Finder Controls |
+|---|---|---|
+| UK GDPR / EU GDPR | All users in UK and EU; data processing of personal information | Consent management, right-to-erasure workflow, data portability export, DPA register, ICO registration, 72-hour breach notification |
+| PCI-DSS v4.0 | All payment card processing operations | No raw card data stored; Stripe/BitriPay tokenisation; quarterly vulnerability scans; annual QSA audit |
+| UK Computer Misuse Act | Platform security requirements | Access logging, intrusion detection, responsible disclosure policy, penetration testing programme |
+| Companies Act 2006 | UK entity operations | Corporate record keeping, invoice compliance, VAT registration and reporting |
+| AML / KYC (MLR 2017) | Enterprise accounts with significant ACU volumes | Enhanced due diligence for accounts exceeding £10K/year; transaction monitoring; suspicious activity reporting |
+
+### 12.2 Cybersecurity Control Framework
+
+| Threat Category | Attack Vectors Mitigated | Controls Deployed |
+|---|---|---|
+| Authentication Attacks | Credential stuffing, brute force, account takeover | bcrypt password hashing (cost factor 12), rate-limited login (5 attempts/15 min), CAPTCHA on registration, MFA (TOTP/SMS) |
+| API Abuse | Excessive API calls, scraping, bot automation, ACU theft | Rate limiting per user/IP/endpoint, API key scoping, anomaly detection on call patterns, Cloudflare Bot Management |
+| Injection Attacks | SQL injection, NoSQL injection, command injection | ORM with parameterised queries only (TypeORM/Prisma), input schema validation, output encoding |
+| Session Attacks | Session hijacking, CSRF, XSS | Short-lived JWTs (15 min), CSRF tokens, CSP headers, HttpOnly cookies, SameSite=Strict |
+| Data Exfiltration | Unauthorised bulk data access, insider threat | Row-level security in PostgreSQL, field-level encryption for PII, admin action audit log, data access anomaly alerts |
+| Infrastructure Attacks | DDoS, DNS hijacking, supply chain | Cloudflare DDoS protection, DNSSEC, SRI for CDN assets, dependency vulnerability scanning (Snyk) |
+
 ---
 
 # ENGINEERING ANNEX — TRANSFORMATION PILLARS
