@@ -120,10 +120,10 @@ Focus the AI on specific sectors for more targeted niche ideas.
 
 ### Profile Selectors
 
-- **Experience** — e.g., Beginner
-- **Funding Goal** — e.g., Self Funded
-- **Timeline** — e.g., Start Immediately
-- **Model Preference** — e.g., High Margin
+- **Experience** — Beginner (default) · Intermediate · Experienced · Expert
+- **Funding Goal** — Self Funded (default) · Grant · Loan · Angel Investment · VC Investment · Not Sure
+- **Timeline** — Start Immediately (default) · Within 30 Days · Within 90 Days · Within 6 Months · Research Only
+- **Model Preference** — High Margin (default) · Low Startup Cost · Scalable · Any
 
 ### Max Startup Investment
 

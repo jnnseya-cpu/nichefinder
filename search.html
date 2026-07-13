@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Niche Finder — AI Search Canvas</title>
+<meta name="description" content="Business Discovery OS — guide the venture intelligence OS to discover your next opportunity.">
+<style>
+  :root{
+    --ink:#070B14;
+    --ink-2:#0A1120;
+    --panel:#0E1626;
+    --panel-2:#121C30;
+    --line:rgba(217,164,65,.14);
+    --line-soft:rgba(139,147,165,.14);
+    --text:#EAE5D9;
+    --muted:#8B93A5;
+    --gold:#D9A441;
+    --gold-bright:#F1C97E;
+    --gold-dim:rgba(217,164,65,.55);
+    --teal:#3FA79B;
+    --serif:"Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:"SF Mono","Cascadia Code","JetBrains Mono",Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--ink);color:var(--text);
+    font-family:var(--sans);font-size:16px;line-height:1.6;
+    -webkit-font-smoothing:antialiased;overflow-x:hidden;
+  }
+  ::selection{background:var(--gold);color:var(--ink)}
+  a{color:inherit}
+  a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{
+    outline:2px solid var(--gold-bright);outline-offset:2px;border-radius:2px;
+  }
+  .wrap{max-width:1240px;margin:0 auto;padding:0 clamp(18px,3.5vw,44px)}
+
+  /* ---------- NAV ---------- */
+  header.nav{
+    position:fixed;inset:0 0 auto 0;z-index:50;
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    background:rgba(7,11,20,.62);border-bottom:1px solid var(--line-soft);
+  }
+  .nav-inner{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .brand{display:flex;align-items:center;gap:11px;text-decoration:none}
+  .brand-mark{width:28px;height:28px;flex:none;border:1px solid var(--gold);border-radius:50%;display:grid;place-items:center}
+  .brand-mark i{width:7px;height:7px;border-radius:50%;background:var(--gold);display:block}
+  .brand span{font-family:var(--serif);font-size:1.1rem}
+  .brand em{font-style:normal;color:var(--gold)}
+  .sync{
+    font-family:var(--mono);font-size:.66rem;letter-spacing:.2em;color:var(--gold);
+    display:flex;align-items:center;gap:8px;
+  }
+  .sync i{width:6px;height:6px;border-radius:50%;background:var(--gold);display:block;animation:pulse 2.2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+
+  /* ---------- HEAD ---------- */
+  .page-head{padding:118px 0 34px}
+  .eyebrow{
+    font-family:var(--mono);font-size:.7rem;letter-spacing:.26em;text-transform:uppercase;color:var(--gold);
+    display:flex;align-items:center;gap:14px;
+  }
+  .eyebrow::before{content:"";width:32px;height:1px;background:var(--gold-dim);flex:none}
+  .page-head h1{
+    font-family:var(--serif);font-weight:400;font-size:clamp(1.9rem,4.4vw,3rem);
+    line-height:1.08;letter-spacing:-.01em;margin-top:16px;text-wrap:balance;
+  }
+  .page-head h1 .gold{color:var(--gold-bright);font-style:italic}
+  .page-head p{color:var(--muted);margin-top:12px;max-width:62ch}
+
+  /* ---------- LAYOUT ---------- */
+  .canvas{display:grid;grid-template-columns:1fr 330px;gap:34px;align-items:start;padding-bottom:110px}
+  @media(max-width:1020px){.canvas{grid-template-columns:1fr}}
+  .col{display:flex;flex-direction:column;gap:26px;min-width:0}
+
+  .block{
+    background:linear-gradient(170deg,var(--panel-2),var(--panel) 60%);
+    border:1px solid var(--line-soft);border-radius:10px;padding:26px 26px 28px;
+  }
+  .block-head{display:flex;align-items:baseline;gap:14px;margin-bottom:6px}
+  .block-head .n{font-family:var(--mono);font-size:.68rem;letter-spacing:.2em;color:var(--gold);flex:none}
+  .block-head h2{font-family:var(--serif);font-weight:400;font-size:1.3rem;letter-spacing:.01em}
+  .block-head .req{
+    margin-left:auto;font-family:var(--mono);font-size:.58rem;letter-spacing:.16em;
+    color:var(--gold);border:1px solid var(--line);border-radius:3px;padding:3px 8px;white-space:nowrap;
+  }
+  .block > .hint{font-size:.85rem;color:var(--muted);margin-bottom:18px}
+
+  /* option cards */
+  .opt-grid{display:grid;gap:10px;margin-top:16px}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  @media(max-width:760px){.g3{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:500px){.g3,.g2{grid-template-columns:1fr}}
+  .opt{
+    position:relative;text-align:left;cursor:pointer;
+    background:rgba(7,11,20,.45);border:1px solid var(--line-soft);border-radius:7px;
+    padding:15px 16px;color:var(--text);font-family:var(--sans);
+    transition:border-color .18s,background .18s,transform .18s;
+  }
+  .opt:hover{border-color:var(--gold-dim);transform:translateY(-1px)}
+  .opt .t{font-size:.92rem;font-weight:600;letter-spacing:.01em;display:block}
+  .opt .d{font-size:.76rem;color:var(--muted);display:block;margin-top:4px;line-height:1.45}
+  .opt .new{
+    position:absolute;top:-8px;right:10px;font-family:var(--mono);font-size:.55rem;
+    letter-spacing:.14em;background:var(--gold);color:var(--ink);border-radius:3px;padding:2px 7px;font-weight:700;
+  }
+  .opt[aria-pressed="true"]{
+    border-color:var(--gold);background:linear-gradient(170deg,rgba(217,164,65,.12),rgba(217,164,65,.04));
+  }
+  .opt[aria-pressed="true"]::after{
+    content:"✓";position:absolute;top:10px;right:12px;color:var(--gold-bright);
+    font-family:var(--mono);font-size:.75rem;
+  }
+
+  /* form controls */
+  label.lab{
+    display:block;font-family:var(--mono);font-size:.62rem;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--muted);margin:20px 0 8px;
+  }
+  select,input[type=text],textarea{
+    width:100%;background:rgba(7,11,20,.55);border:1px solid var(--line-soft);border-radius:6px;
+    color:var(--text);font-family:var(--sans);font-size:.92rem;padding:12px 14px;
+    transition:border-color .18s;appearance:none;
+  }
+  select{
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23D9A441' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;
+  }
+  select:hover,input[type=text]:hover,textarea:hover{border-color:var(--gold-dim)}
+  select option{background:var(--panel);color:var(--text)}
+  textarea{resize:vertical;min-height:76px}
+  .char{font-family:var(--mono);font-size:.62rem;color:var(--muted);text-align:right;margin-top:6px;letter-spacing:.1em}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:560px){.two{grid-template-columns:1fr}}
+
+  /* segmented (area type) */
+  .seg{display:flex;gap:8px;flex-wrap:wrap}
+  .seg button{
+    flex:1;min-width:80px;cursor:pointer;background:rgba(7,11,20,.45);
+    border:1px solid var(--line-soft);border-radius:6px;color:var(--muted);
+    font-family:var(--mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;
+    padding:10px 8px;transition:all .18s;
+  }
+  .seg button:hover{border-color:var(--gold-dim);color:var(--text)}
+  .seg button[aria-pressed="true"]{border-color:var(--gold);color:var(--gold-bright);background:rgba(217,164,65,.08)}
+
+  /* advanced */
+  details.adv{border:1px solid var(--line-soft);border-radius:10px;overflow:hidden}
+  details.adv > summary{
+    cursor:pointer;list-style:none;padding:20px 26px;
+    background:linear-gradient(170deg,var(--panel-2),var(--panel) 60%);
+    display:flex;align-items:center;gap:14px;
+    font-family:var(--serif);font-size:1.15rem;
+  }
+  details.adv > summary::-webkit-details-marker{display:none}
+  details.adv > summary .chev{margin-left:auto;color:var(--gold);transition:transform .25s;font-family:var(--mono);font-size:.8rem}
+  details.adv[open] > summary .chev{transform:rotate(90deg)}
+  details.adv > summary .tag{font-family:var(--mono);font-size:.58rem;letter-spacing:.16em;color:var(--muted);border:1px solid var(--line-soft);padding:3px 8px;border-radius:3px}
+  .adv-body{padding:8px 26px 30px;background:var(--ink-2);border-top:1px solid var(--line-soft)}
+
+  /* sectors */
+  .tier{margin-top:22px}
+  .tier .tname{
+    font-family:var(--mono);font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--gold);display:flex;align-items:center;gap:12px;
+  }
+  .tier .tname::after{content:"";height:1px;background:var(--line-soft);flex:1}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .chip{
+    cursor:pointer;background:rgba(7,11,20,.45);border:1px solid var(--line-soft);border-radius:99px;
+    color:var(--muted);font-size:.78rem;padding:7px 14px;font-family:var(--sans);transition:all .16s;
+  }
+  .chip:hover{border-color:var(--gold-dim);color:var(--text)}
+  .chip[aria-pressed="true"]{border-color:var(--gold);color:var(--gold-bright);background:rgba(217,164,65,.1)}
+  .chip[disabled]{opacity:.35;cursor:not-allowed}
+  .sector-count{font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;color:var(--muted);margin-top:14px}
+  .sector-count b{color:var(--gold-bright)}
+
+  /* slider */
+  .slider-row{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-top:20px}
+  .slider-row .amt{font-family:var(--mono);font-size:1.5rem;color:var(--gold-bright);font-variant-numeric:tabular-nums}
+  .slider-row .amt small{font-size:.7rem;color:var(--muted);margin-left:8px;letter-spacing:.08em}
+  input[type=range]{
+    width:100%;margin-top:14px;appearance:none;background:transparent;cursor:pointer;
+  }
+  input[type=range]::-webkit-slider-runnable-track{height:3px;background:rgba(139,147,165,.25);border-radius:2px}
+  input[type=range]::-webkit-slider-thumb{
+    appearance:none;width:18px;height:18px;border-radius:50%;background:var(--gold);
+    border:3px solid var(--ink);margin-top:-7.5px;box-shadow:0 0 0 1px var(--gold);
+  }
+  input[type=range]::-moz-range-track{height:3px;background:rgba(139,147,165,.25);border-radius:2px}
+  input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--gold);border:none}
+  .rule{
+    margin-top:14px;font-size:.78rem;color:var(--muted);border-left:2px solid var(--gold-dim);
+    padding:2px 0 2px 14px;
+  }
+  .rule b{color:var(--text);font-weight:600}
+
+  /* toggle */
+  .toggle-row{display:flex;align-items:flex-start;gap:16px;margin-top:24px;padding:18px;border:1px solid var(--line);border-radius:8px;background:rgba(217,164,65,.03)}
+  .toggle-row .tx .t{font-weight:600;font-size:.95rem}
+  .toggle-row .tx .d{font-size:.78rem;color:var(--muted);margin-top:3px}
+  .toggle-row .tx .d b{color:var(--gold-bright);font-family:var(--mono);font-weight:600}
+  .switch{
+    margin-left:auto;flex:none;width:46px;height:26px;border-radius:99px;cursor:pointer;
+    background:rgba(139,147,165,.25);border:1px solid var(--line-soft);position:relative;transition:background .2s;
+  }
+  .switch i{
+    position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;
+    background:var(--muted);transition:all .2s;display:block;
+  }
+  .switch[aria-checked="true"]{background:rgba(217,164,65,.35);border-color:var(--gold)}
+  .switch[aria-checked="true"] i{left:22px;background:var(--gold-bright)}
+
+  /* ---------- RAIL ---------- */
+  .rail{position:sticky;top:86px;display:flex;flex-direction:column;gap:18px}
+  @media(max-width:1020px){.rail{position:static}}
+  .rail-card{
+    background:linear-gradient(170deg,var(--panel-2),var(--panel) 60%);
+    border:1px solid var(--line);border-radius:10px;padding:24px;
+  }
+  .rail-card h3{font-family:var(--serif);font-weight:400;font-size:1.15rem;margin-bottom:14px}
+  .sum{display:flex;flex-direction:column;gap:10px;font-size:.8rem}
+  .sum .row{display:flex;justify-content:space-between;gap:14px;border-bottom:1px dashed var(--line-soft);padding-bottom:9px}
+  .sum .k{color:var(--muted);font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;padding-top:2px}
+  .sum .v{text-align:right;color:var(--text);max-width:60%}
+  .acu{display:flex;align-items:baseline;justify-content:space-between;margin-top:16px}
+  .acu .k{font-family:var(--mono);font-size:.62rem;letter-spacing:.18em;color:var(--muted);text-transform:uppercase}
+  .acu .v{font-family:var(--mono);font-size:1.6rem;color:var(--gold-bright);font-variant-numeric:tabular-nums}
+  .acu .v small{font-size:.7rem;color:var(--muted)}
+  .btn-generate{
+    width:100%;margin-top:18px;cursor:pointer;border:none;border-radius:5px;
+    background:var(--gold);color:var(--ink);font-family:var(--sans);
+    font-size:1rem;font-weight:700;letter-spacing:.02em;padding:16px 20px;
+    transition:background .18s,transform .18s;
+  }
+  .btn-generate:hover{background:var(--gold-bright);transform:translateY(-2px)}
+  .btn-generate[disabled]{opacity:.5;cursor:wait;transform:none}
+  .rail-note{font-size:.72rem;color:var(--muted);margin-top:12px;line-height:1.5}
+
+  /* ---------- RESULTS ---------- */
+  .results{scroll-margin-top:90px}
+  .results-head{display:flex;align-items:baseline;gap:16px;margin:14px 0 18px}
+  .results-head h2{font-family:var(--serif);font-weight:400;font-size:1.6rem}
+  .results-head .count{font-family:var(--mono);font-size:.68rem;letter-spacing:.16em;color:var(--muted)}
+  .thinking{
+    display:none;border:1px dashed var(--line);border-radius:10px;padding:34px;text-align:center;
+    font-family:var(--mono);font-size:.72rem;letter-spacing:.18em;color:var(--gold);text-transform:uppercase;
+  }
+  .thinking.on{display:block}
+  .thinking .bar{height:2px;background:rgba(139,147,165,.15);border-radius:2px;margin-top:18px;overflow:hidden}
+  .thinking .bar i{display:block;height:100%;width:38%;background:var(--gold);border-radius:2px;animation:scan 1.6s ease-in-out infinite}
+  @keyframes scan{0%{transform:translateX(-100%)}100%{transform:translateX(280%)}}
+  .niches{display:grid;gap:14px}
+  .niche{
+    background:linear-gradient(170deg,var(--panel-2),var(--panel) 60%);
+    border:1px solid var(--line-soft);border-radius:10px;padding:24px 26px;
+    display:grid;grid-template-columns:1fr auto;gap:8px 24px;align-items:start;
+    opacity:0;transform:translateY(14px);transition:opacity .6s,transform .6s cubic-bezier(.2,.7,.2,1),border-color .2s;
+  }
+  .niche.in{opacity:1;transform:none}
+  .niche:hover{border-color:var(--gold-dim)}
+  .niche h3{font-family:var(--serif);font-weight:400;font-size:1.25rem}
+  .niche .meta{font-family:var(--mono);font-size:.6rem;letter-spacing:.16em;color:var(--muted);text-transform:uppercase;margin-top:4px}
+  .niche p{grid-column:1;font-size:.88rem;color:var(--muted);margin-top:8px;max-width:64ch}
+  .niche > div:first-child{grid-column:1}
+  .niche .score{grid-row:1/span 2;grid-column:2;text-align:right}
+  .niche .score .n{font-family:var(--mono);font-size:2rem;color:var(--gold-bright);font-variant-numeric:tabular-nums;line-height:1}
+  .niche .score .l{font-family:var(--mono);font-size:.55rem;letter-spacing:.16em;color:var(--muted);text-transform:uppercase;margin-top:6px}
+  .niche .actions{grid-column:1/-1;display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+  .niche .actions .a{
+    font-size:.78rem;font-weight:600;text-decoration:none;border-radius:4px;padding:9px 16px;
+    border:1px solid var(--line-soft);color:var(--muted);transition:all .18s;cursor:pointer;background:none;font-family:var(--sans);
+  }
+  .niche .actions .a:hover{border-color:var(--gold-dim);color:var(--text)}
+  .niche .actions .a.primary{background:var(--gold);border-color:var(--gold);color:var(--ink)}
+  .niche .actions .a.primary:hover{background:var(--gold-bright)}
+  .niche .actions .cost{font-family:var(--mono);font-size:.6rem;color:var(--muted);letter-spacing:.1em;align-self:center}
+
+  footer{border-top:1px solid var(--line-soft);padding:32px 0;font-size:.8rem;color:var(--muted)}
+  .foot{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}
+
+  @media (prefers-reduced-motion: reduce){
+    *{transition-duration:.01ms!important;animation:none!important}
+    .niche{opacity:1;transform:none}
+  }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="index.html" aria-label="Niche Finder home">
+      <span class="brand-mark" aria-hidden="true"><i></i></span>
+      <span>Niche<em>Finder</em></span>
+    </a>
+    <span class="sync"><i aria-hidden="true"></i>OS SYNC ACTIVE</span>
+  </div>
+</header>
+
+<main>
+  <div class="wrap page-head">
+    <p class="eyebrow">Business Discovery OS</p>
+    <h1>AI <span class="gold">Search Canvas</span></h1>
+    <p>Your journey from idea to execution starts here. Use the filters below to guide the AI — the more specific you are, the better the results.</p>
+  </div>
+
+  <div class="wrap canvas">
+    <div class="col">
+
+      <!-- 1. STARTING POINT -->
+      <section class="block" aria-labelledby="h-start">
+        <div class="block-head">
+          <span class="n">01</span>
+          <h2 id="h-start">Discovery Starting Point</h2>
+        </div>
+        <div class="opt-grid g3" id="startGrid" role="group" aria-label="Discovery starting point">
+          <button class="opt" aria-pressed="true"><span class="t">I have no idea</span><span class="d">Best for beginners. The OS will guide you.</span></button>
+          <button class="opt" aria-pressed="false"><span class="t">Around Me</span><span class="d">Find opportunities in your local area.</span></button>
+          <button class="opt" aria-pressed="false"><span class="t">From My Skills</span><span class="d">Turn your existing skills into a business.</span></button>
+          <button class="opt" aria-pressed="false"><span class="t">From a Problem</span><span class="d">Solve a real-world problem you've noticed.</span></button>
+          <button class="opt" aria-pressed="false"><span class="t">Boring Businesses</span><span class="d">Focus on practical, cashflow-first businesses.</span></button>
+          <button class="opt" aria-pressed="false"><span class="t">From My Budget</span><span class="d">Find ideas that fit what you can afford.</span></button>
+        </div>
+      </section>
+
+      <!-- 2. GOAL -->
+      <section class="block" aria-labelledby="h-goal">
+        <div class="block-head">
+          <span class="n">02</span>
+          <h2 id="h-goal">Primary Venture Goal</h2>
+        </div>
+        <div class="opt-grid g2" id="goalGrid" role="group" aria-label="Primary venture goal">
+          <button class="opt" aria-pressed="true"><span class="t">Investor-Ready Startup</span><span class="d">High growth • Scalable • Fundable</span></button>
+          <button class="opt" aria-pressed="false"><span class="t">Small Cashflow Business</span><span class="d">Practical • Fast Revenue • Local</span></button>
+        </div>
+      </section>
+
+      <!-- 3. ROUTING -->
+      <section class="block" aria-labelledby="h-route">
+        <div class="block-head">
+          <span class="n">03</span>
+          <h2 id="h-route">Intelligence Routing</h2>
+        </div>
+        <p class="hint">Guide the system to prioritize specific commercial outcomes.</p>
+        <div class="opt-grid g3" id="routeGrid" role="group" aria-label="Intelligence routing priority">
+          <button class="opt" aria-pressed="false"><span class="t">Standard Opportunities</span><span class="d">Proven reliable</span></button>
+          <button class="opt" aria-pressed="false"><span class="t">High-Profit Opportunities</span><span class="d">Maximize margins</span></button>
+          <button class="opt" aria-pressed="false"><span class="t">Low-Competition Opportunities</span><span class="d">Market gaps</span></button>
+          <button class="opt" aria-pressed="false"><span class="new">NEW</span><span class="t">Breakthrough Concepts</span><span class="d">Innovation first</span></button>
+          <button class="opt" aria-pressed="true"><span class="t">Balanced Results</span><span class="d">Optimal mix</span></button>
+        </div>
+      </section>
+
+      <!-- 4. MARKET -->
+      <section class="block" aria-labelledby="h-market">
+        <div class="block-head">
+          <span class="n">04</span>
+          <h2 id="h-market">Market Focus</h2>
+          <span class="req">MANDATORY</span>
+        </div>
+        <label class="lab" for="country">Country</label>
+        <select id="country"></select>
+        <div class="two">
+          <div>
+            <label class="lab" for="city">City / Region (Optional)</label>
+            <input type="text" id="city" placeholder="e.g., 'Nairobi', 'Lagos'">
+          </div>
+          <div>
+            <label class="lab" id="areaLab">Area Type</label>
+            <div class="seg" id="areaSeg" role="group" aria-labelledby="areaLab">
+              <button aria-pressed="false">Urban</button>
+              <button aria-pressed="false">City</button>
+              <button aria-pressed="false">Rural</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. MODE -->
+      <section class="block" aria-labelledby="h-mode">
+        <div class="block-head">
+          <span class="n">05</span>
+          <h2 id="h-mode">Operational Mode</h2>
+        </div>
+        <div class="opt-grid g3" id="modeGrid" role="group" aria-label="Operational mode">
+          <button class="opt" aria-pressed="false"><span class="t">Digital</span><span class="d">Online, SaaS, apps, AI</span></button>
+          <button class="opt" aria-pressed="false"><span class="t">Non-Digital</span><span class="d">Physical, local, service</span></button>
+          <button class="opt" aria-pressed="false"><span class="t">Boring Business</span><span class="d">High-demand, cashflow-focused</span></button>
+          <button class="opt" aria-pressed="false"><span class="t">Hybrid</span><span class="d">Physical + Digital systems</span></button>
+          <button class="opt" aria-pressed="true"><span class="t">Any</span><span class="d">System recommended</span></button>
+        </div>
+      </section>
+
+      <!-- ADVANCED -->
+      <details class="adv">
+        <summary>
+          <span class="n" style="font-family:var(--mono);font-size:.68rem;letter-spacing:.2em;color:var(--gold)">06</span>
+          Advanced Filters
+          <span class="tag">OPTIONAL</span>
+          <span class="chev" aria-hidden="true">▶</span>
+        </summary>
+        <div class="adv-body">
+
+          <div class="tier" style="margin-top:26px">
+            <label class="lab" style="margin:0 0 4px">Business Sectors (up to 3)</label>
+            <p class="hint" style="margin-bottom:4px">Focus the AI on specific sectors for more targeted niche ideas.</p>
+          </div>
+          <div id="tiers"></div>
+          <p class="sector-count">SELECTED <b id="secCount">0</b> / 3</p>
+
+          <div class="two" style="margin-top:8px">
+            <div>
+              <label class="lab" for="exp">Experience</label>
+              <select id="exp">
+                <option>Beginner</option><option>Intermediate</option><option>Experienced</option><option>Expert</option>
+              </select>
+            </div>
+            <div>
+              <label class="lab" for="fund">Funding Goal</label>
+              <select id="fund">
+                <option>Self Funded</option><option>Grant</option><option>Loan</option><option>Angel Investment</option><option>VC Investment</option><option>Not Sure</option>
+              </select>
+            </div>
+            <div>
+              <label class="lab" for="time">Timeline</label>
+              <select id="time">
+                <option>Start Immediately</option><option>Within 30 Days</option><option>Within 90 Days</option><option>Within 6 Months</option><option>Research Only</option>
+              </select>
+            </div>
+            <div>
+              <label class="lab" for="model">Model Preference</label>
+              <select id="model">
+                <option>High Margin</option><option>Low Startup Cost</option><option>Scalable</option><option>Any</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="slider-row">
+            <label class="lab" for="budget" style="margin:0">Max Startup Investment</label>
+            <span class="amt"><span id="budgetVal">US$10,000</span><small id="budgetLocal"></small></span>
+          </div>
+          <input type="range" id="budget" min="500" max="100000" step="500" value="10000">
+          <p class="rule"><b>Standard Rule:</b> Constraints mapped to 10k USD global equivalent (Local Parity logic active). Displayed in local currency for UK, EU, Canada &amp; US; USD equivalent elsewhere.</p>
+
+          <label class="lab" for="ctx">Additional Context &amp; Keywords</label>
+          <textarea id="ctx" maxlength="260" placeholder="e.g., 'focus on sustainable solutions' or 'target young professionals'"></textarea>
+          <p class="char"><span id="ctxCount">0</span> / 260</p>
+
+          <div class="toggle-row">
+            <div class="tx">
+              <div class="t">Investor Production Mode</div>
+              <div class="d">Upgrades reasoning density for high-stakes conversations. <b>+40% ACU consumption</b></div>
+            </div>
+            <button class="switch" id="invMode" role="switch" aria-checked="false" aria-label="Investor Production Mode"><i></i></button>
+          </div>
+
+        </div>
+      </details>
+
+      <!-- RESULTS -->
+      <section class="results" id="results" aria-live="polite">
+        <div class="results-head">
+          <h2>Generated Niche Ideas</h2>
+          <span class="count" id="resCount">SHOWING 0 OF 0 SAVED NICHES</span>
+        </div>
+        <div class="thinking" id="thinking">
+          Opportunity Discovery Agent · Scanning market signals
+          <span class="bar"><i></i></span>
+        </div>
+        <div class="niches" id="niches"></div>
+      </section>
+
+    </div>
+
+    <!-- RAIL -->
+    <aside class="rail" aria-label="Search summary">
+      <div class="rail-card">
+        <h3>Search Configuration</h3>
+        <div class="sum">
+          <div class="row"><span class="k">Start</span><span class="v" id="sumStart">I have no idea</span></div>
+          <div class="row"><span class="k">Goal</span><span class="v" id="sumGoal">Investor-Ready Startup</span></div>
+          <div class="row"><span class="k">Routing</span><span class="v" id="sumRoute">Balanced Results</span></div>
+          <div class="row"><span class="k">Market</span><span class="v" id="sumMarket">—</span></div>
+          <div class="row"><span class="k">Mode</span><span class="v" id="sumMode">Any</span></div>
+          <div class="row"><span class="k">Budget</span><span class="v" id="sumBudget">US$10,000</span></div>
+        </div>
+        <div class="acu">
+          <span class="k">Search Cost</span>
+          <span class="v" id="acuCost">25 <small>ACU</small></span>
+        </div>
+        <button class="btn-generate" id="generate">Generate Niche Ideas</button>
+        <p class="rail-note">All outputs are probabilistic and require your critical review. You are the final decision-maker.</p>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <span>© 2026 Niche Finder</span>
+    <span style="font-family:var(--mono);font-size:.66rem;letter-spacing:.16em">THE OPERATING SYSTEM FOR VENTURE CREATION</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  /* ---------- data ---------- */
+  var COUNTRIES = ["Afghanistan","Albania","Algeria","Andorra","Angola","Antigua and Barbuda","Argentina","Armenia","Australia","Austria","Azerbaijan","Bahamas","Bahrain","Bangladesh","Barbados","Belarus","Belgium","Belize","Benin","Bhutan","Bolivia","Bosnia and Herzegovina","Botswana","Brazil","Brunei","Bulgaria","Burkina Faso","Burundi","Cabo Verde","Cambodia","Cameroon","Canada","Central African Republic","Chad","Chile","China","Colombia","Comoros","Congo (Republic of the)","Congo, Democratic Republic of the","Costa Rica","Côte d'Ivoire","Croatia","Cuba","Cyprus","Czechia","Denmark","Djibouti","Dominica","Dominican Republic","Ecuador","Egypt","El Salvador","Equatorial Guinea","Eritrea","Estonia","Eswatini","Ethiopia","Fiji","Finland","France","Gabon","Gambia","Georgia","Germany","Ghana","Greece","Grenada","Guatemala","Guinea","Guinea-Bissau","Guyana","Haiti","Honduras","Hungary","Iceland","India","Indonesia","Iran","Iraq","Ireland","Israel","Italy","Jamaica","Japan","Jordan","Kazakhstan","Kenya","Kiribati","Kosovo","Kuwait","Kyrgyzstan","Laos","Latvia","Lebanon","Lesotho","Liberia","Libya","Liechtenstein","Lithuania","Luxembourg","Madagascar","Malawi","Malaysia","Maldives","Mali","Malta","Marshall Islands","Mauritania","Mauritius","Mexico","Micronesia","Moldova","Monaco","Mongolia","Montenegro","Morocco","Mozambique","Myanmar","Namibia","Nauru","Nepal","Netherlands","New Zealand","Nicaragua","Niger","Nigeria","North Korea","North Macedonia","Norway","Oman","Pakistan","Palau","Palestine","Panama","Papua New Guinea","Paraguay","Peru","Philippines","Poland","Portugal","Qatar","Romania","Russia","Rwanda","Saint Kitts and Nevis","Saint Lucia","Saint Vincent and the Grenadines","Samoa","San Marino","São Tomé and Príncipe","Saudi Arabia","Senegal","Serbia","Seychelles","Sierra Leone","Singapore","Slovakia","Slovenia","Solomon Islands","Somalia","South Africa","South Korea","South Sudan","Spain","Sri Lanka","Sudan","Suriname","Sweden","Switzerland","Syria","Taiwan","Tajikistan","Tanzania","Thailand","Timor-Leste","Togo","Tonga","Trinidad and Tobago","Tunisia","Turkey","Turkmenistan","Tuvalu","Uganda","Ukraine","United Arab Emirates","United Kingdom","United States","Uruguay","Uzbekistan","Vanuatu","Vatican City","Venezuela","Vietnam","Yemen","Zambia","Zimbabwe"];
+  var EU = ["Austria","Belgium","Bulgaria","Croatia","Cyprus","Czechia","Denmark","Estonia","Finland","France","Germany","Greece","Hungary","Ireland","Italy","Latvia","Lithuania","Luxembourg","Malta","Netherlands","Poland","Portugal","Romania","Slovakia","Slovenia","Spain","Sweden"];
+  var TIERS = {
+    "Primary":["Agribusiness & Forestry","Fishing & Aquaculture","Infrastructure Supporting Agriculture & Mining","Mining & Quarrying","Oil & Gas Extraction"],
+    "Secondary":["Bulk Storage & Warehousing","Construction","Construction Consultancy","Cost Management","Design Management","Energy Utilities","Manufacturing","Renewable Energy","Social Infrastructure","Transmission & Distribution","Transportation Infrastructure"],
+    "Tertiary":["Creative Industries","Digital Marketing","Education","Estate Agency","Financial Institutions","Food Delivery","Graphic Design","Health","Hospitality & Tourism","Logistics & Supply Chain","Public-Private Partnerships","Retail & Property","Trade & Supply Chain Finance"],
+    "Quaternary":["AI-Powered Services","Data & Analytics","Fintech","Information Technology","Research & Development","Software & SaaS","Venture Capital & Funds"],
+    "Quinary":["Executive Management","Government & Public Policy","High-Level Consulting","NGOs & Development Programs"]
+  };
+  var BASE_ACU = 25;
+
+  /* ---------- country select ---------- */
+  var sel = document.getElementById('country');
+  var ph = document.createElement('option');
+  ph.textContent = 'Select a country…'; ph.value = ''; ph.disabled = true; ph.selected = true;
+  sel.appendChild(ph);
+  COUNTRIES.forEach(function(c){
+    var o = document.createElement('option'); o.textContent = c; o.value = c; sel.appendChild(o);
+  });
+
+  /* ---------- single-select groups ---------- */
+  function group(id, sumId){
+    var g = document.getElementById(id);
+    g.addEventListener('click', function(e){
+      var btn = e.target.closest('.opt'); if (!btn) return;
+      g.querySelectorAll('.opt').forEach(function(b){ b.setAttribute('aria-pressed','false'); });
+      btn.setAttribute('aria-pressed','true');
+      if (sumId) document.getElementById(sumId).textContent = btn.querySelector('.t').textContent;
+    });
+  }
+  group('startGrid','sumStart');
+  group('goalGrid','sumGoal');
+  group('routeGrid','sumRoute');
+  group('modeGrid','sumMode');
+
+  /* area segmented */
+  var seg = document.getElementById('areaSeg');
+  seg.addEventListener('click', function(e){
+    var b = e.target.closest('button'); if (!b) return;
+    var was = b.getAttribute('aria-pressed') === 'true';
+    seg.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed','false'); });
+    if (!was) b.setAttribute('aria-pressed','true');
+    updMarket();
+  });
+
+  function updMarket(){
+    var c = sel.value, city = document.getElementById('city').value.trim();
+    var area = seg.querySelector('[aria-pressed="true"]');
+    var parts = [];
+    if (city) parts.push(city);
+    if (area) parts.push(area.textContent);
+    if (c) parts.push(c);
+    document.getElementById('sumMarket').textContent = parts.length ? parts.join(', ') : '—';
+    updBudget();
+  }
+  sel.addEventListener('change', updMarket);
+  document.getElementById('city').addEventListener('input', updMarket);
+
+  /* ---------- sectors ---------- */
+  var tiersEl = document.getElementById('tiers'), picked = [];
+  Object.keys(TIERS).forEach(function(t){
+    var wrap = document.createElement('div'); wrap.className = 'tier';
+    var name = document.createElement('div'); name.className = 'tname'; name.textContent = t;
+    var chips = document.createElement('div'); chips.className = 'chips';
+    TIERS[t].forEach(function(s){
+      var c = document.createElement('button');
+      c.className = 'chip'; c.type = 'button'; c.textContent = s; c.setAttribute('aria-pressed','false');
+      chips.appendChild(c);
+    });
+    wrap.appendChild(name); wrap.appendChild(chips); tiersEl.appendChild(wrap);
+  });
+  tiersEl.addEventListener('click', function(e){
+    var c = e.target.closest('.chip'); if (!c || c.disabled) return;
+    var on = c.getAttribute('aria-pressed') === 'true';
+    if (on){ picked.splice(picked.indexOf(c.textContent), 1); c.setAttribute('aria-pressed','false'); }
+    else if (picked.length < 3){ picked.push(c.textContent); c.setAttribute('aria-pressed','true'); }
+    document.getElementById('secCount').textContent = picked.length;
+    tiersEl.querySelectorAll('.chip').forEach(function(x){
+      x.disabled = picked.length >= 3 && x.getAttribute('aria-pressed') !== 'true';
+    });
+  });
+
+  /* ---------- budget + currency rules ---------- */
+  var CUR = { 'United States':['USD','$',1], 'United Kingdom':['GBP','£',.79], 'Canada':['CAD','C$',1.37] };
+  var budget = document.getElementById('budget');
+  function fmt(n){ return n.toLocaleString('en-US'); }
+  function updBudget(){
+    var usd = +budget.value, c = sel.value, main, local = '';
+    if (CUR[c]){
+      var k = CUR[c]; main = k[1] + fmt(Math.round(usd * k[2])) + ' ' + k[0];
+      if (k[0] !== 'USD') local = '≈ US$' + fmt(usd);
+    } else if (EU.indexOf(c) > -1){
+      main = '€' + fmt(Math.round(usd * .92)) + ' EUR'; local = '≈ US$' + fmt(usd);
+    } else {
+      main = 'US$' + fmt(usd);
+      if (c) local = '10k USD equivalent · local parity';
+    }
+    document.getElementById('budgetVal').textContent = main;
+    document.getElementById('budgetLocal').textContent = local ? ' ' + local : '';
+    document.getElementById('sumBudget').textContent = main;
+  }
+  budget.addEventListener('input', updBudget);
+
+  /* ---------- context counter ---------- */
+  var ctx = document.getElementById('ctx');
+  ctx.addEventListener('input', function(){
+    document.getElementById('ctxCount').textContent = ctx.value.length;
+  });
+
+  /* ---------- investor mode + ACU ---------- */
+  var inv = document.getElementById('invMode');
+  inv.addEventListener('click', function(){
+    inv.setAttribute('aria-checked', inv.getAttribute('aria-checked') === 'true' ? 'false' : 'true');
+    updAcu();
+  });
+  function updAcu(){
+    var cost = inv.getAttribute('aria-checked') === 'true' ? Math.round(BASE_ACU * 1.4) : BASE_ACU;
+    document.getElementById('acuCost').innerHTML = cost + ' <small>ACU</small>';
+  }
+
+  /* ---------- generate (demo) ---------- */
+  var MOCKS = [
+    { t:'Solar-Powered Cold-Chain Micro-Depots', m:'AGRIBUSINESS · KINSHASA · HYBRID', s:87,
+      p:'Off-grid refrigerated storage hubs serving smallholder produce cooperatives, monetized per-crate with mobile-money settlement. Post-harvest losses above 35% signal strong latent demand.' },
+    { t:'Prepaid Water-Point Management SaaS', m:'SOCIAL INFRASTRUCTURE · URBAN · DIGITAL', s:82,
+      p:'Metering and revenue-collection software for community water kiosks, replacing cash reconciliation with USSD prepay. Recurring per-kiosk licensing with NGO partnership channels.' },
+    { t:'Last-Mile Pharma Logistics Network', m:'HEALTH · LOGISTICS · BORING BUSINESS', s:78,
+      p:'Scheduled motorcycle cold-bag delivery connecting wholesale pharmacies to rural clinics. Route-density economics validated against comparable East African operators.' }
+  ];
+  var gen = document.getElementById('generate'), thinking = document.getElementById('thinking'), nichesEl = document.getElementById('niches');
+  var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  gen.addEventListener('click', function(){
+    if (!sel.value){
+      sel.focus();
+      document.getElementById('sumMarket').textContent = 'Select a country — mandatory';
+      return;
+    }
+    gen.disabled = true; gen.textContent = 'Discovery Agent Running…';
+    nichesEl.innerHTML = ''; thinking.classList.add('on');
+    document.getElementById('results').scrollIntoView({behavior: reduced ? 'auto' : 'smooth'});
+    setTimeout(function(){
+      thinking.classList.remove('on');
+      gen.disabled = false; gen.textContent = 'Generate Niche Ideas';
+      document.getElementById('resCount').textContent = 'SHOWING 3 OF 3 SAVED NICHES';
+      MOCKS.forEach(function(m, i){
+        var el = document.createElement('article'); el.className = 'niche';
+        el.innerHTML =
+          '<div><h3></h3><div class="meta"></div></div>' +
+          '<div class="score"><div class="n"></div><div class="l">Confidence</div></div>' +
+          '<p></p>' +
+          '<div class="actions">' +
+            '<button class="a primary">Unlock Deep-Dive</button>' +
+            '<span class="cost">60 ACU</span>' +
+            '<button class="a">Save to Portfolio</button>' +
+          '</div>';
+        el.querySelector('h3').textContent = m.t;
+        el.querySelector('.meta').textContent = m.m;
+        el.querySelector('.score .n').textContent = m.s;
+        el.querySelector('p').textContent = m.p;
+        nichesEl.appendChild(el);
+        setTimeout(function(){ el.classList.add('in'); }, reduced ? 0 : 90 * i);
+      });
+    }, reduced ? 60 : 2400);
+  });
+
+  updBudget(); updAcu();
+})();
+</script>
+</body>
+</html>
