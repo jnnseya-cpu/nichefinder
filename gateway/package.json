@@ -1,0 +1,20 @@
+{
+  "name": "nichefinder-ai-gateway",
+  "version": "0.1.0",
+  "description": "Unified AI gateway for Niche Finder — routes venture-intelligence requests across Claude, Gemini, and OpenAI with failover and ACU metering.",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "MOCK_AI=1 node src/server.js",
+    "test": "node test/smoke.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.111.0",
+    "@google/genai": "^2.11.0",
+    "openai": "^6.46.0"
+  }
+}
