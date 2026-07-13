@@ -227,6 +227,17 @@
   if (!project || !project.fin) {
     project = null; // project.html always persists a merged project; direct visits get the demo
   }
+
+  /* Capital-bracket law applies to EVERY price on the platform, not just search:
+     document tags shown here inherit the project's locked bracket factor and
+     Investor Mode, exactly like the Build Hub charges in project.html. */
+  var bFactor = Number((project || {}).bracketFactor) || 1;
+  var invMode = localStorage.getItem('nf_investor_mode') === '1';
+  function pricedAcu(base){
+    var c = base * bFactor;
+    if (invMode) c *= NF.COSTS.investor_multiplier;
+    return Math.round(c);
+  }
   var P = project || {
     id: 'demo-coldchain',
     title: 'Solar-Powered Cold-Chain Micro-Depots',
@@ -436,13 +447,13 @@
 
   /* ================= document scaffolding ================= */
   var TYPES = {
-    validation: { n: 'Market Validation Report', tag: 'VALIDATION · ' + NF.COSTS.validation + ' ACU', sub: 'Demand evidence, market sizing, and competitive scan', ac: C.teal },
-    forecast:   { n: '3-Year Financial Forecast', tag: 'FINANCIAL MODEL · ' + NF.COSTS.forecast + ' ACU', sub: 'Revenue build-up, P&L, cashflow, and sensitivity analysis', ac: C.brand },
-    pnl:        { n: '3-Year Profit & Loss', tag: 'P&L STATEMENT · ' + NF.COSTS.pnl + ' ACU', sub: 'Structured P&L with margins, opex breakdown, and EBITDA sensitivity', ac: C.brand },
-    bizplan:    { n: 'Business Plan', tag: 'BUSINESS PLAN · ' + NF.COSTS.bizplan + ' ACU', sub: 'Investor-grade operating and growth plan', ac: C.violet },
-    pitch:      { n: 'Investor Pitch Deck', tag: 'PITCH DECK · ' + NF.COSTS.pitch + ' ACU', sub: '12 slides, export-ready', ac: C.blue },
-    riskmap:    { n: 'Risk Heatmap', tag: 'RISK ENGINE · ' + NF.COSTS.riskmap + ' ACU', sub: 'Regulatory, operational, and market exposures mapped by probability and impact', ac: C.coral },
-    export:     { n: 'Export Pack', tag: 'EXPORT · ' + NF.COSTS.excel_model + ' ACU', sub: 'Download every generated asset', ac: C.coral }
+    validation: { n: 'Market Validation Report', tag: 'VALIDATION · ' + pricedAcu(NF.COSTS.validation) + ' ACU', sub: 'Demand evidence, market sizing, and competitive scan', ac: C.teal },
+    forecast:   { n: '3-Year Financial Forecast', tag: 'FINANCIAL MODEL · ' + pricedAcu(NF.COSTS.forecast) + ' ACU', sub: 'Revenue build-up, P&L, cashflow, and sensitivity analysis', ac: C.brand },
+    pnl:        { n: '3-Year Profit & Loss', tag: 'P&L STATEMENT · ' + pricedAcu(NF.COSTS.pnl) + ' ACU', sub: 'Structured P&L with margins, opex breakdown, and EBITDA sensitivity', ac: C.brand },
+    bizplan:    { n: 'Business Plan', tag: 'BUSINESS PLAN · ' + pricedAcu(NF.COSTS.bizplan) + ' ACU', sub: 'Investor-grade operating and growth plan', ac: C.violet },
+    pitch:      { n: 'Investor Pitch Deck', tag: 'PITCH DECK · ' + pricedAcu(NF.COSTS.pitch) + ' ACU', sub: '12 slides, export-ready', ac: C.blue },
+    riskmap:    { n: 'Risk Heatmap', tag: 'RISK ENGINE · ' + pricedAcu(NF.COSTS.riskmap) + ' ACU', sub: 'Regulatory, operational, and market exposures mapped by probability and impact', ac: C.coral },
+    export:     { n: 'Export Pack', tag: 'EXPORT · ' + pricedAcu(NF.COSTS.excel_model) + ' ACU', sub: 'Download every generated asset', ac: C.coral }
   };
   var type = new URLSearchParams(location.search).get('type');
   if (!TYPES[type]) type = 'validation';
