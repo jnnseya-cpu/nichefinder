@@ -99,9 +99,187 @@ No competitor deploys a true multi-agent AI workforce where specialised agents h
 
 ---
 
-# SECTION 03 — TRANSFORMATION PILLARS (ENGINEERING ANNEX)
+# SECTION 03 — COMPLETE USER ECOSYSTEM
 
-*The sections below are the engineering-grade transformation annex: audited current state, invariant laws already enforced in code, and the gap-closing work per pillar. They are superseded section-by-section as further master-document sections are ratified.*
+## 3. Complete User Ecosystem
+
+### 3.1 User Type Registry
+
+| User Type | Role Description | Primary Goal | ACU Relationship |
+|---|---|---|---|
+| Aspiring Entrepreneur | Individual seeking their first fundable idea | Discover & validate a viable venture niche | Welcome ACUs → convert to Paid ACUs |
+| Early-Stage Founder | Active builder with idea, needs validation & materials | Validate existing idea + produce investor assets | High ACU consumer — document generation focus |
+| Startup Incubator / Accelerator | Organisation managing cohorts of founders | Systematic opportunity evaluation for cohort | Enterprise ACU pool — admin-allocated |
+| Angel Investor / VC Analyst | Capital deployer assessing deal flow | Rapid viability screening of investment opportunities | Analytical consumer — scoring & reporting focus |
+| Existing Business Owner | Operating business exploring diversification | Identify adjacent market opportunities | Strategic consumer — market intelligence focus |
+| Enterprise Partner | Organisation white-labelling or integrating the OS | Embed Niche Finder intelligence into own platform | Revenue share model — API-based ACU billing |
+| Platform Administrator | Internal Niche Finder operations team | Manage users, ACUs, agents, compliance, revenue | No ACU cost — system access |
+| Developer / API Partner | Third-party building on the Niche Finder API | Extend or embed venture intelligence capabilities | API key billing — per-call ACU metering |
+
+### 3.2 User Journey Map by Type
+
+**Journey A: Aspiring Entrepreneur**
+
+*ACU events below follow the canonical pricing schedule already set (Annex §6): bracket 1 (≤ £10k) prices shown; every £10k capital bracket doubles them, Investor Mode adds ×1.4. The source draft's placeholder figures were conformed to the existing structure per the standing ACU rule.*
+
+| Stage | Action | OS Response | ACU Event |
+|---|---|---|---|
+| 1. Discovery | Lands on platform, registers | Onboarding Agent activates, Welcome ACUs assigned | Welcome credit — 100 free ACUs (read-only) |
+| 2. Search | Enters country, industry, budget constraints | Opportunity Discovery Agent generates ranked niche list | 125 ACU spend (niche search) |
+| 3. Shortlist | Reviews confidence-scored results | Portfolio Manager saves shortlisted projects | Free (read-only) |
+| 4. Unlock | Selects promising niche, clicks Unlock | Deep-Dive Analysis Agent generates full breakdown | 150 ACU spend (unlock) |
+| 5. Validate | Reviews market analysis, requests validation report | Market Validation Agent produces investor-grade report | 250 ACU spend (validation) |
+| 6. Model | Triggers financial forecast generation | Financial Modelling Agent produces 3-year model + Excel | 250 ACU (forecast) + 350 ACU (Excel model) |
+| 7. Plan | Requests business plan document | Business Plan Agent generates professional PDF/Word | 500 ACU spend (+150 ACU PDF edition) |
+| 8. Pitch | Requests investor pitch deck | Pitch Deck Agent produces branded, slide-ready deck | 500 ACU spend (tiers 500 / 650 / 850) |
+| 9. Export | Downloads all assets | Package exported; project status = investor_ready | Free re-download of generated assets (new PDF exports 100 ACU per schedule) |
+
+---
+
+# SECTION 04 — AI-AGENT COMMAND CENTRES
+
+## 4. AI-Agent Command Centres
+
+Every user type on the Niche Finder AI-OS receives a dedicated, personalised AI Command Centre. Each Command Centre is a persistent, context-aware workspace powered by a coordinated team of specialised AI agents. The Command Centre is not a dashboard — it is an active intelligence environment that monitors, recommends, alerts, and executes on behalf of the user continuously.
+
+### 4.1 Entrepreneur Command Centre
+
+| Agent | Data Visible | Actions Available | Automations Controlled |
+|---|---|---|---|
+| AI Chief of Staff | All projects, ACU balance, document status, deadlines | Prioritise projects, schedule actions, set goals | Auto-reminders, project status triggers |
+| AI Venture Analyst | Confidence scores, market data, competitor landscape | Generate insights, compare niches, flag opportunities | Auto-score new niches, weekly market updates |
+| AI Research Agent | Industry trends, economic indicators, news signals | Run targeted research, monitor competitor moves | Auto-alerts on niche market shifts |
+| AI Financial Coach | Financial model assumptions, cashflow projections | Adjust assumptions, remodel scenarios, stress test | Auto-recalculate on macro data changes |
+| AI Document Agent | All generated assets, export history, version tracking | Regenerate documents, update sections, export | Auto-version on data updates |
+| AI Growth Agent | ACU balance, usage patterns, feature adoption | Suggest next actions, optimise venture path | Auto-recommend ACU top-ups, upsell triggers |
+
+### 4.2 Incubator / Accelerator Command Centre
+
+| Agent | Data Visible | Actions Available |
+|---|---|---|
+| Cohort Intelligence Agent | All member projects, scores, progress status | Compare cohort ventures, identify top performers, flag at-risk founders |
+| Portfolio Manager Agent | ACU pool allocation, member spending, document outputs | Allocate ACUs to members, set spending limits, generate cohort reports |
+| Benchmark Agent | Cross-cohort venture confidence scores, sector heatmaps | Generate cohort comparison reports, sector opportunity maps |
+| Compliance Agent | Member KYC status, data consent records, export logs | Audit member data access, generate compliance reports |
+
+### 4.3 Admin Super Command Centre
+
+| Control Domain | Visibility | Control Actions |
+|---|---|---|
+| User Management | All users, registration dates, ACU balances, activity logs | Suspend, restore, adjust ACU, force KYC, impersonate for support |
+| Revenue Intelligence | ACU purchase history, conversion rates, ARPU, LTV, churn | Trigger campaigns, adjust pricing tiers, push promotional ACUs |
+| Agent Governance | All agent activity logs, error rates, escalations, performance | Pause agents, adjust instructions, redeploy, update system prompts |
+| Platform Health | Uptime, latency, error rates, queue depths, API response times | Trigger alerts, initiate rollbacks, scale infrastructure |
+| Compliance Control | GDPR requests, audit logs, data exports, deletion requests | Execute right-to-be-forgotten, generate ICO reports, manage consents |
+| BitriPay Revenue | ACU purchase transactions, settlement status, refunds, disputes | Issue refunds, resolve disputes, adjust fee structures |
+
+*ACU note (standing rule): "adjust pricing tiers" and "push promotional ACUs" operate within the existing economy — package prices (£5/£10/£20/£50), the canonical action schedule, and the capital-bracket law are governance-versioned constants (Annex §13); admin actions grant/deduct ACUs through audited ledger operations, exactly as the Super Admin OS Users tab does today.*
+
+---
+
+# SECTION 05 — CORE AI AGENT SPECIFICATIONS
+
+## 5. Core AI Agent Specifications
+
+*Conformance notes (standing rules): (1) All ACU figures below follow the canonical schedule already set — the source draft's placeholder spends were conformed (search 125, unlock 150, forecast 250 + Excel 350, business plan 500, pitch from 500), bracket 1 prices, doubling per £10k capital bracket, Investor Mode ×1.4. (2) The Venture Confidence Scorecard layers on top of the deterministic scoring core, never replaces it: the Overall Confidence Score (0–100) is the deterministic 0–10 score × 10, computed from PRS 35% / CS 30% / PSS 35%; the eight scorecard dimensions are evidence inputs that feed those three pillars; decision bands (STRONG GO ≥ 7.5, CONDITIONAL GO 6.0–7.4, NO GO < 6.0) and the breakthrough rules are unchanged.*
+
+### AGENT: Opportunity Discovery Agent
+
+- **PURPOSE:** Autonomously generates hyper-specific, ranked venture opportunities from user-defined constraints (country, industry, budget, risk tolerance). Acts as the entry point of the venture creation pipeline.
+- **INPUTS:** User search parameters (country, industry, budget, timeline, risk preference), economic indicator datasets, market trend signals, historical venture performance data, Venture Memory Layer context
+- **OUTPUTS:** Ranked list of 5–10 distinct venture opportunities, each with: title, one-paragraph summary, Overall Confidence Score (0–100, derived from the deterministic 0–10 core), sub-scores across 8 dimensions, estimated startup capital range, estimated time-to-revenue
+- **TRIGGERS:** User submits Search Canvas form; Venture Memory Layer provides contextual preference data; Scheduled auto-discovery for Incubator users
+- **APIs USED:** Anthropic Claude API (LLM reasoning), Vector DB (semantic similarity to historical ventures), Market Data API (economic indicators), Web Search API (real-time trend validation)
+- **BUSINESS VALUE:** Primary revenue trigger — every discovery search consumes **125 Paid ACUs** (bracket 1). Drives all downstream ACU consumption. High-quality discovery output is the primary conversion driver for ACU top-ups.
+
+### AGENT: Venture Scoring Agent (Neural Scorecard Engine)
+
+- **PURPOSE:** Applies the proprietary Venture Confidence Scorecard to every generated opportunity. Scores each niche across 8 commercial viability dimensions, producing a single comparable Overall Confidence Score.
+- **INPUTS:** Raw opportunity data from Discovery Agent, real-time market data, competitive density signals, regulatory environment data, capital efficiency benchmarks, geographic market maturity indices
+- **OUTPUTS:** Scored venture report with: Overall Confidence Score, sub-scores for Market Readiness, Competitive Density, Capital Efficiency, Regulatory Complexity, Revenue Model Clarity, Exit Potential, Time-to-Market, Founder Skill Alignment
+- **TRIGGERS:** Auto-triggered after every Opportunity Discovery Agent run; re-triggered on Deep-Dive Unlock
+- **APIs USED:** Anthropic Claude API (scoring reasoning), Vector DB (benchmark comparison), Market Intelligence API
+- **BUSINESS VALUE:** Differentiates Niche Finder from idea generators. Score credibility drives ACU unlock conversion. Score transparency builds user trust and platform authority.
+- **Deterministic mapping:** the eight dimensions aggregate into the invariant pillars — Market Readiness → PRS; Competitive Density → CS; Capital Efficiency, Regulatory Complexity, Revenue Model Clarity, Time-to-Market, Founder Skill Alignment → PSS; Exit Potential informs BPS/PPP in Breakthrough Discovery. Final arithmetic is always `PRS×0.35 + CS×0.30 + PSS×0.35`.
+
+### AGENT: Deep-Dive Analysis Agent
+
+- **PURPOSE:** Produces a comprehensive investor-grade market analysis report for a single unlocked venture opportunity. Goes beyond surface-level scoring to deliver actionable intelligence.
+- **INPUTS:** Selected venture opportunity data, Scoring Agent outputs, competitor landscape data, TAM/SAM/SOM data sources, regulatory database, pricing model benchmarks from comparable businesses
+- **OUTPUTS:** Full Deep-Dive Report including: TAM/SAM/SOM analysis, competitive landscape map, regulatory requirements by jurisdiction, pricing model recommendations, customer persona definitions, go-to-market strategy outline, key risk factors with mitigation strategies
+- **TRIGGERS:** User clicks "Unlock" on a shortlisted project and confirms **150 ACU** spend
+- **APIs USED:** Anthropic Claude API, Web Search API (real-time competitor data), Regulatory Database API, Market Intelligence providers
+- **BUSINESS VALUE:** Gateway ACU spend event. Quality of output here determines whether user proceeds to financial modelling (additional 250–600 ACUs) and document generation (business plan 500 + pitch from 500).
+
+### AGENT: Financial Modelling Agent
+
+- **PURPOSE:** Generates a dynamic, assumption-driven 3-year financial forecast and cashflow projection for any validated venture opportunity. Produces both in-platform visualisations and downloadable Excel models.
+- **INPUTS:** Deep-Dive Analysis outputs, user-defined financial assumptions (initial investment, pricing, growth rate, cost structure), industry-standard financial benchmarks, geographic market salary and cost data
+- **OUTPUTS:** Interactive 3-year P&L model, monthly cashflow projection, break-even analysis, funding requirement calculation, key financial metrics (CAC, LTV, gross margin, EBITDA), downloadable Excel financial model, PDF summary
+- **TRIGGERS:** User requests financial forecast after Deep-Dive unlock (**250 ACU** forecast; **350 ACU** Excel model; **220 ACU** P&L; bundles 400/500/700 per schedule); triggered automatically in Incubator bulk-processing mode
+- **APIs USED:** Anthropic Claude API (model generation), Excel generation library (SheetJS/ExcelJS), PDF generation (Puppeteer), Financial benchmark APIs
+- **BUSINESS VALUE:** Produces the single highest-value asset in the venture package. Drives ACU top-up behaviour. Excel model is the primary asset investors request. Enables Niche Finder to replace a CFO-grade consultancy engagement.
+
+### AGENT: Business Plan Agent
+
+- **PURPOSE:** Generates a complete, structured, investor-grade business plan document in PDF and Word format, integrating all prior agent outputs into a single coherent narrative.
+- **INPUTS:** Opportunity Discovery output, Deep-Dive Analysis report, Financial Model data, user company name and founder details, brand preferences
+- **OUTPUTS:** Professional business plan document (15–25 pages) covering: executive summary, problem/solution, market opportunity, business model, go-to-market strategy, competitive analysis, financial projections, team section, funding ask and use of funds. Output in PDF and .docx formats.
+- **TRIGGERS:** User requests Business Plan generation from project dashboard (**500 ACU** spend; +150 ACU PDF edition)
+- **APIs USED:** Anthropic Claude API, document generation library (docx/Puppeteer), cloud storage (Cloudflare R2 / S3)
+- **BUSINESS VALUE:** Replaces $5K–$15K business plan writing service. Primary B2B upsell trigger — incubators use bulk plan generation for entire cohorts. Anchor document in investor fundraising package.
+
+### AGENT: Pitch Deck Agent
+
+- **PURPOSE:** Generates a visually structured, content-complete investor pitch deck in presentation format, synthesising all venture intelligence into a compelling fundraising narrative.
+- **INPUTS:** Business Plan Agent outputs, venture scoring data, financial model highlights, founder-supplied brand assets (optional), target investor type (angel, VC, grant)
+- **OUTPUTS:** Investor pitch deck (10–15 slides) in PPTX format covering: problem, solution, market size, product overview, business model, traction/validation, financial highlights, team, funding ask. Branded with professional design template.
+- **TRIGGERS:** User requests Pitch Deck from project dashboard (**500 / 650 / 850 ACU** by deck tier; +200 ACU PPT export)
+- **APIs USED:** Anthropic Claude API, PPTX generation library, cloud storage, optional Canva API for design enhancement
+- **BUSINESS VALUE:** Highest-ACU single document action. Pitch deck + financial model together represent the full fundraising toolkit. Enables founders to enter investor conversations within hours of platform use.
+
+### AGENT: Onboarding Agent
+
+- **PURPOSE:** Manages the complete new user activation journey from registration through first successful opportunity discovery. Maximises activation rate and time-to-first-value.
+- **INPUTS:** User registration data, referral source, declared goals, industry interests, geographic focus, device type
+- **OUTPUTS:** Personalised onboarding sequence, Welcome ACU allocation (100 free read-only ACUs per the canonical economy), guided Search Canvas pre-population, first discovery recommendation, contextual tooltips and in-app guidance
+- **TRIGGERS:** User registration event; email verification completion; first platform login
+- **APIs USED:** Twilio SendGrid (email), Firebase Auth, Anthropic Claude API (personalisation logic)
+- **BUSINESS VALUE:** Directly impacts activation rate (registered → first search conversion). Every 10% improvement in activation rate compounds into significant LTV uplift across the user base.
+
+### AGENT: Venture Memory Agent
+
+- **PURPOSE:** Maintains and continuously enriches each user's private Venture Memory Layer — a persistent, vector-stored intelligence profile that personalises all agent outputs over time.
+- **INPUTS:** All user actions (searches, unlocks, document generations, exports), venture preferences, risk tolerance signals, geographic patterns, industry focus, feedback signals (saved/dismissed niches)
+- **OUTPUTS:** Updated user preference vector, personalised opportunity weighting adjustments, proactive recommendation queue, preference drift alerts for admin
+- **TRIGGERS:** Every user action event; weekly preference model update cycle; user feedback submission
+- **APIs USED:** Vector database (Pinecone / Weaviate), Anthropic Claude API, Firebase Firestore (event logging)
+- **BUSINESS VALUE:** Creates durable platform lock-in through personalisation compounding. Users whose recommendations improve over time show 3x higher retention rates and 2.4x higher ACU spend velocity.
+- **Deterministic guardrail:** memory personalises discovery ordering and recommendations only — it never alters scores, decision bands, or ACU prices.
+
+### AGENT: Fraud Detection & Risk Agent
+
+- **PURPOSE:** Monitors all ACU transactions, account behaviour, and API access patterns for fraudulent activity, account sharing, ACU manipulation, and security anomalies.
+- **INPUTS:** Transaction logs, login patterns, device fingerprints, IP geolocation data, ACU purchase events, API call patterns, account sharing signals
+- **OUTPUTS:** Risk score per account, fraud alerts to admin, automatic account flagging, escalation triggers, blocked transaction notifications
+- **TRIGGERS:** Every ACU purchase event; login from new device; API key generation; unusual ACU consumption spike
+- **APIs USED:** Stripe Radar (payment fraud), CrowdStrike Falcon API (behavioural analytics), Anthropic Claude API (pattern reasoning)
+- **BUSINESS VALUE:** Protects platform revenue integrity. ACU fraud and account sharing are the primary revenue leakage risks in a credit-based model. Prevents chargeback exposure on high-volume ACU purchases.
+
+### AGENT: Compliance & GDPR Agent
+
+- **PURPOSE:** Enforces data privacy compliance across the platform, managing consent records, right-to-be-forgotten requests, data portability exports, and regulatory audit requirements.
+- **INPUTS:** User consent records, data processing logs, deletion request queue, audit trail data, geographic jurisdiction data
+- **OUTPUTS:** Consent compliance reports, GDPR deletion execution, data export packages, ICO-ready audit logs, jurisdiction-specific compliance certificates
+- **TRIGGERS:** User deletion request; data export request; new jurisdiction activation; quarterly compliance audit cycle
+- **APIs USED:** OneTrust or Cookiebot (consent), custom audit log system, Anthropic Claude API (policy interpretation)
+- **BUSINESS VALUE:** Essential for UK/EU market operation. Incubator and Enterprise clients require demonstrable compliance before procurement. Reduces legal risk exposure to near-zero.
+
+---
+
+# ENGINEERING ANNEX — TRANSFORMATION PILLARS
+
+*The annex below is the engineering-grade transformation layer: audited current state, invariant laws already enforced in code, and the gap-closing work per pillar. Annex numbering (§3–§13) is internal to the annex and independent of the master-document SECTION numbering above. Annex content is additive — master sections land verbatim on top; nothing here is removed.*
 
 ## 3. Current-state audit (prototype inventory)
 
