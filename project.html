@@ -140,6 +140,72 @@
   .action.working{border-color:var(--gold);pointer-events:none}
   .rail-note{font-size:.72rem;color:var(--muted);margin-top:14px;line-height:1.55}
 
+  /* repository strip + breakthrough badge */
+  .repo-strip{display:flex;gap:20px;align-items:center;font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--teal);margin-bottom:12px}
+  .repo-strip i{width:6px;height:6px;border-radius:50%;background:var(--teal);display:inline-block;animation:pulse 2.2s infinite}
+  .repo-strip .v4{color:var(--gold)}
+  .bps-pill{flex:none;margin-top:10px;font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:#fff;border-radius:99px;padding:6px 14px;background:linear-gradient(90deg,#6B5CA5,#2E6FA3)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+
+  /* tabs */
+  .tabs{display:flex;gap:6px;margin-top:26px;border-bottom:1px solid var(--line-soft)}
+  .tab{cursor:pointer;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:var(--mono);font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;padding:12px 18px}
+  .tab:hover{color:var(--text)}
+  .tab.on{color:var(--gold-bright);border-bottom-color:var(--gold)}
+  .tabpane{display:none}
+  .tabpane.on{display:block}
+
+  /* AI operational brief */
+  .brief{background:linear-gradient(170deg,var(--panel-2),var(--panel) 60%);border:1px solid var(--line);border-radius:10px;padding:26px 28px}
+  .brief-head{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .brief-head h2{font-family:var(--serif);font-weight:400;font-size:1.3rem;flex:1}
+  .brief-score{font-family:var(--mono);font-size:1.5rem;color:var(--gold-bright)}
+  .brief-score small{font-size:.7rem;color:var(--muted)}
+  .brief-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px}
+  @media(max-width:760px){.brief-grid{grid-template-columns:1fr}}
+  .bcard{border:1px solid var(--line-soft);border-radius:8px;padding:17px 18px;background:rgba(7,11,20,.45);position:relative;overflow:hidden}
+  .bcard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--bc,var(--gold))}
+  .bcard .bk{font-family:var(--mono);font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--bc,var(--gold))}
+  .bcard p{font-size:.84rem;color:var(--muted);margin-top:8px}
+  .bcard p b{color:var(--text)}
+  .brief-facts{display:flex;gap:26px;flex-wrap:wrap;margin-top:20px;padding-top:18px;border-top:1px dashed var(--line-soft)}
+  .brief-facts .f .k{font-family:var(--mono);font-size:.56rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  .brief-facts .f .v{font-family:var(--mono);font-size:1rem;color:var(--gold-bright);margin-top:3px}
+  .next-action{
+    display:flex;align-items:center;gap:16px;margin-top:20px;border-radius:8px;padding:15px 18px;
+    background:linear-gradient(90deg,rgba(196,96,79,.16),rgba(217,164,65,.1));border:1px solid rgba(196,96,79,.4);
+  }
+  .next-action .req{flex:none;font-family:var(--mono);font-size:.56rem;letter-spacing:.16em;background:var(--red);color:#fff;border-radius:3px;padding:3px 8px}
+  .next-action .tx{flex:1;font-size:.9rem}
+  .next-action .meta{font-family:var(--mono);font-size:.56rem;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;text-align:right;line-height:1.8}
+
+  /* build hub */
+  .hub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px;margin-top:6px}
+  .hub-card{border:1px solid var(--line-soft);border-radius:10px;padding:22px;background:linear-gradient(170deg,var(--panel-2),var(--panel) 60%);display:flex;flex-direction:column;gap:8px;position:relative;overflow:hidden}
+  .hub-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--hc,var(--gold))}
+  .hub-card b{font-family:var(--serif);font-weight:400;font-size:1.1rem}
+  .hub-card .hd{font-size:.8rem;color:var(--muted)}
+  .hub-state{font-family:var(--mono);font-size:.56rem;letter-spacing:.16em;text-transform:uppercase;margin-top:8px}
+  .hub-state.synced{color:var(--teal)}
+  .hub-state.locked{color:var(--gold-bright)}
+  .hub-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .hub-btn{cursor:pointer;font-size:.74rem;font-weight:600;font-family:var(--sans);border-radius:5px;padding:8px 14px;border:1px solid var(--line-soft);background:none;color:var(--text);text-decoration:none}
+  .hub-btn:hover{border-color:var(--gold-dim)}
+  .hub-btn.primary{background:var(--gold);border-color:var(--gold);color:var(--ink)}
+  .hub-btn.primary:hover{background:var(--gold-bright)}
+  .hub-btn[disabled]{opacity:.45;cursor:not-allowed}
+
+  /* memory */
+  .mem-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:6px}
+  @media(max-width:860px){.mem-grid{grid-template-columns:1fr}}
+  .mem-card{border:1px solid var(--line-soft);border-radius:10px;padding:22px;background:linear-gradient(170deg,var(--panel-2),var(--panel) 60%)}
+  .mem-card h3{font-family:var(--serif);font-weight:400;font-size:1.1rem;display:flex;gap:12px;align-items:center}
+  .mem-card h3::after{content:"";height:1px;background:var(--line-soft);flex:1}
+  .mem-card p{font-size:.84rem;color:var(--muted);margin-top:10px}
+  .mem-log{margin-top:12px;display:flex;flex-direction:column;gap:8px;font-family:var(--mono);font-size:.68rem;color:var(--muted)}
+  .mem-log span{border-left:2px solid var(--teal);padding-left:10px}
+  .mem-links{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+
   .toast{
     position:fixed;bottom:26px;left:50%;transform:translate(-50%,20px);opacity:0;z-index:80;
     background:var(--panel-2);border:1px solid var(--gold);border-radius:8px;padding:13px 22px;
@@ -164,6 +230,7 @@
     </a>
     <div class="nav-right">
       <a href="search.html">Search Canvas</a>
+      <a href="dashboard.html">Command Center</a>
       <span class="acu-balance" id="acuBalance">— ACU</span>
     </div>
   </div>
@@ -171,10 +238,12 @@
 
 <main>
   <div class="wrap page-head">
+    <div class="repo-strip"><span><i></i> VENTURE REPOSITORY ACTIVE</span><span class="v4">SYNC ACTIVE V4</span></div>
     <p class="crumb"><a href="search.html">Business Discovery OS</a> / Deep-Dive Analysis</p>
     <div class="title-row">
       <h1 id="title">Loading project…</h1>
       <span class="status-pill" id="statusPill">unlocked</span>
+      <span class="bps-pill" id="bpsPill">BREAKTHROUGH (BPS: 8/10)</span>
     </div>
     <p class="meta-line" id="metaLine"></p>
 
@@ -186,6 +255,49 @@
       <div class="stage" data-stage="pitch_ready"><span>Pitch Ready</span></div>
       <div class="stage" data-stage="investor_ready"><span>Investor Ready</span></div>
     </div>
+
+    <div class="tabs" role="tablist">
+      <button class="tab on" data-pane="analysis" role="tab">Analysis</button>
+      <button class="tab" data-pane="hub" role="tab">Build Hub</button>
+      <button class="tab" data-pane="memory" role="tab">Memory</button>
+    </div>
+  </div>
+
+  <div class="tabpane on" id="pane-analysis">
+  <div class="wrap" style="padding-top:26px">
+    <section class="brief" id="aiBrief">
+      <div class="brief-head">
+        <h2>AI Operational Brief</h2>
+        <span class="brief-score" id="briefScore">8.5<small> /10</small></span>
+      </div>
+      <div class="bcard" style="--bc:var(--gold);margin-top:18px">
+        <span class="bk">Breakthrough Rationale</span>
+        <p id="briefRationale"></p>
+      </div>
+      <div class="brief-grid">
+        <div class="bcard" style="--bc:var(--teal)"><span class="bk">AI Situation</span><p id="briefSituation"></p></div>
+        <div class="bcard" style="--bc:#6B9BD1"><span class="bk">AI Insight</span><p id="briefInsight"></p></div>
+        <div class="bcard" style="--bc:var(--red)"><span class="bk">AI Risk Alert</span><p id="briefRisk"></p></div>
+        <div class="bcard" style="--bc:var(--gold)"><span class="bk">AI Recommendation</span><p id="briefReco"></p></div>
+      </div>
+      <div class="brief-facts">
+        <div class="f"><div class="k">Target Investment</div><div class="v" id="briefInvest">US$10,000</div></div>
+        <div class="f"><div class="k">AI Confidence</div><div class="v" id="briefConf">HIGH CERTAINTY</div></div>
+        <div class="f"><div class="k">Recommendation</div><div class="v">UNLOCKED</div></div>
+      </div>
+      <h2 style="font-family:var(--serif);font-weight:400;font-size:1.2rem;margin-top:28px">Decision Intelligence Matrix</h2>
+      <div class="brief-grid">
+        <div class="bcard" style="--bc:var(--teal)"><span class="bk">Optimal Route</span><p id="dimOptimal"></p></div>
+        <div class="bcard" style="--bc:#6B5CA5"><span class="bk">Pivot Alternative</span><p id="dimPivot"></p></div>
+        <div class="bcard" style="--bc:var(--red)"><span class="bk">Risk of Inaction</span><p id="dimInaction"></p></div>
+        <div class="bcard" style="--bc:var(--gold)"><span class="bk">Commercial Value</span><p id="dimValue"></p></div>
+      </div>
+      <div class="next-action">
+        <span class="req">REQUIRED</span>
+        <span class="tx" id="briefNext">Finalize commercial assumptions.</span>
+        <span class="meta">OWNER: OPERATOR<br>DEADLINE: IMMEDIATE</span>
+      </div>
+    </section>
   </div>
 
   <div class="wrap layout">
@@ -239,12 +351,53 @@
       </div>
     </aside>
   </div>
+  </div><!-- /pane-analysis -->
+
+  <div class="tabpane" id="pane-hub">
+    <div class="wrap" style="padding:26px 0 110px">
+      <div class="hub-grid" id="hubGrid"></div>
+    </div>
+  </div>
+
+  <div class="tabpane" id="pane-memory">
+    <div class="wrap" style="padding:26px 0 110px">
+      <div class="mem-grid">
+        <div class="mem-card">
+          <h3>Process Memory State</h3>
+          <p>Every action on this venture is autosaved to your private Venture Memory. The OS uses it to sharpen future recommendations.</p>
+          <div class="mem-log" id="memLog"></div>
+        </div>
+        <div class="mem-card">
+          <h3>Predicted Trajectory</h3>
+          <p id="memTrajectory">Venture velocity is stable. Increase feedback loop density by generating validation assets.</p>
+          <h3 style="margin-top:22px">Predicted Next Best Step</h3>
+          <p id="memNext">Initialize build engine.</p>
+        </div>
+        <div class="mem-card" style="grid-column:1/-1">
+          <h3>Saved Reports</h3>
+          <p>Re-open any generated Build Hub document.</p>
+          <div class="mem-links" id="memLinks"></div>
+        </div>
+      </div>
+    </div>
+  </div>
 </main>
 
-<footer>
-  <div class="wrap foot">
-    <span>© 2026 Niche Finder</span>
-    <span style="font-family:var(--mono);font-size:.66rem;letter-spacing:.16em">THE OPERATING SYSTEM FOR VENTURE CREATION</span>
+<footer class="site" style="border-top:1px solid var(--line-soft);margin-top:60px;padding:48px 0 30px;font-size:.84rem;color:var(--muted)">
+  <div class="wrap">
+    <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:30px" class="foot-grid">
+      <div>
+        <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"><i></i></span><span>Niche<em>Finder</em></span></a>
+        <p style="font-size:.82rem;margin-top:12px;max-width:34ch">The AI Operating System for Venture Creation. Discover, validate, and build your next investor-ready business.</p>
+      </div>
+      <div><h4 style="font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">Platform</h4><a href="index.html#how" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">How It Works</a><a href="index.html" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">About Us</a><a href="#" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Blog</a><a href="#" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Contact</a></div>
+      <div><h4 style="font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">Legal</h4><a href="#" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Terms of Use</a><a href="#" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Privacy Policy</a><a href="#" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Disclaimer</a><a href="#" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Cookies</a></div>
+      <div><h4 style="font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">Connect</h4><a href="#" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">LinkedIn</a><a href="#" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Twitter / X</a></div>
+    </div>
+    <div style="margin-top:36px;padding-top:18px;border-top:1px solid var(--line-soft);font-size:.72rem;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap">
+      <span>© 2026 Niche Finder Ltd. All rights reserved.</span>
+      <span>Use of Niche Finder is subject to our Terms of Use and Privacy Policy.</span>
+    </div>
   </div>
 </footer>
 
@@ -280,13 +433,30 @@
       { t: 'Deploy pilot depot', p: 'Install the first 20-crate solar depot; instrument temperature logging for spoilage-reduction proof.', tm: 'Weeks 5–10' },
       { t: 'Prove unit economics', p: 'Run 90 days at target utilization; capture spoilage-delta data for the investor pack.', tm: 'Weeks 11–22' },
       { t: 'Raise & replicate', p: 'Use validated depot economics to raise for 10 additional depots along two trading corridors.', tm: 'Months 6–12' }
-    ]
+    ],
+    bps: 8,
+    brief: {
+      score: '8.5',
+      rationale: 'This niche offers novelty by pairing solar-first infrastructure with prepaid mobile-money economics rather than generic cold storage. Unmet demand is high — post-harvest losses above 35% are already a priced pain. Timing is strong: falling solar equipment costs, mature mobile-money rails, and no structural incumbent in the target corridors. Defensibility builds through corridor density, cooperative relationships, and utilization data no new entrant will hold.',
+      situation: 'Smallholder cooperatives lose over a third of produce value between harvest and sale. Legacy cold-chain operators carry 3× the operating cost and avoid these corridors entirely.',
+      insight: 'Reliability, not price, is the purchase trigger. A prepaid crate-credit model converts spoilage risk into a predictable operating expense farmers already understand.',
+      riskAlert: 'Equipment import lead times of 6–14 weeks are the dominant execution risk. Engagement discipline of cooperatives beyond the pilot corridor is unproven.',
+      recommendation: 'Unlocked',
+      confidence: 'HIGH CERTAINTY',
+      optimalRoute: 'Deploy the single-depot wedge at the highest-traffic collection point, pre-selling 60% capacity before installation. AI-driven route data and utilization telemetry make each subsequent depot a lower-risk copy.',
+      pivot: 'Pivot to a B2B equipment-leasing model for existing traders if direct depot operation shows weak utilization — same supply chain, different balance sheet.',
+      riskOfInaction: 'Solar hardware costs are falling; a funded competitor could lock the best collection points within 12–18 months, making later entry a price war.',
+      commercialValue: 'High. Recurring prepaid revenue, 61% contribution margin, and a repeatable expansion unit that pays back in under 4,000 transactions. Scales along existing trade corridors with minimal marginal overhead.',
+      nextAction: 'Finalize commercial assumptions.'
+    }
   };
 
   var project;
   try { project = JSON.parse(localStorage.getItem('nf_active_project')) || DEFAULT; } catch (e) { project = DEFAULT; }
-  // merge: AI-generated niches carry title/meta/score/summary only — fill analysis sections from the template
+  // merge: AI-generated niches may carry partial data — fill remaining analysis sections from the template
   Object.keys(DEFAULT).forEach(function(k){ if (project[k] == null) project[k] = DEFAULT[k]; });
+  // persist the merged project so asset.html renders documents from identical data
+  try { localStorage.setItem('nf_active_project', JSON.stringify(project)); } catch (e) {}
 
   /* ---------- state: status + ACU balance persist ---------- */
   var STAGES = ['shortlisted','unlocked','validated','financial_ready','pitch_ready','investor_ready'];
@@ -421,12 +591,36 @@
 
   /* ---------- actions ---------- */
   var ACTIONS = [
-    { id: 'validation', t: 'Market Validation Report', d: 'Demand evidence & competitor scan', cost: 40, advances: 'validated' },
-    { id: 'forecast', t: 'Financial Forecast', d: '3-year model & cashflow projections', cost: 50, advances: 'financial_ready' },
-    { id: 'bizplan', t: 'Business Plan', d: 'Full investor-grade business plan', cost: 80, advances: 'pitch_ready' },
-    { id: 'pitch', t: 'Investor Pitch Deck', d: '12-slide deck, export-ready', cost: 100, advances: 'investor_ready' },
-    { id: 'export', t: 'Export Excel + PDF Pack', d: 'Download all generated assets', cost: 15, advances: null }
+    { id: 'validation', t: 'Market Validation Report', d: 'Deep dive into local demand, competition, and timing', cost: 40, advances: 'validated', hc: '#3FA79B' },
+    { id: 'forecast', t: '3-Year Forecast', d: 'Detailed P&L, cashflow, and break-even analysis', cost: 50, advances: 'financial_ready', hc: '#D9A441' },
+    { id: 'riskmap', t: 'Risk Heatmap', d: 'Identify regulatory, operational, and market exposures', cost: 25, advances: null, hc: '#C4604F' },
+    { id: 'bizplan', t: 'Business Plan', d: 'Professional, investor-ready execution strategy', cost: 80, advances: 'pitch_ready', hc: '#6B5CA5' },
+    { id: 'pitch', t: 'Investor Pitch Deck', d: '12-slide deck, export-ready', cost: 100, advances: 'investor_ready', hc: '#6B9BD1' },
+    { id: 'export', t: 'Export Excel + PDF Pack', d: 'Download all generated assets', cost: 15, advances: null, hc: '#8B93A5' }
   ];
+
+  /* ---------- autosave: ledger + reports + memory ---------- */
+  function logLedger(label, amt){
+    try {
+      var l = JSON.parse(localStorage.getItem('nf_ledger') || '[]');
+      l.unshift({ t: label, amt: amt, ts: Date.now() });
+      localStorage.setItem('nf_ledger', JSON.stringify(l.slice(0, 200)));
+    } catch (e) {}
+  }
+  function logReport(actionId, actionTitle){
+    try {
+      var r = JSON.parse(localStorage.getItem('nf_reports') || '[]');
+      r.unshift({ type: actionId, title: actionTitle + ' — ' + project.title, project: project.id, ts: Date.now() });
+      localStorage.setItem('nf_reports', JSON.stringify(r.slice(0, 100)));
+    } catch (e) {}
+  }
+  function logMemory(text){
+    try {
+      var m = JSON.parse(localStorage.getItem('nf_memory_' + project.id) || '[]');
+      m.unshift({ t: text, ts: Date.now() });
+      localStorage.setItem('nf_memory_' + project.id, JSON.stringify(m.slice(0, 50)));
+    } catch (e) {}
+  }
   var actionsEl = document.getElementById('actions');
   var toast = document.getElementById('toast'), toastTimer;
   function showToast(html){
@@ -451,26 +645,135 @@
       btn.className = 'action' + (done ? ' done' : '');
       btn.innerHTML = '<span class="t"></span><span class="cost"></span>';
       btn.querySelector('.t').innerHTML = esc(a.t) + '<span class="d">' + esc(a.d) + '</span>';
-      btn.querySelector('.cost').textContent = done ? '✓ SAVED' : a.cost + ' ACU';
+      btn.querySelector('.cost').textContent = done ? 'VIEW ↗' : a.cost + ' ACU';
       if (!done && balance < a.cost) btn.disabled = true;
-      if (!done) btn.addEventListener('click', function(){ runAction(a, btn); });
+      if (done) btn.addEventListener('click', function(){ location.href = 'asset.html?type=' + a.id; });
+      else btn.addEventListener('click', function(){ runAction(a, btn); });
       actionsEl.appendChild(btn);
     });
   }
 
   function runAction(a, btn){
     btn.classList.add('working');
-    btn.querySelector('.cost').textContent = 'GENERATING…';
+    var costEl = btn.querySelector('.cost');
+    if (costEl) costEl.textContent = 'GENERATING…';
+    else btn.textContent = 'GENERATING…';
     setTimeout(function(){
       balance -= a.cost;
       state.doneActions.push(a.id);
       if (a.advances && STAGES.indexOf(a.advances) > STAGES.indexOf(state.status)) state.status = a.advances;
+      logLedger('OPERATIONAL_TASK · ' + a.t, -a.cost);
+      logReport(a.id, a.t);
+      logMemory(a.t + ' generated (' + a.cost + ' ACU). Status → ' + state.status + '.');
       saveAll();
-      showToast('<b>' + a.t + '</b> generated · ' + a.cost + ' ACU consumed · balance ' + balance.toLocaleString('en-US') + ' ACU');
+      showToast('<b>' + a.t + '</b> generated · ' + a.cost + ' ACU consumed · <a href="asset.html?type=' + a.id + '" style="color:var(--gold-bright)">Open document ↗</a>');
+      toast.style.pointerEvents = 'auto';
     }, reduced ? 100 : 1600);
   }
 
   render();
+
+  /* ---------- AI Operational Brief ---------- */
+  var B = project.brief || {};
+  function setTxt(id, v){ var el = document.getElementById(id); if (el && v != null) el.textContent = v; }
+  document.getElementById('briefScore').innerHTML = esc(B.score || (project.score / 10).toFixed(1)) + '<small> /10</small>';
+  document.getElementById('bpsPill').textContent =
+    (project.bps >= 7 ? 'BREAKTHROUGH' : project.bps >= 5 ? 'STRONG OPTION' : 'STANDARD') + ' (BPS: ' + (project.bps || Math.round(project.score / 10)) + '/10)';
+  setTxt('briefRationale', B.rationale);
+  setTxt('briefSituation', B.situation);
+  setTxt('briefInsight', B.insight);
+  setTxt('briefRisk', B.riskAlert);
+  setTxt('briefReco', B.recommendation === 'Unlocked' ? 'Unlock and proceed to the Build Hub — the opportunity clears the confidence bar for capital-light validation.' : B.recommendation);
+  setTxt('briefConf', B.confidence);
+  setTxt('dimOptimal', B.optimalRoute);
+  setTxt('dimPivot', B.pivot);
+  setTxt('dimInaction', B.riskOfInaction);
+  setTxt('dimValue', B.commercialValue);
+  setTxt('briefNext', B.nextAction);
+  var invMatch = (project.meta || '').match(/US?\$[\d,]+/i);
+  if (invMatch) setTxt('briefInvest', invMatch[0].toUpperCase());
+
+  /* ---------- tabs ---------- */
+  document.querySelectorAll('.tab').forEach(function(t){
+    t.addEventListener('click', function(){
+      document.querySelectorAll('.tab').forEach(function(x){ x.classList.remove('on'); });
+      document.querySelectorAll('.tabpane').forEach(function(x){ x.classList.remove('on'); });
+      t.classList.add('on');
+      document.getElementById('pane-' + t.dataset.pane).classList.add('on');
+      if (t.dataset.pane === 'hub') renderHub();
+      if (t.dataset.pane === 'memory') renderMemory();
+    });
+  });
+
+  /* ---------- Build Hub ---------- */
+  function renderHub(){
+    var grid = document.getElementById('hubGrid');
+    grid.innerHTML = '';
+    ACTIONS.forEach(function(a){
+      var done = state.doneActions.indexOf(a.id) > -1;
+      var card = document.createElement('div');
+      card.className = 'hub-card';
+      card.style.setProperty('--hc', a.hc);
+      card.innerHTML = '<b></b><span class="hd"></span>' +
+        '<span class="hub-state ' + (done ? 'synced' : 'locked') + '">' + (done ? 'REPOSITORY SYNCED' : a.cost + ' ACU') + '</span>' +
+        '<div class="hub-btns"></div>';
+      card.querySelector('b').textContent = a.t;
+      card.querySelector('.hd').textContent = a.d;
+      var btns = card.querySelector('.hub-btns');
+      if (done){
+        var view = document.createElement('a');
+        view.className = 'hub-btn primary'; view.href = 'asset.html?type=' + a.id; view.textContent = 'View report';
+        var fmtTag = document.createElement('span');
+        fmtTag.className = 'hub-btn'; fmtTag.style.pointerEvents = 'none'; fmtTag.textContent = 'HTML';
+        var regen = document.createElement('button');
+        regen.className = 'hub-btn'; regen.textContent = 'Regenerate · Version 2.0 · ' + Math.ceil(a.cost / 2) + ' ACU';
+        regen.addEventListener('click', function(){
+          if (balance < Math.ceil(a.cost / 2)) return alert('Insufficient ACU balance.');
+          balance -= Math.ceil(a.cost / 2);
+          logLedger('REGENERATE · ' + a.t + ' V2', -Math.ceil(a.cost / 2));
+          logMemory(a.t + ' regenerated as Version 2.0.');
+          saveAll(); renderHub();
+          showToast('<b>' + a.t + '</b> · Version 2.0 generated');
+        });
+        btns.appendChild(view); btns.appendChild(fmtTag); btns.appendChild(regen);
+      } else {
+        var exec = document.createElement('button');
+        exec.className = 'hub-btn primary';
+        exec.textContent = 'Execute ' + a.t + ' Engine';
+        if (balance < a.cost) exec.disabled = true;
+        exec.addEventListener('click', function(){
+          runAction(a, exec);
+          setTimeout(renderHub, 1800);
+        });
+        btns.appendChild(exec);
+      }
+      grid.appendChild(card);
+    });
+  }
+
+  /* ---------- Memory ---------- */
+  function renderMemory(){
+    var log = document.getElementById('memLog');
+    var entries;
+    try { entries = JSON.parse(localStorage.getItem('nf_memory_' + project.id) || '[]'); } catch (e) { entries = []; }
+    log.innerHTML = entries.length
+      ? entries.map(function(e){ var d = document.createElement('span'); d.textContent = new Date(e.ts).toLocaleString() + ' — ' + e.t; return d.outerHTML; }).join('')
+      : '<span>No memory entries yet — actions autosave here.</span>';
+    var next = state.doneActions.length === 0 ? 'Initialize build engine.'
+      : state.doneActions.length < 4 ? 'Continue asset generation: ' + (ACTIONS.filter(function(a){ return state.doneActions.indexOf(a.id) < 0 && a.id !== 'export'; })[0] || {}).t + '.'
+      : 'Package and export the investor pack.';
+    document.getElementById('memNext').textContent = next;
+    var links = document.getElementById('memLinks');
+    links.innerHTML = '';
+    ACTIONS.filter(function(a){ return state.doneActions.indexOf(a.id) > -1 && a.id !== 'export'; }).forEach(function(a){
+      var l = document.createElement('a');
+      l.className = 'hub-btn'; l.href = 'asset.html?type=' + a.id; l.textContent = 'View ' + a.t;
+      links.appendChild(l);
+    });
+    if (!links.children.length) links.innerHTML = '<span style="font-size:.8rem;color:var(--muted)">No reports generated yet.</span>';
+  }
+
+  logMemory('Deep-dive session opened.');
 })();
 </script>
 </body>

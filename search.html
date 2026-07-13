@@ -296,7 +296,11 @@
       <span class="brand-mark" aria-hidden="true"><i></i></span>
       <span>Niche<em>Finder</em></span>
     </a>
-    <span class="sync"><i aria-hidden="true"></i>OS SYNC ACTIVE</span>
+    <span style="display:flex;align-items:center;gap:18px">
+      <a href="dashboard.html" style="font-size:.82rem;color:var(--muted);text-decoration:none">Command Center</a>
+      <span class="sync"><i aria-hidden="true"></i>OS SYNC ACTIVE</span>
+      <span class="sync" id="acuBalance" style="color:var(--gold-bright);border:1px solid var(--line);border-radius:99px;padding:6px 14px">— ACU</span>
+    </span>
   </div>
 </header>
 
@@ -498,10 +502,21 @@
   </div>
 </main>
 
-<footer>
-  <div class="wrap foot">
-    <span>© 2026 Niche Finder</span>
-    <span style="font-family:var(--mono);font-size:.66rem;letter-spacing:.16em">THE OPERATING SYSTEM FOR VENTURE CREATION</span>
+<footer class="site" style="border-top:1px solid var(--line-soft);margin-top:60px;padding:48px 0 30px;font-size:.84rem;color:var(--muted)">
+  <div class="wrap">
+    <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:30px" class="foot-grid">
+      <div>
+        <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"><i></i></span><span>Niche<em>Finder</em></span></a>
+        <p style="font-size:.82rem;margin-top:12px;max-width:34ch">The AI Operating System for Venture Creation. Discover, validate, and build your next investor-ready business.</p>
+      </div>
+      <div><h4 style="font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">Platform</h4><a href="index.html#how" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">How It Works</a><a href="index.html" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">About Us</a><a href="#" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Blog</a><a href="#" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Contact</a></div>
+      <div><h4 style="font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">Legal</h4><a href="#" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Terms of Use</a><a href="#" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Privacy Policy</a><a href="#" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Disclaimer</a><a href="#" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Cookies</a></div>
+      <div><h4 style="font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">Connect</h4><a href="#" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">LinkedIn</a><a href="#" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Twitter / X</a></div>
+    </div>
+    <div style="margin-top:36px;padding-top:18px;border-top:1px solid var(--line-soft);font-size:.72rem;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap">
+      <span>© 2026 Niche Finder Ltd. All rights reserved.</span>
+      <span>Use of Niche Finder is subject to our Terms of Use and Privacy Policy.</span>
+    </div>
   </div>
 </footer>
 
@@ -664,9 +679,50 @@
             title: { type: 'string' },
             tagline: { type: 'string', description: 'UPPERCASE meta line: SECTOR · LOCATION · MODE' },
             summary: { type: 'string', description: '2-3 sentence commercial rationale' },
-            confidence: { type: 'integer', description: 'Overall Confidence Score 0-100' }
+            confidence: { type: 'integer', description: 'Overall Confidence Score 0-100, calibrated: only exceptional opportunities exceed 85' },
+            marketReadiness: { type: 'integer', description: 'Sub-score 0-100' },
+            competitiveGap: { type: 'integer', description: 'Sub-score 0-100' },
+            prospectOfSuccess: { type: 'integer', description: 'Sub-score 0-100' },
+            addressableMarketUsd: { type: 'integer', description: 'Realistic regional TAM in USD, derived from population, spend, and category data' },
+            breakEvenMonths: { type: 'integer', description: 'Months to break even, consistent with the financials' },
+            grossMarginPct: { type: 'integer', description: 'Realistic steady-state gross margin percent for this business type' },
+            startupCapitalUsd: { type: 'integer', description: 'Startup capital needed in USD, must fit within the user max investment' },
+            revenueY1: { type: 'integer', description: 'Year 1 revenue USD — conservative, consistent with capacity and ramp' },
+            revenueY2: { type: 'integer', description: 'Year 2 revenue USD' },
+            revenueY3: { type: 'integer', description: 'Year 3 revenue USD' },
+            costsY1: { type: 'integer', description: 'Year 1 total operating costs USD, consistent with the gross margin' },
+            costsY2: { type: 'integer', description: 'Year 2 total operating costs USD' },
+            costsY3: { type: 'integer', description: 'Year 3 total operating costs USD' },
+            risks: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  sev: { type: 'string', enum: ['high', 'med', 'low'] },
+                  t: { type: 'string', description: 'Risk title' },
+                  p: { type: 'string', description: 'One-sentence description with a concrete mitigation' }
+                },
+                required: ['sev', 't', 'p'],
+                additionalProperties: false
+              }
+            },
+            roadmap: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  t: { type: 'string', description: 'Phase title' },
+                  p: { type: 'string', description: 'Concrete objective for the phase' },
+                  tm: { type: 'string', description: 'Timeframe, e.g. Weeks 1-4' }
+                },
+                required: ['t', 'p', 'tm'],
+                additionalProperties: false
+              }
+            }
           },
-          required: ['title', 'tagline', 'summary', 'confidence'],
+          required: ['title', 'tagline', 'summary', 'confidence', 'marketReadiness', 'competitiveGap', 'prospectOfSuccess',
+                     'addressableMarketUsd', 'breakEvenMonths', 'grossMarginPct', 'startupCapitalUsd',
+                     'revenueY1', 'revenueY2', 'revenueY3', 'costsY1', 'costsY2', 'costsY3', 'risks', 'roadmap'],
           additionalProperties: false
         }
       }
@@ -674,6 +730,8 @@
     required: ['niches'],
     additionalProperties: false
   };
+
+  function fmtM(n){ return n >= 1e6 ? '$' + (n / 1e6).toFixed(n >= 1e7 ? 0 : 1) + 'M' : '$' + Math.round(n / 1000) + 'K'; }
 
   function fetchNiches(cfg){
     var controller = new AbortController();
@@ -683,9 +741,10 @@
       headers: { 'content-type': 'application/json' },
       signal: controller.signal,
       body: JSON.stringify({
-        system: 'You are the Opportunity Discovery Agent of Niche Finder, a venture intelligence OS. Generate hyper-specific, fundable business opportunities matched to the user constraints. Be concrete and commercially grounded.',
-        messages: [{ role: 'user', content: 'Generate exactly 3 distinct niche venture opportunities for these constraints:\n' + JSON.stringify(cfg, null, 2) }],
+        system: 'You are the Opportunity Discovery Agent of Niche Finder, a venture intelligence OS. Act as a world-class venture analyst. Before answering, reason deeply about the local economy, demand evidence, realistic pricing, capacity constraints, and cost structures — every number you output must be defensible and internally consistent (revenue ramps must respect capacity, costs must reconcile with the gross margin, break-even must follow from the cashflow). Never output round guesses.',
+        messages: [{ role: 'user', content: 'Generate exactly 3 distinct, hyper-specific niche venture opportunities for these constraints. Every financial figure must be derived from explicit reasoning about this specific market:\n' + JSON.stringify(cfg, null, 2) }],
         jsonSchema: NICHE_SCHEMA,
+        effort: 'xhigh',
         investorMode: cfg.investorMode
       })
     }).then(function(r){
@@ -695,7 +754,32 @@
     }).then(function(data){
       var parsed = JSON.parse(data.text);
       return parsed.niches.map(function(n){
-        return { t: n.title, m: n.tagline.toUpperCase(), s: Math.max(0, Math.min(100, n.confidence)), p: n.summary, live: true };
+        return {
+          t: n.title,
+          m: n.tagline.toUpperCase(),
+          s: Math.max(0, Math.min(100, n.confidence)),
+          p: n.summary,
+          live: true,
+          sub: {
+            'Market Readiness': n.marketReadiness,
+            'Competitive Gap': n.competitiveGap,
+            'Prospect of Success': n.prospectOfSuccess
+          },
+          market: {
+            'Addressable Market': fmtM(n.addressableMarketUsd),
+            'Break-even': n.breakEvenMonths + ' mo',
+            'Gross Margin': n.grossMarginPct + '%',
+            'Startup Capital': '$' + n.startupCapitalUsd.toLocaleString('en-US')
+          },
+          fin: {
+            years: ['Year 1', 'Year 2', 'Year 3'],
+            revenue: [n.revenueY1, n.revenueY2, n.revenueY3],
+            costs: [n.costsY1, n.costsY2, n.costsY3],
+            cashflow: [n.revenueY1 - n.costsY1, n.revenueY2 - n.costsY2, n.revenueY3 - n.costsY3]
+          },
+          risks: n.risks,
+          roadmap: n.roadmap
+        };
       });
     });
   }
@@ -713,15 +797,54 @@
 
   function slug(s){ return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48); }
 
+  /* ---------- shared ACU wallet ---------- */
+  var UNLOCK_COST = 60;
+  function getBalance(){
+    var stored = localStorage.getItem('nf_acu_balance');
+    var b = stored === null ? 500 : Number(stored); // 500 = welcome bonus
+    return Number.isFinite(b) ? b : 500;
+  }
+  function setBalance(b){
+    localStorage.setItem('nf_acu_balance', String(b));
+    renderBalance();
+  }
+  function renderBalance(){
+    document.getElementById('acuBalance').textContent = getBalance().toLocaleString('en-US') + ' ACU';
+  }
+  function logLedger(label, amt){
+    try {
+      var l = JSON.parse(localStorage.getItem('nf_ledger') || '[]');
+      l.unshift({ t: label, amt: amt, ts: Date.now() });
+      localStorage.setItem('nf_ledger', JSON.stringify(l.slice(0, 200)));
+    } catch (e) {}
+  }
+  function charge(cost, label){
+    var b = getBalance();
+    if (b < cost){
+      alert('Insufficient ACU balance for ' + label + ' (' + cost + ' ACU needed, ' + b + ' available). Top up to continue.');
+      return false;
+    }
+    setBalance(b - cost);
+    logLedger('OPERATIONAL_TASK · ' + label, -cost);
+    return true;
+  }
+  renderBalance();
+
   function unlockProject(m){
-    localStorage.setItem('nf_active_project', JSON.stringify({
+    if (!charge(UNLOCK_COST, 'Deep-Dive unlock')) return;
+    var proj = {
       id: slug(m.t),
       title: m.t,
       meta: m.m,
       score: m.s,
       thesis: m.p.replace(/&/g, '&amp;').replace(/</g, '&lt;'),
-      sub: { 'Market Readiness': Math.min(100, m.s + 4), 'Competitive Gap': Math.max(0, m.s - 3), 'Prospect of Success': m.s }
-    }));
+      sub: m.sub || { 'Market Readiness': Math.min(100, m.s + 4), 'Competitive Gap': Math.max(0, m.s - 3), 'Prospect of Success': m.s }
+    };
+    if (m.market) proj.market = m.market;
+    if (m.risks) proj.risks = m.risks;
+    if (m.roadmap) proj.roadmap = m.roadmap;
+    if (m.fin) proj.fin = m.fin;
+    localStorage.setItem('nf_active_project', JSON.stringify(proj));
     location.href = 'project.html';
   }
 
@@ -748,10 +871,27 @@
       el.querySelector('.a.primary').addEventListener('click', function(){ unlockProject(m); });
       el.querySelector('.a:not(.primary)').addEventListener('click', function(ev){
         ev.target.textContent = 'Saved ✓';
+        try {
+          var saved = JSON.parse(localStorage.getItem('nf_saved') || '[]');
+          if (!saved.some(function(s){ return s.t === m.t; })){
+            saved.unshift({ t: m.t, m: m.m, s: m.s, p: m.p, status: 'SAVED', ts: Date.now() });
+            localStorage.setItem('nf_saved', JSON.stringify(saved.slice(0, 100)));
+          }
+        } catch (e) {}
       });
       nichesEl.appendChild(el);
       setTimeout(function(){ el.classList.add('in'); }, reduced ? 0 : 90 * i);
     });
+    // autosave: search history entry
+    try {
+      var hist = JSON.parse(localStorage.getItem('nf_history') || '[]');
+      hist.unshift({
+        country: document.getElementById('country').value,
+        routing: (document.querySelector('#routeGrid [aria-pressed="true"] .t') || {}).textContent || 'balanced',
+        count: list.length, live: !!live, ts: Date.now()
+      });
+      localStorage.setItem('nf_history', JSON.stringify(hist.slice(0, 100)));
+    } catch (e) {}
   }
 
   gen.addEventListener('click', function(){
@@ -760,6 +900,8 @@
       document.getElementById('sumMarket').textContent = 'Select a country — mandatory';
       return;
     }
+    var searchCost = inv.getAttribute('aria-checked') === 'true' ? Math.round(BASE_ACU * 1.4) : BASE_ACU;
+    if (!charge(searchCost, 'niche generation')) return;
     gen.disabled = true; gen.textContent = 'Discovery Agent Running…';
     nichesEl.innerHTML = ''; thinking.classList.add('on');
     document.getElementById('results').scrollIntoView({behavior: reduced ? 'auto' : 'smooth'});

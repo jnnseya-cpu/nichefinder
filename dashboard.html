@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Niche Finder — Command Center</title>
+<meta name="description" content="Operator Command Center — wallet, venture assets, predictive intelligence, and the immutable venture ledger.">
+<style>
+  :root{
+    --ink:#070B14;--ink-2:#0A1120;--panel:#0E1626;--panel-2:#121C30;
+    --line:rgba(217,164,65,.14);--line-soft:rgba(139,147,165,.14);
+    --text:#EAE5D9;--muted:#8B93A5;--gold:#D9A441;--gold-bright:#F1C97E;--gold-dim:rgba(217,164,65,.55);
+    --teal:#3FA79B;--red:#C4604F;--violet:#8B7BC7;--blue:#6B9BD1;
+    --serif:"Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:"SF Mono","Cascadia Code","JetBrains Mono",Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--ink);color:var(--text);font-family:var(--sans);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  ::selection{background:var(--gold);color:var(--ink)}
+  a{color:inherit}
+  a:focus-visible,button:focus-visible{outline:2px solid var(--gold-bright);outline-offset:2px;border-radius:2px}
+  .wrap{max-width:1240px;margin:0 auto;padding:0 clamp(18px,3.5vw,44px)}
+
+  header.nav{position:fixed;inset:0 0 auto 0;z-index:50;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:rgba(7,11,20,.62);border-bottom:1px solid var(--line-soft)}
+  .nav-inner{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .brand{display:flex;align-items:center;gap:11px;text-decoration:none}
+  .brand-mark{width:28px;height:28px;flex:none;border:1px solid var(--gold);border-radius:50%;display:grid;place-items:center}
+  .brand-mark i{width:7px;height:7px;border-radius:50%;background:var(--gold);display:block}
+  .brand span{font-family:var(--serif);font-size:1.1rem}
+  .brand em{font-style:normal;color:var(--gold)}
+  .nav-links{display:flex;gap:22px;align-items:center;font-size:.85rem}
+  .nav-links a{color:var(--muted);text-decoration:none}
+  .nav-links a:hover{color:var(--text)}
+
+  .strip{display:flex;gap:22px;flex-wrap:wrap;align-items:center;font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--teal)}
+  .strip i{width:6px;height:6px;border-radius:50%;background:var(--teal);display:inline-block;animation:pulse 2.2s infinite}
+  .strip .v{color:var(--gold)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+
+  .page-head{padding:106px 0 10px}
+  .cmd-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:14px}
+  .page-head h1{font-family:var(--serif);font-weight:400;font-size:clamp(1.7rem,3.6vw,2.5rem);flex:1}
+  .btn{cursor:pointer;font-size:.8rem;font-weight:600;font-family:var(--sans);border-radius:5px;padding:10px 18px;border:1px solid var(--line-soft);background:none;color:var(--text);text-decoration:none}
+  .btn:hover{border-color:var(--gold-dim)}
+  .btn.gold{background:var(--gold);border-color:var(--gold);color:var(--ink)}
+  .btn.gold:hover{background:var(--gold-bright)}
+
+  .grid{display:grid;gap:18px}
+  .stats{grid-template-columns:repeat(auto-fit,minmax(190px,1fr));margin-top:26px}
+  .tile{border:1px solid var(--line-soft);border-radius:10px;padding:20px 22px;background:linear-gradient(170deg,var(--panel-2),var(--panel) 60%);position:relative;overflow:hidden}
+  .tile::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--tc,var(--gold))}
+  .tile .v{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:1.7rem;color:var(--text)}
+  .tile .v small{font-size:.8rem;color:var(--muted)}
+  .tile .k{font-family:var(--mono);font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:var(--tc,var(--gold));margin-bottom:8px}
+  .tile .d{font-size:.72rem;color:var(--muted);margin-top:6px}
+  .tile .top-up{margin-top:10px;font-size:.7rem;font-weight:700;cursor:pointer;background:none;border:1px solid var(--line);color:var(--gold-bright);border-radius:4px;padding:5px 12px}
+  .tile .top-up:hover{background:rgba(217,164,65,.1)}
+
+  section.blk{margin-top:26px;border:1px solid var(--line-soft);border-radius:10px;padding:24px 26px;background:linear-gradient(170deg,var(--panel-2),var(--panel) 60%)}
+  section.blk>h2{font-family:var(--serif);font-weight:400;font-size:1.25rem;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  section.blk>h2 .tag{font-family:var(--mono);font-size:.56rem;letter-spacing:.16em;color:var(--muted);border:1px solid var(--line-soft);border-radius:3px;padding:3px 8px}
+  section.blk>h2::after{content:"";height:1px;background:var(--line-soft);flex:1}
+  section.blk>p{font-size:.85rem;color:var(--muted);margin-top:10px}
+
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:900px){.two{grid-template-columns:1fr}}
+
+  .bgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+  @media(max-width:700px){.bgrid{grid-template-columns:1fr}}
+  .bcard{border:1px solid var(--line-soft);border-radius:8px;padding:15px 16px;background:rgba(7,11,20,.45);position:relative;overflow:hidden}
+  .bcard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--bc,var(--gold))}
+  .bcard .bk{font-family:var(--mono);font-size:.56rem;letter-spacing:.16em;text-transform:uppercase;color:var(--bc,var(--gold))}
+  .bcard p{font-size:.82rem;color:var(--muted);margin-top:6px}
+
+  .ref-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-top:16px}
+  .ref-stats .r{border:1px dashed var(--line-soft);border-radius:8px;padding:12px 14px}
+  .ref-stats .r .v{font-family:var(--mono);font-size:1.2rem;color:var(--gold-bright)}
+  .ref-stats .r .k{font-family:var(--mono);font-size:.54rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:3px}
+  .invite{display:flex;align-items:center;gap:12px;margin-top:16px;flex-wrap:wrap}
+  .invite code{font-family:var(--mono);font-size:.95rem;letter-spacing:.14em;color:var(--gold-bright);border:1px dashed var(--gold-dim);border-radius:6px;padding:10px 18px}
+
+  .list{margin-top:14px;display:flex;flex-direction:column}
+  .row{display:flex;gap:16px;align-items:flex-start;padding:13px 0;border-bottom:1px dashed var(--line-soft)}
+  .row:last-child{border-bottom:none}
+  .row .tx{flex:1;min-width:0}
+  .row .tx b{font-size:.9rem;font-weight:600}
+  .row .tx p{font-size:.76rem;color:var(--muted);margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .row .side{flex:none;text-align:right;font-family:var(--mono);font-size:.64rem;color:var(--muted);line-height:1.9}
+  .pill{display:inline-block;font-family:var(--mono);font-size:.54rem;letter-spacing:.14em;border-radius:3px;padding:2px 8px;margin-left:8px;vertical-align:2px}
+  .pill.saved{background:rgba(139,147,165,.18);color:var(--muted)}
+  .pill.unlocked{background:rgba(63,167,155,.16);color:var(--teal)}
+  .score10{font-family:var(--mono);color:var(--gold-bright)}
+  .rank{font-family:var(--mono);font-size:.6rem;color:var(--violet)}
+  .amt-neg{color:var(--red)} .amt-pos{color:var(--teal)}
+  .row .rtype{flex:none;font-family:var(--mono);font-size:.56rem;letter-spacing:.12em;text-transform:uppercase;border-radius:3px;padding:3px 8px;margin-top:2px}
+  .see-more{margin-top:12px;font-size:.76rem;color:var(--gold-bright);background:none;border:none;cursor:pointer;font-family:var(--sans)}
+
+  footer.site{border-top:1px solid var(--line-soft);margin-top:60px;padding:48px 0 30px;font-size:.84rem;color:var(--muted)}
+  .foot-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:30px}
+  @media(max-width:800px){.foot-grid{grid-template-columns:1fr 1fr}}
+  footer.site h4{font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:14px}
+  footer.site a{display:block;color:var(--muted);text-decoration:none;padding:3px 0}
+  footer.site a:hover{color:var(--text)}
+  .foot-bottom{margin-top:36px;padding-top:18px;border-top:1px solid var(--line-soft);font-size:.72rem;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
+
+  .toast{position:fixed;bottom:26px;left:50%;transform:translate(-50%,20px);opacity:0;z-index:80;background:var(--panel-2);border:1px solid var(--gold);border-radius:8px;padding:13px 22px;font-size:.86rem;transition:all .3s ease;pointer-events:none}
+  .toast.on{opacity:1;transform:translate(-50%,0)}
+  @media (prefers-reduced-motion: reduce){*{transition-duration:.01ms!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"><i></i></span><span>Niche<em>Finder</em></span></a>
+    <nav class="nav-links">
+      <a href="search.html">Search Canvas</a>
+      <a href="project.html">Active Project</a>
+      <a href="dashboard.html" style="color:var(--gold-bright)">Command Center</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap page-head">
+    <div class="strip">
+      <span><i></i> VENTURE OS: LEARNING LOOP ACTIVE</span>
+      <span>OS SYNC ACTIVE</span>
+      <span class="v" id="syncVer">V36 · JUST NOW</span>
+    </div>
+    <div class="cmd-row">
+      <h1>Command Center: <span style="color:var(--gold-bright)">Operator</span></h1>
+      <button class="btn" id="editProfile">Edit Operator Profile</button>
+      <button class="btn" id="refresh">Refresh</button>
+      <a class="btn gold" href="search.html">Start OS Search</a>
+    </div>
+
+    <div class="grid stats">
+      <div class="tile" style="--tc:var(--gold)">
+        <div class="k">Wallet Balance</div>
+        <div class="v" id="wallet">— <small>ACU</small></div>
+        <div class="d">Available Credits</div>
+        <button class="top-up" id="topUp">+ Top up 500 ACU</button>
+      </div>
+      <div class="tile" style="--tc:var(--teal)">
+        <div class="k">Venture Assets</div>
+        <div class="v" id="statAssets">0</div>
+        <div class="d">Generated Reports</div>
+      </div>
+      <div class="tile" style="--tc:var(--violet)">
+        <div class="k">Saved Niches</div>
+        <div class="v" id="statSaved">0</div>
+        <div class="d" id="statUnlocked">0 unlocked</div>
+      </div>
+      <div class="tile" style="--tc:var(--blue)">
+        <div class="k">System Activity</div>
+        <div class="v" id="statRuns">0</div>
+        <div class="d">Engine Runs</div>
+      </div>
+      <div class="tile" style="--tc:var(--red)">
+        <div class="k">Learning Signals</div>
+        <div class="v" id="statSignals">0</div>
+        <div class="d">User Corrections · Syncing</div>
+      </div>
+    </div>
+
+    <section class="blk">
+      <h2>OS Predictive Intelligence Report <span class="tag" id="piScore">6.0/10 · CONFIDENCE: MEDIUM</span></h2>
+      <p>Contextualized reasoning based on behavioral signal ingestion (Rule 13 &amp; 15).</p>
+      <div class="bgrid">
+        <div class="bcard" style="--bc:var(--teal)"><span class="bk">AI Situation</span><p id="piSituation">Operational baseline established.</p></div>
+        <div class="bcard" style="--bc:var(--blue)"><span class="bk">AI Insight</span><p id="piInsight">Discovery patterns are forming but require more validation signals.</p></div>
+        <div class="bcard" style="--bc:var(--red)"><span class="bk">AI Risk Alert</span><p id="piRisk">Limited rejection data reduces discovery precision.</p></div>
+        <div class="bcard" style="--bc:var(--gold)"><span class="bk">AI Recommendation</span><p id="piReco">Complete more searches or provide feedback on current results.</p></div>
+      </div>
+      <div class="bcard" style="--bc:var(--red);margin-top:12px;display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+        <span style="font-family:var(--mono);font-size:.56rem;letter-spacing:.14em;background:var(--red);color:#fff;border-radius:3px;padding:3px 8px">PRIORITY</span>
+        <span style="flex:1;font-size:.88rem" id="piNext">Review and refine your preferred sector filters.</span>
+        <span style="font-family:var(--mono);font-size:.56rem;letter-spacing:.1em;color:var(--muted);text-align:right">OWNER: OPERATOR<br>DEADLINE: WITHIN 48H</span>
+      </div>
+      <h2 style="margin-top:22px;font-size:1.1rem">Decision Intelligence Matrix</h2>
+      <div class="bgrid">
+        <div class="bcard" style="--bc:var(--teal)"><span class="bk">Best Option</span><p id="dimBest">Initialize discovery.</p></div>
+        <div class="bcard" style="--bc:var(--violet)"><span class="bk">Alternative Path</span><p id="dimAlt">N/A</p></div>
+        <div class="bcard" style="--bc:var(--red)"><span class="bk">Risk of Inaction</span><p id="dimInact">N/A</p></div>
+        <div class="bcard" style="--bc:var(--gold)"><span class="bk">Commercial Impact</span><p id="dimImpact">N/A</p></div>
+      </div>
+    </section>
+
+    <div class="two" style="margin-top:26px">
+      <section class="blk" style="margin-top:0">
+        <h2>Efficiency Hub <span class="tag" style="color:var(--teal)">REPETITION SCANNER ACTIVE</span></h2>
+        <p id="effHub">Scanning for automation shortcuts…</p>
+      </section>
+      <section class="blk" style="margin-top:0">
+        <h2>Venture Health Monitor <span class="tag" style="color:var(--teal)">PROACTIVE SCAN ACTIVE</span></h2>
+        <p id="healthMon">Venture velocity is stable. Increase feedback loop density.</p>
+      </section>
+    </div>
+
+    <section class="blk">
+      <h2>Growth Partner Programme <span class="tag">STANDARD REFERRER</span></h2>
+      <p>Earn by helping founders discover smarter venture opportunities — Niche Finder only rewards real paid usage, not fake sign-ups.</p>
+      <div class="ref-stats">
+        <div class="r"><div class="v">0</div><div class="k">Total referrals</div></div>
+        <div class="r"><div class="v">0</div><div class="k">Qualified referrals</div></div>
+        <div class="r"><div class="v">£0</div><div class="k">Paid commission</div></div>
+        <div class="r"><div class="v">0 ACU</div><div class="k">Pending rewards</div></div>
+      </div>
+      <div class="invite">
+        <span style="font-family:var(--mono);font-size:.58rem;letter-spacing:.16em;color:var(--muted)">YOUR INVITE CODE</span>
+        <code id="inviteCode">NF-QWFCJEER</code>
+        <button class="btn" id="copyRef">Copy referral link</button>
+        <button class="btn">Programme details</button>
+      </div>
+    </section>
+
+    <div class="two" style="margin-top:26px">
+      <section class="blk" style="margin-top:0">
+        <h2>Saved Opportunities <span class="tag" id="savedCount">0 TOTAL</span></h2>
+        <div class="list" id="savedList"></div>
+      </section>
+      <section class="blk" style="margin-top:0">
+        <h2>Search History <span class="tag" id="histCount">0 RUNS</span></h2>
+        <div class="list" id="histList"></div>
+      </section>
+    </div>
+
+    <div class="two" style="margin-top:26px">
+      <section class="blk" style="margin-top:0">
+        <h2>Generated Reports <span class="tag" id="repCount">0 ASSETS</span></h2>
+        <div class="list" id="repList"></div>
+      </section>
+      <section class="blk" style="margin-top:0">
+        <h2>Venture Ledger <span class="tag">IMMUTABLE AUDIT TRAIL</span></h2>
+        <div class="list" id="ledgerList"></div>
+      </section>
+    </div>
+
+    <section class="blk">
+      <h2>Recalibrate Intelligence</h2>
+      <p>Force an operational sync to ingest the latest behavioral signals.</p>
+      <button class="btn gold" id="recal" style="margin-top:14px">Sync Command Center</button>
+    </section>
+  </div>
+
+  <footer class="site">
+    <div class="wrap">
+      <div class="foot-grid">
+        <div>
+          <a class="brand" href="index.html" style="margin-bottom:14px"><span class="brand-mark" aria-hidden="true"><i></i></span><span>Niche<em>Finder</em></span></a>
+          <p style="font-size:.82rem;margin-top:12px;max-width:34ch">The AI Operating System for Venture Creation. Discover, validate, and build your next investor-ready business.</p>
+        </div>
+        <div><h4>Platform</h4><a href="index.html#how">How It Works</a><a href="index.html">About Us</a><a href="#">Blog</a><a href="#">Contact</a></div>
+        <div><h4>Legal</h4><a href="#">Terms of Use</a><a href="#">Privacy Policy</a><a href="#">Disclaimer</a><a href="#">Cookies</a></div>
+        <div><h4>Connect</h4><a href="#">LinkedIn</a><a href="#">Twitter / X</a></div>
+      </div>
+      <div class="foot-bottom">
+        <span>© 2026 Niche Finder Ltd. All rights reserved.</span>
+        <span>Use of Niche Finder is subject to our Terms of Use and Privacy Policy.</span>
+      </div>
+    </div>
+  </footer>
+</main>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+  function get(key, fallback){ try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch (e) { return fallback; } }
+  function ago(ts){
+    var s = (Date.now() - ts) / 1000;
+    if (s < 90) return 'just now';
+    if (s < 5400) return Math.round(s / 60) + ' min ago';
+    if (s < 129600) return Math.round(s / 3600) + ' hours ago';
+    return Math.round(s / 86400) + ' days ago';
+  }
+  var toast = document.getElementById('toast'), toastTimer;
+  function showToast(msg){
+    toast.textContent = msg; toast.classList.add('on');
+    clearTimeout(toastTimer); toastTimer = setTimeout(function(){ toast.classList.remove('on'); }, 2600);
+  }
+
+  var stored = localStorage.getItem('nf_acu_balance');
+  var balance = stored === null ? 500 : (Number(stored) || 0);
+  var ledger = get('nf_ledger', []);
+  var saved = get('nf_saved', []);
+  var history = get('nf_history', []);
+  var reports = get('nf_reports', []);
+
+  // unlocked = projects with any saved state
+  var unlocked = 0;
+  for (var i = 0; i < localStorage.length; i++){
+    if (localStorage.key(i).indexOf('nf_state_') === 0) unlocked++;
+  }
+
+  document.getElementById('wallet').innerHTML = balance.toLocaleString('en-US') + ' <small>ACU</small>';
+  document.getElementById('statAssets').textContent = reports.length;
+  document.getElementById('statSaved').textContent = saved.length + unlocked;
+  document.getElementById('statUnlocked').textContent = unlocked + ' unlocked';
+  document.getElementById('statRuns').textContent = history.length;
+  document.getElementById('statSignals').textContent = Math.max(0, ledger.filter(function(l){ return /REGENERATE/.test(l.t); }).length);
+  document.getElementById('syncVer').textContent = 'V' + (4 + history.length + reports.length) + ' · ' + (ledger[0] ? ago(ledger[0].ts).toUpperCase() : 'BASELINE');
+
+  /* predictive report adapts to actual behavioral signals */
+  var runs = history.length, assets = reports.length;
+  var piScore = Math.min(9.5, 3 + runs * 0.4 + assets * 0.35 + unlocked * 0.3).toFixed(1);
+  var conf = piScore >= 7.5 ? 'HIGH' : piScore >= 5 ? 'MEDIUM' : 'LOW';
+  document.getElementById('piScore').textContent = piScore + '/10 · CONFIDENCE: ' + conf;
+  if (runs > 0){
+    document.getElementById('piSituation').textContent = runs + ' discovery run' + (runs > 1 ? 's' : '') + ' completed across ' +
+      new Set(history.map(function(h){ return h.country; })).size + ' market(s). Operational baseline established.';
+    document.getElementById('piInsight').textContent = assets > 0
+      ? 'Asset generation follows unlocks within the same session — the build loop is active. Deepen it with regeneration passes.'
+      : 'Discovery patterns are forming but require more validation signals. Unlock a deep-dive to activate the build loop.';
+    document.getElementById('piNext').textContent = assets === 0
+      ? 'Unlock your top-ranked niche and execute the Market Validation engine.'
+      : 'Regenerate your oldest asset to Version 2.0 to strengthen learning signals.';
+    document.getElementById('dimBest').textContent = 'Continue the ' + (history[0].country || 'active') + ' discovery thread — momentum compounds.';
+    document.getElementById('dimAlt').textContent = 'Broaden Intelligence Routing to Breakthrough Concepts for one run.';
+    document.getElementById('dimInact').textContent = 'Signal decay: discovery precision drops as behavioral data ages.';
+    document.getElementById('dimImpact').textContent = 'Each validated niche compounds the repository\'s comparable-benchmark quality.';
+  }
+  if (runs >= 3) document.getElementById('effHub').textContent =
+    'Repetition detected: ' + history.filter(function(h){ return h.country === history[0].country; }).length +
+    ' runs target ' + history[0].country + '. Suggest saving this canvas as a preset.';
+  if (unlocked > 0) document.getElementById('healthMon').textContent =
+    'readiness · ' + (reports[0] ? ago(reports[0].ts) : 'baseline') + ' — Venture velocity is stable. Increase feedback loop density.';
+
+  /* lists */
+  function fill(el, items, renderRow, emptyMsg, cap){
+    el.innerHTML = '';
+    if (!items.length){ el.innerHTML = '<div class="row"><div class="tx"><p>' + emptyMsg + '</p></div></div>'; return; }
+    items.slice(0, cap || 8).forEach(function(it){ el.appendChild(renderRow(it)); });
+    if (items.length > (cap || 8)){
+      var more = document.createElement('button');
+      more.className = 'see-more';
+      more.textContent = 'Show all ' + items.length + ' →';
+      more.addEventListener('click', function(){ el.innerHTML = ''; items.forEach(function(it){ el.appendChild(renderRow(it)); }); });
+      el.appendChild(more);
+    }
+  }
+  function rowEl(html){ var d = document.createElement('div'); d.className = 'row'; d.innerHTML = html; return d; }
+  function esc(s){ var d = document.createElement('div'); d.textContent = String(s); return d.innerHTML; }
+
+  document.getElementById('savedCount').textContent = (saved.length + unlocked) + ' TOTAL';
+  fill(document.getElementById('savedList'), saved, function(s, i){
+    var rank = saved.indexOf(s) + 1;
+    return rowEl('<div class="tx"><b>' + esc(s.t) + '</b><span class="pill ' + (s.status === 'UNLOCKED' ? 'unlocked' : 'saved') + '">' + esc(s.status || 'SAVED') + '</span><p>' + esc(s.p) + '</p></div>' +
+      '<div class="side"><span class="score10">' + (s.s / 10).toFixed(1) + '/10</span><br><span class="rank">RANK #' + rank + '</span></div>');
+  }, 'No saved niches yet — run a search and Save to Portfolio.');
+
+  document.getElementById('histCount').textContent = history.length + ' RUNS';
+  fill(document.getElementById('histList'), history, function(h){
+    return rowEl('<div class="tx"><b>' + esc(h.country) + ' · ' + esc(String(h.routing).toLowerCase().replace(/ /g, '_')) + '</b><p>Generated ' + h.count + ' niche ideas.' + (h.live ? ' (LIVE AI)' : ' (demo)') + '</p></div>' +
+      '<div class="side">' + ago(h.ts) + '</div>');
+  }, 'No engine runs yet.');
+
+  var REP_COLORS = { validation: 'var(--teal)', forecast: 'var(--gold)', bizplan: 'var(--violet)', pitch: 'var(--blue)', riskmap: 'var(--red)', export: 'var(--muted)' };
+  var REP_NAMES = { validation: 'Market Validation', forecast: '3-Year Forecast', bizplan: 'Business Plan', pitch: 'Pitch Deck', riskmap: 'Risk Heatmap', export: 'Export Pack' };
+  document.getElementById('repCount').textContent = reports.length + ' ASSETS';
+  fill(document.getElementById('repList'), reports, function(r){
+    return rowEl('<span class="rtype" style="border:1px solid ' + (REP_COLORS[r.type] || 'var(--line-soft)') + ';color:' + (REP_COLORS[r.type] || 'var(--muted)') + '">' + (REP_NAMES[r.type] || r.type) + '</span>' +
+      '<div class="tx"><b>' + esc(r.title) + '</b><p>' + ago(r.ts) + '</p></div>' +
+      '<div class="side"><a href="asset.html?type=' + esc(r.type) + '" style="color:var(--gold-bright)">View</a><br>HTML</div>');
+  }, 'No generated assets yet — execute an engine in the Build Hub.');
+
+  fill(document.getElementById('ledgerList'), ledger, function(l){
+    var neg = l.amt < 0;
+    return rowEl('<div class="tx"><b style="font-family:var(--mono);font-size:.72rem;letter-spacing:.08em">' + esc(l.t) + '</b><p>' + ago(l.ts) + ' · Synced</p></div>' +
+      '<div class="side"><span class="' + (neg ? 'amt-neg' : 'amt-pos') + '">' + (neg ? '' : '+') + l.amt + ' ACU</span></div>');
+  }, 'Ledger is empty — every ACU movement lands here automatically.', 10);
+
+  /* actions */
+  function logLedger(label, amt){
+    ledger.unshift({ t: label, amt: amt, ts: Date.now() });
+    localStorage.setItem('nf_ledger', JSON.stringify(ledger.slice(0, 200)));
+  }
+  document.getElementById('topUp').addEventListener('click', function(){
+    balance += 500;
+    localStorage.setItem('nf_acu_balance', String(balance));
+    logLedger('Test account credit for Operator', 500);
+    showToast('+500 ACU credited · balance ' + balance.toLocaleString('en-US') + ' ACU');
+    setTimeout(function(){ location.reload(); }, 900);
+  });
+  document.getElementById('refresh').addEventListener('click', function(){ location.reload(); });
+  document.getElementById('recal').addEventListener('click', function(){
+    showToast('Operational sync complete — behavioral signals ingested.');
+  });
+  document.getElementById('copyRef').addEventListener('click', function(){
+    var link = 'https://nichefinderhq.com/?ref=' + document.getElementById('inviteCode').textContent;
+    (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject()).then(
+      function(){ showToast('Referral link copied.'); },
+      function(){ showToast(link); }
+    );
+  });
+  document.getElementById('editProfile').addEventListener('click', function(){
+    showToast('Operator profile editing ships with accounts — coming next.');
+  });
+
+  // stable per-user invite code
+  var code = localStorage.getItem('nf_invite');
+  if (!code){
+    code = 'NF-' + Array.from({ length: 8 }, function(){ return 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random() * 32)]; }).join('');
+    localStorage.setItem('nf_invite', code);
+  }
+  document.getElementById('inviteCode').textContent = code;
+})();
+</script>
+</body>
+</html>

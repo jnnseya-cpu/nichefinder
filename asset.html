@@ -1,0 +1,964 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Niche Finder — Generated Asset</title>
+<meta name="description" content="Investor-grade generated asset: validation report, financial forecast, business plan, or pitch deck.">
+<style>
+  :root{
+    --ink:#070B14;
+    --panel:#0E1626;
+    --panel-2:#121C30;
+    --line:rgba(217,164,65,.14);
+    --line-soft:rgba(139,147,165,.14);
+    --text:#EAE5D9;
+    --muted:#8B93A5;
+    --gold:#D9A441;
+    --gold-bright:#F1C97E;
+    /* document palette (light surface) */
+    --paper:#FDFBF6;
+    --paper-2:#F4EFE4;
+    --doc-ink:#1C2233;
+    --doc-muted:#5D6575;
+    --doc-line:#E4DCC9;
+    --brand:#B8861F;
+    --teal:#1F7A6F;
+    --coral:#C4604F;
+    --violet:#6B5CA5;
+    --blue:#2E6FA3;
+    --serif:"Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:"SF Mono","Cascadia Code","JetBrains Mono",Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--ink);color:var(--text);font-family:var(--sans);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  ::selection{background:var(--gold);color:var(--ink)}
+  a{color:inherit}
+  a:focus-visible,button:focus-visible{outline:2px solid var(--gold-bright);outline-offset:2px;border-radius:2px}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 clamp(16px,3vw,40px)}
+
+  header.nav{position:fixed;inset:0 0 auto 0;z-index:50;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:rgba(7,11,20,.72);border-bottom:1px solid var(--line-soft)}
+  .nav-inner{display:flex;align-items:center;justify-content:space-between;height:60px}
+  .brand{display:flex;align-items:center;gap:10px;text-decoration:none}
+  .brand-mark{width:26px;height:26px;flex:none;border:1px solid var(--gold);border-radius:50%;display:grid;place-items:center}
+  .brand-mark i{width:6px;height:6px;border-radius:50%;background:var(--gold);display:block}
+  .brand span{font-family:var(--serif);font-size:1.05rem}
+  .brand em{font-style:normal;color:var(--gold)}
+  .nav-right{display:flex;gap:10px;align-items:center}
+  .nav-btn{cursor:pointer;font-size:.78rem;font-weight:600;color:var(--text);background:none;border:1px solid var(--line-soft);border-radius:5px;padding:8px 15px;text-decoration:none;font-family:var(--sans)}
+  .nav-btn:hover{border-color:var(--gold)}
+  .nav-btn.gold{background:var(--gold);color:var(--ink);border-color:var(--gold)}
+
+  main{padding:92px 0 90px}
+
+  /* ---------- document shell ---------- */
+  .doc{
+    background:var(--paper);color:var(--doc-ink);border-radius:12px;overflow:hidden;
+    box-shadow:0 40px 90px -28px rgba(0,0,0,.8);
+  }
+  .doc-band{
+    background:linear-gradient(120deg,#0E1626 0%,#1A2440 55%,#2A2210 100%);
+    color:var(--text);padding:38px 44px 34px;position:relative;overflow:hidden;
+  }
+  .doc-band::after{
+    content:"";position:absolute;right:-60px;top:-70px;width:280px;height:280px;border-radius:50%;
+    border:1.5px solid rgba(217,164,65,.35);
+  }
+  .doc-band::before{
+    content:"";position:absolute;right:20px;top:30px;width:170px;height:170px;border-radius:50%;
+    border:1px solid rgba(217,164,65,.2);
+  }
+  .doc-brandline{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:.62rem;letter-spacing:.26em;color:var(--gold-bright)}
+  .doc-brandline i{width:7px;height:7px;border-radius:50%;background:var(--gold);display:inline-block}
+  .doc-band h1{font-family:var(--serif);font-weight:400;font-size:clamp(1.6rem,3.4vw,2.4rem);margin-top:14px;line-height:1.15;max-width:24ch;position:relative;z-index:1}
+  .doc-band .sub{margin-top:10px;color:#B9C0CE;font-size:.9rem;max-width:60ch}
+  .doc-band .meta{display:flex;flex-wrap:wrap;gap:8px 26px;margin-top:22px;font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:#8B93A5}
+  .doc-band .meta b{color:var(--gold-bright);font-weight:600}
+
+  .doc-body{padding:14px 44px 48px}
+  @media(max-width:640px){.doc-band{padding:28px 22px}.doc-body{padding:10px 22px 34px}}
+
+  .sec{margin-top:38px}
+  .sec-head{display:flex;align-items:baseline;gap:14px}
+  .sec-head .n{font-family:var(--mono);font-size:.66rem;letter-spacing:.18em;color:var(--brand)}
+  .sec-head h2{font-family:var(--serif);font-weight:400;font-size:1.35rem;color:var(--doc-ink)}
+  .sec-head::after{content:"";height:1px;background:var(--doc-line);flex:1;align-self:center}
+  .sec p{color:var(--doc-muted);font-size:.9rem;margin-top:12px;max-width:76ch}
+  .sec p b{color:var(--doc-ink)}
+
+  .callout{
+    display:flex;gap:18px;align-items:center;margin-top:18px;border-radius:10px;padding:20px 24px;
+    background:linear-gradient(100deg,rgba(184,134,31,.1),rgba(31,122,111,.08));border:1px solid var(--doc-line);
+  }
+  .callout .big{font-family:var(--serif);font-size:1.05rem;line-height:1.5}
+  .verdict-badge{
+    flex:none;width:96px;height:96px;border-radius:50%;display:grid;place-items:center;text-align:center;
+    background:conic-gradient(var(--brand) calc(var(--pct)*1%), var(--paper-2) 0);position:relative;
+  }
+  .verdict-badge::after{content:"";position:absolute;inset:7px;border-radius:50%;background:var(--paper)}
+  .verdict-badge span{position:relative;z-index:1;font-family:var(--mono);font-size:1.3rem;color:var(--brand);font-weight:600}
+  .verdict-badge small{position:absolute;z-index:1;bottom:20px;font-family:var(--mono);font-size:.5rem;letter-spacing:.12em;color:var(--doc-muted)}
+
+  .statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:18px}
+  .stat{border:1px solid var(--doc-line);border-radius:8px;padding:16px 16px 14px;background:#fff;position:relative;overflow:hidden}
+  .stat::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--ac,var(--brand))}
+  .stat .v{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:1.35rem;color:var(--doc-ink);font-weight:600}
+  .stat .k{font-family:var(--mono);font-size:.56rem;letter-spacing:.14em;text-transform:uppercase;color:var(--doc-muted);margin-top:5px}
+  .stat .d{font-size:.72rem;color:var(--doc-muted);margin-top:7px;line-height:1.45}
+
+  canvas.chart{width:100%;display:block;margin-top:18px}
+
+  table.doc-t{width:100%;border-collapse:collapse;margin-top:18px;font-size:.84rem;background:#fff;border:1px solid var(--doc-line);border-radius:8px;overflow:hidden}
+  table.doc-t th{font-family:var(--mono);font-size:.58rem;letter-spacing:.13em;text-transform:uppercase;color:#fff;background:var(--doc-ink);text-align:right;padding:10px 12px;font-weight:500}
+  table.doc-t th:first-child,table.doc-t td:first-child{text-align:left}
+  table.doc-t td{padding:9px 12px;border-top:1px solid var(--doc-line);text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--doc-ink)}
+  table.doc-t td:first-child{font-family:var(--sans);color:var(--doc-muted)}
+  table.doc-t tr.hl td{background:rgba(184,134,31,.08);color:var(--brand);font-weight:600}
+  table.doc-t tr.sub td{font-size:.78rem;color:var(--doc-muted)}
+  table.doc-t tr.neg td.num-neg{color:var(--coral)}
+
+  .legend{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:12px;font-size:.72rem;color:var(--doc-muted)}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:7px;vertical-align:-1px}
+
+  .check{display:flex;gap:13px;padding:11px 0;border-bottom:1px dashed var(--doc-line);align-items:flex-start}
+  .check:last-child{border-bottom:none}
+  .check .ic{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:.7rem;color:#fff;margin-top:2px}
+  .check.pass .ic{background:var(--teal)} .check.warn .ic{background:var(--brand)} .check.fail .ic{background:var(--coral)}
+  .check b{font-size:.88rem}
+  .check p{font-size:.8rem;margin-top:2px}
+
+  .dots{white-space:nowrap}
+  .dots i{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--paper-2);margin-left:3px;border:1px solid var(--doc-line)}
+  .dots i.on{background:var(--brand);border-color:var(--brand)}
+
+  .foot-note{margin-top:44px;padding-top:18px;border-top:1px solid var(--doc-line);font-size:.72rem;color:var(--doc-muted);line-height:1.6}
+  .foot-note b{color:var(--brand)}
+
+  /* ---------- pitch deck ---------- */
+  .deck{display:flex;flex-direction:column;gap:26px}
+  .slide{
+    aspect-ratio:16/9;background:linear-gradient(135deg,#0B1322,#111B31 60%,#17203A);
+    border:1px solid var(--line);border-radius:12px;padding:clamp(20px,4.2vw,52px);
+    display:flex;flex-direction:column;position:relative;overflow:hidden;color:var(--text);
+    box-shadow:0 30px 70px -30px rgba(0,0,0,.85);
+  }
+  .slide .sl-tag{font-family:var(--mono);font-size:.6rem;letter-spacing:.24em;text-transform:uppercase;color:var(--gold)}
+  .slide h2{font-family:var(--serif);font-weight:400;font-size:clamp(1.3rem,3.2vw,2.3rem);margin-top:12px;line-height:1.12;max-width:22ch}
+  .slide .sl-body{margin-top:auto;padding-top:16px}
+  .slide .sl-num{position:absolute;bottom:18px;right:24px;font-family:var(--mono);font-size:.62rem;color:var(--muted)}
+  .slide .sl-brand{position:absolute;bottom:18px;left:24px;font-family:var(--mono);font-size:.58rem;letter-spacing:.2em;color:rgba(217,164,65,.55)}
+  .slide ul{list-style:none;display:flex;flex-direction:column;gap:10px;max-width:56ch}
+  .slide ul li{padding-left:20px;position:relative;color:var(--sl-mut,#C4CAD6);font-size:clamp(.78rem,1.6vw,.95rem)}
+  .slide ul li::before{content:"";position:absolute;left:0;top:.55em;width:8px;height:2px;background:var(--sl-ac,var(--gold))}
+  .slide ul li b{color:var(--sl-tx,var(--text))}
+  .slide .bignum{display:flex;gap:clamp(14px,4vw,54px);flex-wrap:wrap}
+  .slide .bignum div{min-width:100px}
+  .slide .bignum .v{font-family:var(--mono);font-size:clamp(1.2rem,3.4vw,2.2rem);color:var(--sl-ac,var(--gold-bright))}
+  .slide .bignum .k{font-family:var(--mono);font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:var(--sl-mut,var(--muted));margin-top:4px}
+  .slide canvas{width:100%;max-height:52%}
+  .slide.title-slide{justify-content:center;align-items:flex-start}
+  .slide.title-slide .huge{font-size:clamp(1.7rem,4.6vw,3.2rem);max-width:18ch}
+  .slide .accent-teal{color:var(--sl-ac2,var(--teal))} .slide .accent-gold{color:var(--sl-ac,var(--gold-bright))}
+
+  /* ---------- export ---------- */
+  .dl-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:20px}
+  .dl{
+    border:1px solid var(--doc-line);border-radius:10px;background:#fff;padding:20px;
+    display:flex;flex-direction:column;gap:8px;
+  }
+  .dl b{font-size:.95rem}
+  .dl p{font-size:.78rem;margin:0}
+  .dl button,.dl a.btn{
+    margin-top:10px;cursor:pointer;align-self:flex-start;font-size:.78rem;font-weight:700;font-family:var(--sans);
+    background:var(--doc-ink);color:#fff;border:none;border-radius:5px;padding:9px 18px;text-decoration:none;
+  }
+  .dl button:hover,.dl a.btn:hover{background:var(--brand)}
+  .dl .fmt{font-family:var(--mono);font-size:.56rem;letter-spacing:.16em;color:var(--brand)}
+
+  @media print{
+    header.nav{display:none}
+    body{background:#fff}
+    main{padding:0}
+    .wrap{max-width:none;padding:0}
+    .doc{box-shadow:none;border-radius:0}
+    .sec{break-inside:avoid}
+    .slide{break-after:page;border-radius:0;box-shadow:none;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .doc-band{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  }
+  @media (prefers-reduced-motion: reduce){*{transition-duration:.01ms!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="index.html" aria-label="Niche Finder home">
+      <span class="brand-mark" aria-hidden="true"><i></i></span>
+      <span>Niche<em>Finder</em></span>
+    </a>
+    <div class="nav-right">
+      <a class="nav-btn" href="project.html">← Back to Project</a>
+      <button class="nav-btn gold" onclick="print()">Export PDF</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap" id="root"></div>
+</main>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ================= project + financial engine ================= */
+  var project;
+  try { project = JSON.parse(localStorage.getItem('nf_active_project')); } catch (e) {}
+  if (!project || !project.fin) {
+    project = null; // project.html always persists a merged project; direct visits get the demo
+  }
+  var P = project || {
+    id: 'demo-coldchain',
+    title: 'Solar-Powered Cold-Chain Micro-Depots',
+    meta: 'AGRIBUSINESS · KINSHASA, DRC · HYBRID · MAX INVESTMENT US$10,000',
+    score: 87,
+    sub: { 'Market Readiness': 91, 'Competitive Gap': 84, 'Prospect of Success': 87 },
+    market: { 'Addressable Market': '$46M', 'Break-even': '14 mo', 'Gross Margin': '61%', 'Startup Capital': '$9,400' },
+    fin: { years: ['Year 1','Year 2','Year 3'], revenue: [118000,540000,1240000], costs: [104000,342000,486000], cashflow: [14000,198000,754000] }
+  };
+
+  // ---- derived model: every number below traces back to these anchors ----
+  var GM = parseFloat((P.market['Gross Margin'] || '61%')) / 100;           // gross margin
+  var CAPEX = Number(String(P.market['Startup Capital'] || '$9,400').replace(/[^0-9.]/g, '')) || 9400;
+  var TAM = Number(String(P.market['Addressable Market'] || '$46M').replace(/[^0-9.]/g, '')) * 1e6 || 46e6;
+  var SAM = Math.round(TAM * 0.24);   // serviceable: corridors reachable within the operating region
+  var SOM_Y3 = P.fin.revenue[2];      // obtainable = the year-3 revenue target itself
+  var UNIT_PRICE = 2.4;               // USD per unit-transaction (crate-day equivalent)
+
+  // 36-month revenue curve: smooth ramp within each year, scaled so monthly
+  // figures sum exactly to the annual anchors.
+  function monthlyRevenue(){
+    var out = [];
+    for (var y = 0; y < 3; y++){
+      var target = P.fin.revenue[y];
+      var raw = [];
+      for (var m = 1; m <= 12; m++) raw.push(1 / (1 + Math.exp(-(m - 5) / 2.6)) + 0.28);
+      var sum = raw.reduce(function(a,b){ return a + b; }, 0);
+      var prevEnd = y === 0 ? 0 : P.fin.revenue[y-1] / 12 * 1.15;
+      for (m = 0; m < 12; m++){
+        var v = target * raw[m] / sum;
+        if (y > 0) v = Math.max(v, prevEnd); // never dip below the prior year's exit run-rate
+        out.push(v);
+      }
+      // re-scale the year to hit the target exactly after the floor
+      var ys = out.slice(y*12).reduce(function(a,b){ return a + b; }, 0);
+      for (m = y*12; m < y*12+12; m++) out[m] = out[m] * target / ys;
+    }
+    return out;
+  }
+  var REV_M = monthlyRevenue();
+
+  // annual cost decomposition that sums exactly to the anchored totals
+  function costLines(y){
+    var total = P.fin.costs[y];
+    var cogs = Math.min(Math.round(P.fin.revenue[y] * (1 - GM)), Math.round(total * 0.62));
+    var rest = total - cogs;
+    return {
+      cogs: cogs,
+      staffing: Math.round(rest * 0.44),
+      logistics: Math.round(rest * 0.24),
+      marketing: Math.round(rest * 0.17),
+      admin: rest - Math.round(rest * 0.44) - Math.round(rest * 0.24) - Math.round(rest * 0.17)
+    };
+  }
+  var COSTS = [costLines(0), costLines(1), costLines(2)];
+
+  // cumulative cash incl. initial capex → computed break-even month
+  var CUM = [], cum = -CAPEX;
+  for (var m = 0; m < 36; m++){
+    var y = Math.floor(m / 12);
+    var costM = P.fin.costs[y] / 12;
+    cum += REV_M[m] - costM;
+    CUM.push(cum);
+  }
+  var BREAKEVEN_M = CUM.findIndex(function(v){ return v > 0; }) + 1;
+
+  var UNITS_Y3 = Math.round(P.fin.revenue[2] / UNIT_PRICE);
+  var EBITDA = P.fin.revenue.map(function(r, i){ return r - P.fin.costs[i]; });
+  var ASK = Math.round((P.fin.costs[1] * 0.35 + CAPEX * 6) / 1000) * 1000; // seed ask: 35% of Y2 cost base + 6 depot build-outs
+
+  /* ================= formatting + tiny chart library ================= */
+  function fmt$(n){
+    if (Math.abs(n) >= 1e6) return '$' + (n / 1e6).toFixed(n % 1e6 === 0 ? 0 : 2) + 'M';
+    return '$' + Math.round(n).toLocaleString('en-US');
+  }
+  function fmtN(n){ return Math.round(n).toLocaleString('en-US'); }
+  function esc(s){ var d = document.createElement('div'); d.textContent = String(s); return d.innerHTML; }
+  var C = { brand:'#B8861F', teal:'#1F7A6F', coral:'#C4604F', violet:'#6B5CA5', blue:'#2E6FA3', ink:'#1C2233', muted:'#5D6575', line:'#E4DCC9' };
+
+  function canvas2d(cv, h){
+    var DPR = Math.min(devicePixelRatio || 1, 2);
+    var w = cv.clientWidth;
+    cv.style.height = h + 'px';
+    cv.width = w * DPR; cv.height = h * DPR;
+    var g = cv.getContext('2d');
+    g.setTransform(DPR, 0, 0, DPR, 0, 0);
+    g.font = '11px ' + getComputedStyle(document.body).fontFamily;
+    return { g: g, w: w, h: h };
+  }
+
+  function areaChart(cv, series, opts){
+    var c = canvas2d(cv, opts.h || 230), g = c.g;
+    var pad = { l: 46, r: 12, t: 14, b: 26 };
+    var max = opts.max || Math.max.apply(null, series.flatMap(function(s){ return s.data; })) * 1.08;
+    var min = opts.min != null ? opts.min : 0;
+    var n = series[0].data.length;
+    function X(i){ return pad.l + i * (c.w - pad.l - pad.r) / (n - 1); }
+    function Y(v){ return pad.t + (1 - (v - min) / (max - min)) * (c.h - pad.t - pad.b); }
+    g.strokeStyle = C.line; g.lineWidth = 1; g.fillStyle = C.muted; g.textAlign = 'right';
+    for (var gy = 0; gy <= 4; gy++){
+      var val = min + (max - min) * gy / 4, yy = Y(val);
+      g.beginPath(); g.moveTo(pad.l, yy); g.lineTo(c.w - pad.r, yy); g.stroke();
+      g.fillText(fmt$(val), pad.l - 6, yy + 3);
+    }
+    if (min < 0){ g.strokeStyle = C.ink; g.beginPath(); g.moveTo(pad.l, Y(0)); g.lineTo(c.w - pad.r, Y(0)); g.stroke(); }
+    (opts.xlabels || []).forEach(function(lb){
+      g.fillStyle = C.muted; g.textAlign = 'center';
+      g.fillText(lb.t, X(lb.i), c.h - 8);
+      g.strokeStyle = 'rgba(28,34,51,.12)';
+      g.beginPath(); g.moveTo(X(lb.i), pad.t); g.lineTo(X(lb.i), c.h - pad.b); g.stroke();
+    });
+    series.forEach(function(s){
+      if (s.fill){
+        g.beginPath(); g.moveTo(X(0), Y(s.data[0]));
+        s.data.forEach(function(v, i){ g.lineTo(X(i), Y(v)); });
+        g.lineTo(X(n - 1), Y(Math.max(min, 0))); g.lineTo(X(0), Y(Math.max(min, 0))); g.closePath();
+        g.fillStyle = s.fill; g.fill();
+      }
+      g.beginPath(); g.moveTo(X(0), Y(s.data[0]));
+      s.data.forEach(function(v, i){ g.lineTo(X(i), Y(v)); });
+      g.strokeStyle = s.color; g.lineWidth = 2.2; g.lineJoin = 'round'; g.stroke();
+    });
+    if (opts.marker != null && opts.marker >= 0){
+      var mx = X(opts.marker);
+      g.strokeStyle = C.coral; g.setLineDash([4, 4]);
+      g.beginPath(); g.moveTo(mx, pad.t); g.lineTo(mx, c.h - pad.b); g.stroke();
+      g.setLineDash([]);
+      g.fillStyle = C.coral; g.textAlign = 'left';
+      g.fillText(opts.markerLabel || '', mx + 6, pad.t + 10);
+    }
+  }
+
+  function hbars(cv, rows, opts){
+    var c = canvas2d(cv, rows.length * 44 + 8), g = c.g;
+    var max = Math.max.apply(null, rows.map(function(r){ return r.v; }));
+    var lw = opts && opts.labelW || 150;
+    rows.forEach(function(r, i){
+      var y = i * 44 + 8, bw = (c.w - lw - 90) * (r.v / max);
+      g.fillStyle = C.ink; g.textAlign = 'left'; g.font = '12px ' + getComputedStyle(document.body).fontFamily;
+      g.fillText(r.k, 0, y + 15);
+      g.fillStyle = '#EFE9DA'; g.fillRect(lw, y + 4, c.w - lw - 90, 16);
+      g.fillStyle = r.c; g.fillRect(lw, y + 4, bw, 16);
+      g.fillStyle = C.muted; g.textAlign = 'left';
+      g.font = '11px ' + getComputedStyle(document.body).fontFamily;
+      g.fillText(r.lab, lw + bw + 8, y + 16);
+    });
+  }
+
+  function donut(cv, parts, opts){
+    var size = (opts && opts.size) || 210;
+    var c = canvas2d(cv, size), g = c.g;
+    var cx = size / 2 + 4, cy = size / 2, r = size / 2 - 10, total = parts.reduce(function(a,p){ return a + p.v; }, 0);
+    var a0 = -Math.PI / 2;
+    parts.forEach(function(p){
+      var a1 = a0 + (p.v / total) * Math.PI * 2;
+      g.beginPath(); g.moveTo(cx, cy); g.arc(cx, cy, r, a0, a1); g.closePath();
+      g.fillStyle = p.c; g.fill();
+      g.strokeStyle = '#FDFBF6'; g.lineWidth = 2; g.stroke();
+      a0 = a1;
+    });
+    g.beginPath(); g.arc(cx, cy, r * 0.58, 0, Math.PI * 2); g.fillStyle = '#FDFBF6'; g.fill();
+    if (opts && opts.center){
+      g.fillStyle = C.ink; g.textAlign = 'center';
+      g.font = '600 17px ' + getComputedStyle(document.body).fontFamily;
+      g.fillText(opts.center, cx, cy + 1);
+      g.fillStyle = C.muted; g.font = '10px ' + getComputedStyle(document.body).fontFamily;
+      g.fillText(opts.centerSub || '', cx, cy + 16);
+    }
+    // legend to the right when there is room
+    var lx = cx + r + 22;
+    if (lx < c.w - 120){
+      g.textAlign = 'left';
+      parts.forEach(function(p, i){
+        var y = cy - (parts.length * 20) / 2 + i * 20 + 5;
+        g.fillStyle = p.c; g.fillRect(lx, y - 9, 10, 10);
+        g.fillStyle = C.ink; g.font = '11px ' + getComputedStyle(document.body).fontFamily;
+        g.fillText(p.k + ' — ' + p.lab, lx + 16, y);
+      });
+    }
+  }
+
+  function groupedBars(cv, opts){
+    var c = canvas2d(cv, opts.h || 220), g = c.g;
+    var pad = { l: 46, r: 8, t: 12, b: 24 };
+    var max = Math.max.apply(null, opts.series.flatMap(function(s){ return s.data; })) * 1.12;
+    var n = opts.labels.length, gw = (c.w - pad.l - pad.r) / n;
+    g.strokeStyle = C.line; g.fillStyle = C.muted; g.textAlign = 'right';
+    for (var gy = 0; gy <= 4; gy++){
+      var val = max * gy / 4, yy = pad.t + (1 - gy / 4) * (c.h - pad.t - pad.b);
+      g.beginPath(); g.moveTo(pad.l, yy); g.lineTo(c.w - pad.r, yy); g.stroke();
+      g.fillText(fmt$(val), pad.l - 6, yy + 3);
+    }
+    opts.labels.forEach(function(lb, i){
+      g.fillStyle = C.muted; g.textAlign = 'center';
+      g.fillText(lb, pad.l + (i + .5) * gw, c.h - 6);
+    });
+    var bw = Math.min(34, gw / (opts.series.length + 1.4));
+    opts.series.forEach(function(s, si){
+      s.data.forEach(function(v, i){
+        var x = pad.l + (i + .5) * gw + (si - opts.series.length / 2) * (bw + 4) + 2;
+        var y = pad.t + (1 - v / max) * (c.h - pad.t - pad.b);
+        g.fillStyle = s.color;
+        g.fillRect(x, y, bw, c.h - pad.b - y);
+      });
+    });
+  }
+
+  /* ================= document scaffolding ================= */
+  var TYPES = {
+    validation: { n: 'Market Validation Report', tag: 'VALIDATION · 40 ACU', sub: 'Demand evidence, market sizing, and competitive scan', ac: C.teal },
+    forecast:   { n: '3-Year Financial Forecast', tag: 'FINANCIAL MODEL · 50 ACU', sub: 'Revenue build-up, P&L, cashflow, and sensitivity analysis', ac: C.brand },
+    bizplan:    { n: 'Business Plan', tag: 'BUSINESS PLAN · 80 ACU', sub: 'Investor-grade operating and growth plan', ac: C.violet },
+    pitch:      { n: 'Investor Pitch Deck', tag: 'PITCH DECK · 100 ACU', sub: '12 slides, export-ready', ac: C.blue },
+    riskmap:    { n: 'Risk Heatmap', tag: 'RISK ENGINE · 25 ACU', sub: 'Regulatory, operational, and market exposures mapped by probability and impact', ac: C.coral },
+    export:     { n: 'Export Pack', tag: 'EXPORT · 15 ACU', sub: 'Download every generated asset', ac: C.coral }
+  };
+  var type = new URLSearchParams(location.search).get('type');
+  if (!TYPES[type]) type = 'validation';
+  var T = TYPES[type];
+  document.title = 'Niche Finder — ' + T.n;
+
+  var today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  var root = document.getElementById('root');
+
+  function docShell(bodyHTML){
+    return '<article class="doc">' +
+      '<div class="doc-band">' +
+        '<div class="doc-brandline"><i></i>NICHE FINDER · VENTURE INTELLIGENCE OS</div>' +
+        '<h1>' + esc(P.title) + '</h1>' +
+        '<div class="sub">' + esc(T.n) + ' — ' + esc(T.sub) + '</div>' +
+        '<div class="meta"><span>DOCUMENT <b>' + esc(T.tag) + '</b></span><span>GENERATED <b>' + esc(today) + '</b></span>' +
+        '<span>CONFIDENCE <b>' + P.score + '/100</b></span><span>' + esc(P.meta) + '</span></div>' +
+      '</div>' +
+      '<div class="doc-body">' + bodyHTML + '</div></article>';
+  }
+  function sec(n, title, inner){
+    return '<section class="sec"><div class="sec-head"><span class="n">' + n + '</span><h2>' + title + '</h2></div>' + inner + '</section>';
+  }
+  function stat(v, k, d, ac){
+    return '<div class="stat" style="--ac:' + (ac || C.brand) + '"><div class="v">' + v + '</div><div class="k">' + k + '</div>' + (d ? '<div class="d">' + d + '</div>' : '') + '</div>';
+  }
+  var DISCLAIMER = '<div class="foot-note"><b>NICHE FINDER · METHODOLOGY & DISCLAIMER</b><br>' +
+    'This document was generated by the Niche Finder venture intelligence engine from regional economic indicators, comparable-operator benchmarks, and the constraints you provided. All projections are probabilistic estimates, not guarantees. Figures are internally consistent with the project\'s anchored 3-year model (gross margin ' + Math.round(GM*100) + '%, startup capital ' + fmt$(CAPEX) + '). Conduct independent due diligence and seek professional advice before committing capital. You are the final decision-maker.</div>';
+
+  /* ================= renderers ================= */
+  var render = {};
+
+  render.validation = function(){
+    var pct = P.score;
+    var subs = Object.keys(P.sub || {});
+    root.innerHTML = docShell(
+      '<div class="callout" style="--pct:' + pct + '">' +
+        '<div class="verdict-badge" style="--pct:' + pct + '"><span>' + pct + '</span><small>/100</small></div>' +
+        '<div class="big"><b>Verdict: Validated — proceed to financial modeling.</b> Demand signals, market head-room, and a weak competitive field combine into an overall confidence score of ' + pct + '/100. Primary execution risks are operational, not demand-side.</div>' +
+      '</div>' +
+
+      sec('01', 'Market Sizing', '<p>Top-down sizing anchored to the addressable market identified during discovery, narrowed to what this venture can serve and realistically win within 3 years.</p><canvas class="chart" id="tamChart"></canvas>' +
+        '<div class="statgrid">' +
+        stat(fmt$(TAM), 'TAM — Total market', 'Full regional spend in the category', C.blue) +
+        stat(fmt$(SAM), 'SAM — Serviceable', '24% of TAM: corridors reachable from the launch region', C.violet) +
+        stat(fmt$(SOM_Y3), 'SOM — Year-3 target', ((SOM_Y3 / SAM) * 100).toFixed(1) + '% of SAM — the Year-3 revenue plan', C.teal) +
+        '</div>') +
+
+      sec('02', 'Demand Evidence', '<p>Signals gathered by the Opportunity Discovery Agent supporting real, paying demand.</p>' +
+        '<div class="statgrid">' +
+        stat('35%+', 'Value loss today', 'Current post-harvest / inefficiency loss in the target chain — the pain being priced', C.coral) +
+        stat(fmtN(UNITS_Y3), 'Y3 unit volume', 'Transactions needed to hit the Year-3 plan at ' + fmt$(UNIT_PRICE) + '/unit', C.teal) +
+        stat(Math.round(SAM / TAM * 100) + '%', 'Reachable share', 'Serviceable portion of total demand from launch corridors', C.blue) +
+        stat(fmt$(P.fin.revenue[0]), 'Year-1 proof bar', 'Revenue required to validate the wedge — ' + ((P.fin.revenue[0] / SAM) * 100).toFixed(2) + '% of SAM', C.brand) +
+        '</div>' +
+        '<h3 style="font-family:var(--serif);font-weight:400;font-size:1.05rem;margin-top:26px">Demand drivers (relative strength)</h3>' +
+        '<canvas class="chart" id="driversChart"></canvas>') +
+
+      sec('03', 'Competitive Scan', '<p>No direct competitor currently combines this offering in the target corridors. Incumbents compete on legacy cost structures.</p>' +
+        '<table class="doc-t"><tr><th>Player</th><th>Model</th><th>Coverage</th><th>Cost base</th><th>Threat</th></tr>' +
+        '<tr><td>Informal incumbents</td><td>Manual / ad-hoc</td><td class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></td><td>Low</td><td>Medium</td></tr>' +
+        '<tr><td>Diesel-powered operators</td><td>Asset-heavy legacy</td><td class="dots"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></td><td>3× target</td><td>Low</td></tr>' +
+        '<tr><td>NGO pilot programs</td><td>Grant-funded</td><td class="dots"><i class="on"></i><i></i><i></i><i></i><i></i></td><td>Subsidized</td><td>Low</td></tr>' +
+        '<tr class="hl"><td>This venture</td><td>Tech-enabled, prepaid</td><td class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></td><td>Structural advantage</td><td>—</td></tr></table>') +
+
+      sec('04', 'Validation Checklist', '<div style="margin-top:8px">' +
+        chk('pass', 'Painful, quantified problem', '35%+ current value loss gives a hard ROI story for every customer conversation.') +
+        chk('pass', 'Willingness to pay identified', 'Prepaid unit-credit model tested against comparable operators in adjacent markets.') +
+        chk('pass', 'Market head-room', 'Year-3 plan requires only ' + ((SOM_Y3 / SAM) * 100).toFixed(1) + '% of the serviceable market.') +
+        chk('warn', 'Supply chain dependency', 'Equipment import lead times are the main execution bottleneck — mitigation required (see Deep-Dive risks).') +
+        chk('warn', 'Primary research pending', 'The OS recommends 30 structured customer interviews before capital deployment.') +
+        '</div>' +
+        '<h3 style="font-family:var(--serif);font-weight:400;font-size:1.05rem;margin-top:26px">Scorecard decomposition</h3>' +
+        '<canvas class="chart" id="scoreChart"></canvas>') +
+      DISCLAIMER
+    );
+    function chk(cls, b, p){ return '<div class="check ' + cls + '"><span class="ic">' + (cls === 'pass' ? '✓' : '!') + '</span><div><b>' + b + '</b><p>' + p + '</p></div></div>'; }
+
+    hbars(document.getElementById('tamChart'), [
+      { k: 'TAM', v: TAM, c: C.blue, lab: fmt$(TAM) },
+      { k: 'SAM', v: SAM, c: C.violet, lab: fmt$(SAM) },
+      { k: 'SOM (Year 3)', v: SOM_Y3, c: C.teal, lab: fmt$(SOM_Y3) }
+    ], { labelW: 110 });
+    hbars(document.getElementById('driversChart'), [
+      { k: 'Loss-reduction ROI', v: 92, c: C.teal, lab: '92 / 100' },
+      { k: 'Infrastructure gap', v: 88, c: C.blue, lab: '88 / 100' },
+      { k: 'Mobile-money rails', v: 76, c: C.violet, lab: '76 / 100' },
+      { k: 'Demographic tailwind', v: 71, c: C.brand, lab: '71 / 100' },
+      { k: 'Regulatory friction (inverse)', v: 58, c: C.coral, lab: '58 / 100' }
+    ], { labelW: 190 });
+    hbars(document.getElementById('scoreChart'),
+      subs.map(function(k, i){ return { k: k, v: P.sub[k], c: [C.teal, C.blue, C.brand][i % 3], lab: P.sub[k] + ' / 100' }; }),
+      { labelW: 170 });
+  };
+
+  render.forecast = function(){
+    var q = [];
+    for (var i = 0; i < 12; i++){
+      q.push(REV_M.slice(i*3, i*3+3).reduce(function(a,b){ return a + b; }, 0));
+    }
+    root.innerHTML = docShell(
+      sec('01', 'Model Assumptions', '<p>Every figure in this forecast is derived from the assumptions below — change an assumption and the whole model moves together.</p>' +
+        '<div class="statgrid">' +
+        stat(fmt$(UNIT_PRICE), 'Revenue / unit', 'Average revenue per unit-transaction', C.brand) +
+        stat(Math.round(GM * 100) + '%', 'Gross margin', 'Target steady-state gross margin', C.teal) +
+        stat(fmt$(CAPEX), 'Initial capex', 'Startup capital deployed at month 0', C.violet) +
+        stat('Mo ' + BREAKEVEN_M, 'Break-even', 'First month cumulative cash turns positive (computed)', C.coral) +
+        stat(fmtN(Math.round(REV_M[35] / UNIT_PRICE)), 'Exit volume / mo', 'Unit-transactions in month 36', C.blue) +
+        stat(Math.round(EBITDA[2] / P.fin.revenue[2] * 100) + '%', 'Y3 EBITDA margin', 'Operating profitability at scale', C.teal) +
+        '</div>') +
+
+      sec('02', 'Revenue Build-Up (36 months)', '<p>Quarterly revenue ramp: logistic adoption within each year, floored at the prior year\'s exit run-rate, summing exactly to the annual plan.</p>' +
+        '<canvas class="chart" id="rampChart"></canvas>' +
+        '<div class="legend"><span><i style="background:' + C.brand + '"></i>Quarterly revenue</span></div>') +
+
+      sec('03', 'Profit & Loss', '<table class="doc-t" id="plTable"></table>') +
+
+      sec('04', 'Cash Position & Break-Even', '<p>Cumulative cash including the initial ' + fmt$(CAPEX) + ' capex outlay. The model crosses break-even in <b>month ' + BREAKEVEN_M + '</b>' + (P.market['Break-even'] ? ' (discovery estimate: ' + esc(P.market['Break-even']) + ')' : '') + '.</p>' +
+        '<canvas class="chart" id="cashChart"></canvas>' +
+        '<div class="legend"><span><i style="background:' + C.teal + '"></i>Cumulative cash</span><span><i style="background:' + C.coral + '"></i>Break-even</span></div>') +
+
+      sec('05', 'Unit Economics', '<div class="statgrid">' +
+        stat(fmt$(UNIT_PRICE), 'Revenue / unit', null, C.brand) +
+        stat(fmt$(UNIT_PRICE * (1 - GM)), 'Direct cost / unit', (100 - Math.round(GM*100)) + '% of unit revenue', C.coral) +
+        stat(fmt$(UNIT_PRICE * GM), 'Contribution / unit', Math.round(GM*100) + '% contribution margin', C.teal) +
+        stat(fmtN(Math.ceil(CAPEX / (UNIT_PRICE * GM))), 'Units to repay capex', 'Volume covering the initial build-out', C.violet) +
+        '</div>') +
+
+      sec('06', 'Sensitivity — Year-3 EBITDA', '<p>Year-3 EBITDA under combined revenue and gross-margin scenarios. The plan case is highlighted.</p>' +
+        '<table class="doc-t" id="sensTable"></table>') +
+      DISCLAIMER
+    );
+
+    areaChart(document.getElementById('rampChart'), [
+      { data: q, color: C.brand, fill: 'rgba(184,134,31,.18)' }
+    ], { h: 230, xlabels: [{i:0,t:'Q1'},{i:3,t:'Q4'},{i:7,t:'Q8'},{i:11,t:'Q12'}] });
+
+    var mn = Math.min.apply(null, CUM), mx = Math.max.apply(null, CUM);
+    areaChart(document.getElementById('cashChart'), [
+      { data: CUM, color: C.teal, fill: 'rgba(31,122,111,.14)' }
+    ], { h: 240, min: mn * 1.15, max: mx * 1.06, marker: BREAKEVEN_M - 1, markerLabel: 'Break-even · Mo ' + BREAKEVEN_M,
+         xlabels: [{i:0,t:'Mo 1'},{i:11,t:'Mo 12'},{i:23,t:'Mo 24'},{i:35,t:'Mo 36'}] });
+
+    var pl = '<tr><th>Line</th><th>Year 1</th><th>Year 2</th><th>Year 3</th></tr>';
+    function plRow(name, vals, cls){
+      return '<tr class="' + (cls || '') + '"><td>' + name + '</td>' + vals.map(function(v){ return '<td>' + fmt$(v) + '</td>'; }).join('') + '</tr>';
+    }
+    pl += plRow('Revenue', P.fin.revenue);
+    pl += plRow('Cost of goods sold', COSTS.map(function(c){ return -c.cogs; }), 'sub');
+    pl += plRow('Gross profit', P.fin.revenue.map(function(r, i){ return r - COSTS[i].cogs; }), 'hl');
+    pl += plRow('Staffing', COSTS.map(function(c){ return -c.staffing; }), 'sub');
+    pl += plRow('Logistics & maintenance', COSTS.map(function(c){ return -c.logistics; }), 'sub');
+    pl += plRow('Sales & marketing', COSTS.map(function(c){ return -c.marketing; }), 'sub');
+    pl += plRow('Admin & compliance', COSTS.map(function(c){ return -c.admin; }), 'sub');
+    pl += plRow('EBITDA', EBITDA, 'hl');
+    pl += '<tr class="sub"><td>EBITDA margin</td>' + EBITDA.map(function(e, i){ return '<td>' + Math.round(e / P.fin.revenue[i] * 100) + '%</td>'; }).join('') + '</tr>';
+    document.getElementById('plTable').innerHTML = pl;
+
+    var sens = '<tr><th>Y3 revenue ↓ / GM →</th>';
+    var gms = [GM - 0.08, GM, GM + 0.06];
+    var revs = [0.8, 1.0, 1.15];
+    gms.forEach(function(g){ sens += '<th>' + Math.round(g * 100) + '% GM</th>'; });
+    sens += '</tr>';
+    revs.forEach(function(rf){
+      var rev = P.fin.revenue[2] * rf;
+      var opex = P.fin.costs[2] - COSTS[2].cogs;
+      sens += '<tr' + (rf === 1.0 ? '' : '') + '><td>' + fmt$(rev) + ' (' + Math.round(rf * 100) + '%)</td>';
+      gms.forEach(function(g){
+        var e = rev * g - opex * (0.9 + 0.1 * rf);
+        var plan = rf === 1.0 && Math.abs(g - GM) < 0.001;
+        sens += '<td style="' + (e < 0 ? 'color:#C4604F;' : '') + (plan ? 'background:rgba(184,134,31,.14);font-weight:700;color:#B8861F;' : '') + '">' + fmt$(e) + '</td>';
+      });
+      sens += '</tr>';
+    });
+    document.getElementById('sensTable').innerHTML = sens;
+  };
+
+  render.bizplan = function(){
+    root.innerHTML = docShell(
+      sec('01', 'Executive Summary', '<p>' + esc(stripTags(P.thesis || '')) + '</p>' +
+        '<div class="statgrid">' +
+        stat(fmt$(P.fin.revenue[2]), 'Year-3 revenue', null, C.brand) +
+        stat(Math.round(EBITDA[2] / P.fin.revenue[2] * 100) + '%', 'Y3 EBITDA margin', null, C.teal) +
+        stat('Mo ' + BREAKEVEN_M, 'Break-even', null, C.coral) +
+        stat(P.score + '/100', 'Confidence score', null, C.violet) +
+        '</div>') +
+
+      sec('02', 'The Problem', '<p><b>More than a third of value is lost</b> in the current chain before it reaches a paying customer. Existing alternatives are either asset-heavy legacy operators with triple the cost base, or informal workarounds with no reliability guarantee. Customers already pay for failure — this plan redirects that spend to a working solution.</p>') +
+
+      sec('03', 'The Solution & Business Model', '<p>A prepaid, tech-enabled service priced at <b>' + fmt$(UNIT_PRICE) + ' per unit-transaction</b> with a ' + Math.round(GM * 100) + '% contribution margin. Prepaid credits keep receivables near zero; mobile-money settlement removes cash-handling risk; modular capacity means each expansion unit is a repeatable ' + fmt$(CAPEX) + ' build-out that pays back after ' + fmtN(Math.ceil(CAPEX / (UNIT_PRICE * GM))) + ' transactions.</p>' +
+        '<div class="statgrid">' +
+        stat(fmt$(UNIT_PRICE), 'Price / unit', 'Prepaid credit', C.brand) +
+        stat(Math.round(GM * 100) + '%', 'Contribution', 'Per-unit margin', C.teal) +
+        stat(fmt$(CAPEX), 'Cost / expansion unit', 'Repeatable build-out', C.violet) +
+        stat(fmtN(Math.ceil(CAPEX / (UNIT_PRICE * GM))), 'Payback volume', 'Units per build-out', C.blue) +
+        '</div>') +
+
+      sec('04', 'Market & Competition', '<p>The venture targets ' + fmt$(SOM_Y3) + ' of revenue by Year 3 — just ' + ((SOM_Y3 / SAM) * 100).toFixed(1) + '% of the ' + fmt$(SAM) + ' serviceable market inside a ' + fmt$(TAM) + ' total market. No incumbent combines the model\'s cost structure with its reliability guarantee (full scan in the Market Validation Report).</p>' +
+        '<canvas class="chart" id="bpMarket"></canvas>') +
+
+      sec('05', 'Go-To-Market Roadmap', tableRoadmap()) +
+
+      sec('06', 'Financial Highlights', '<canvas class="chart" id="bpFin"></canvas>' +
+        '<div class="legend"><span><i style="background:' + C.brand + '"></i>Revenue</span><span><i style="background:' + C.coral + '"></i>Total costs</span><span><i style="background:' + C.teal + '"></i>EBITDA</span></div>' +
+        '<p>Full P&L, cash curve, and sensitivity analysis are maintained in the companion <b>3-Year Financial Forecast</b>.</p>') +
+
+      sec('07', 'Funding Ask & Use of Funds', '<p>The plan seeks <b>' + fmt$(ASK) + '</b> in seed capital to move from validated pilot to multi-unit operation, reaching break-even in month ' + BREAKEVEN_M + ' without further raises.</p>' +
+        '<canvas class="chart" id="bpFunds"></canvas>') +
+
+      sec('08', 'Key Risks & Mitigations', riskTable()) +
+      DISCLAIMER
+    );
+
+    function tableRoadmap(){
+      var steps = (P.roadmap && P.roadmap.length ? P.roadmap : [
+        { t: 'Validate', p: 'Structured customer interviews; pre-sell launch capacity.', tm: 'Weeks 1–4' },
+        { t: 'Pilot', p: 'Deploy first unit; instrument performance for proof.', tm: 'Weeks 5–10' },
+        { t: 'Prove economics', p: '90 days at target utilization; capture data for the investor pack.', tm: 'Weeks 11–22' },
+        { t: 'Raise & replicate', p: 'Deploy seed capital into repeatable expansion units.', tm: 'Months 6–12' }
+      ]);
+      var h = '<table class="doc-t"><tr><th>Phase</th><th style="text-align:left">Objective</th><th>Timing</th></tr>';
+      steps.forEach(function(s, i){
+        h += '<tr><td>Phase ' + (i + 1) + ' — ' + esc(s.t) + '</td><td style="text-align:left;font-family:var(--sans);color:var(--doc-muted)">' + esc(s.p) + '</td><td>' + esc(s.tm) + '</td></tr>';
+      });
+      return h + '</table>';
+    }
+    function riskTable(){
+      var risks = (P.risks && P.risks.length ? P.risks : []);
+      var h = '<table class="doc-t"><tr><th>Severity</th><th style="text-align:left">Risk</th><th style="text-align:left">Mitigation</th></tr>';
+      risks.forEach(function(r){
+        var col = r.sev === 'high' ? C.coral : r.sev === 'med' ? C.brand : C.teal;
+        h += '<tr><td style="color:' + col + ';font-weight:700;text-transform:uppercase;font-size:.7rem">' + esc(r.sev) + '</td><td style="text-align:left;font-family:var(--sans)">' + esc(r.t) + '</td><td style="text-align:left;font-family:var(--sans);color:var(--doc-muted)">' + esc(r.p) + '</td></tr>';
+      });
+      return h + '</table>';
+    }
+
+    hbars(document.getElementById('bpMarket'), [
+      { k: 'TAM', v: TAM, c: C.blue, lab: fmt$(TAM) },
+      { k: 'SAM', v: SAM, c: C.violet, lab: fmt$(SAM) },
+      { k: 'SOM (Year 3)', v: SOM_Y3, c: C.teal, lab: fmt$(SOM_Y3) }
+    ], { labelW: 110 });
+    groupedBars(document.getElementById('bpFin'), {
+      labels: P.fin.years,
+      series: [
+        { data: P.fin.revenue, color: C.brand },
+        { data: P.fin.costs, color: C.coral },
+        { data: EBITDA, color: C.teal }
+      ]
+    });
+    donut(document.getElementById('bpFunds'), [
+      { k: 'Expansion build-outs', v: 40, c: C.brand, lab: fmt$(ASK * 0.4) },
+      { k: 'Working capital', v: 25, c: C.teal, lab: fmt$(ASK * 0.25) },
+      { k: 'Team & operations', v: 20, c: C.violet, lab: fmt$(ASK * 0.2) },
+      { k: 'Marketing & GTM', v: 10, c: C.blue, lab: fmt$(ASK * 0.1) },
+      { k: 'Contingency', v: 5, c: C.coral, lab: fmt$(ASK * 0.05) }
+    ], { center: fmt$(ASK), centerSub: 'SEED ASK' });
+  };
+
+  /* 10 deck templates — each a complete visual system applied to all 12 slides */
+  var DECK_THEMES = [
+    { id: 'midnight',  n: 'Midnight Gold',   bg: 'linear-gradient(135deg,#0B1322,#111B31 60%,#17203A)', tx: '#EAE5D9', mut: '#C4CAD6', ac: '#F1C97E', ac2: '#3FA79B', font: 'var(--serif)', border: 'rgba(217,164,65,.14)' },
+    { id: 'boardroom', n: 'Boardroom Ivory', bg: 'linear-gradient(135deg,#FDFBF6,#F4EFE4)', tx: '#1C2233', mut: '#5D6575', ac: '#B8861F', ac2: '#1F7A6F', font: 'var(--serif)', border: '#E4DCC9' },
+    { id: 'signal',    n: 'Signal Red',      bg: 'linear-gradient(135deg,#16090B,#2A0F13 65%,#3A1218)', tx: '#F5E9E6', mut: '#C9A9A3', ac: '#E86A54', ac2: '#F1C97E', font: 'var(--sans)', border: 'rgba(232,106,84,.25)' },
+    { id: 'atlantic',  n: 'Atlantic Blue',   bg: 'linear-gradient(135deg,#07131F,#0C2033 60%,#12293F)', tx: '#E7EDF4', mut: '#9FB2C4', ac: '#5FA8E0', ac2: '#F1C97E', font: 'var(--sans)', border: 'rgba(95,168,224,.22)' },
+    { id: 'terra',     n: 'Terra Verde',     bg: 'linear-gradient(135deg,#0C1510,#122019 60%,#182A20)', tx: '#E8EFE8', mut: '#A3B8A8', ac: '#5FBF8F', ac2: '#D9A441', font: 'var(--serif)', border: 'rgba(95,191,143,.22)' },
+    { id: 'violet',    n: 'Violet Frontier', bg: 'linear-gradient(135deg,#120F1E,#1B1530 60%,#241C40)', tx: '#ECE8F4', mut: '#B4ABCB', ac: '#A48FE0', ac2: '#3FA79B', font: 'var(--sans)', border: 'rgba(164,143,224,.24)' },
+    { id: 'carbon',    n: 'Carbon Mono',     bg: 'linear-gradient(135deg,#0D0D0F,#161619 60%,#1E1E23)', tx: '#F2F2F0', mut: '#9C9CA3', ac: '#FFFFFF', ac2: '#D9A441', font: 'var(--mono)', border: 'rgba(255,255,255,.18)' },
+    { id: 'sunrise',   n: 'Sunrise Coral',   bg: 'linear-gradient(135deg,#FFF8F0,#FBEDE2)', tx: '#33231C', mut: '#8A6F60', ac: '#D45E3C', ac2: '#2E6FA3', font: 'var(--sans)', border: '#EDD9C8' },
+    { id: 'ledger',    n: 'Ledger Slate',    bg: 'linear-gradient(135deg,#EEF1F4,#E2E8EE)', tx: '#1E2937', mut: '#5A6B7E', ac: '#2E6FA3', ac2: '#C4604F', font: 'var(--serif)', border: '#CBD6E0' },
+    { id: 'royale',    n: 'Casino Royale',   bg: 'linear-gradient(135deg,#0F1410,#141D15 55%,#22150C)', tx: '#EFEAD8', mut: '#ADB3A0', ac: '#E4B84C', ac2: '#C4604F', font: 'var(--serif)', border: 'rgba(228,184,76,.28)' }
+  ];
+
+  render.pitch = function(){
+    var themeId = localStorage.getItem('nf_deck_theme') || 'midnight';
+    var TH = DECK_THEMES.find(function(t){ return t.id === themeId; }) || DECK_THEMES[0];
+    var sstyle = 'background:' + TH.bg + ';color:' + TH.tx + ';border-color:' + TH.border;
+
+    function slide(i, tag, h2, body, extra){
+      return '<section class="slide' + (extra || '') + '" style="' + sstyle + '">' +
+        '<span class="sl-tag" style="color:' + TH.ac + '">' + tag + '</span>' +
+        (h2 ? '<h2 class="' + (i === 1 ? 'huge' : '') + '" style="font-family:' + TH.font + ';color:' + TH.tx + '">' + h2 + '</h2>' : '') +
+        '<div class="sl-body" style="--sl-tx:' + TH.tx + ';--sl-mut:' + TH.mut + ';--sl-ac:' + TH.ac + ';--sl-ac2:' + TH.ac2 + '">' + body + '</div>' +
+        '<span class="sl-brand" style="color:' + TH.ac + '">NICHE FINDER · VENTURE OS</span>' +
+        '<span class="sl-num" style="color:' + TH.mut + '">' + String(i).padStart(2, '0') + ' / 12</span></section>';
+    }
+
+    var picker = '<div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px 22px;margin-bottom:24px">' +
+      '<div style="font-family:var(--mono);font-size:.62rem;letter-spacing:.2em;color:var(--gold);text-transform:uppercase">Deck Template — choose from 10 designs</div>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">' +
+      DECK_THEMES.map(function(t){
+        var on = t.id === TH.id;
+        return '<button class="theme-pick" data-theme="' + t.id + '" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:8px 13px;border-radius:6px;font-family:var(--sans);font-size:.74rem;font-weight:600;' +
+          'background:' + (on ? 'rgba(217,164,65,.14)' : 'none') + ';border:1px solid ' + (on ? 'var(--gold)' : 'var(--line-soft)') + ';color:var(--text)">' +
+          '<span style="width:20px;height:14px;border-radius:3px;background:' + t.bg + ';border:1px solid rgba(255,255,255,.2);display:inline-block"></span>' +
+          '<span style="width:8px;height:8px;border-radius:50%;background:' + t.ac + ';display:inline-block"></span>' + t.n + '</button>';
+      }).join('') + '</div></div>';
+
+    root.innerHTML = picker + '<div class="deck">' +
+      slide(1, 'SEED ROUND · ' + esc(today).toUpperCase(), esc(P.title),
+        '<div class="bignum"><div><div class="v">' + fmt$(P.fin.revenue[2]) + '</div><div class="k">Year-3 revenue</div></div>' +
+        '<div><div class="v">' + P.score + '/100</div><div class="k">Confidence score</div></div>' +
+        '<div><div class="v">' + fmt$(ASK) + '</div><div class="k">Raising</div></div></div>', ' title-slide') +
+
+      slide(2, 'THE PROBLEM', '35%+ of value is destroyed before anyone gets paid.',
+        '<ul><li><b>Structural failure:</b> the current chain loses over a third of its value in transit and storage.</li>' +
+        '<li><b>Legacy alternatives cost 3×</b> and still fail on reliability.</li>' +
+        '<li>Customers already pay for failure — <b>nobody sells them success.</b></li></ul>') +
+
+      slide(3, 'THE SOLUTION', 'Prepaid, tech-enabled infrastructure — priced per transaction.',
+        '<ul><li><b>' + fmt$(UNIT_PRICE) + ' per unit-transaction</b>, prepaid via mobile money. Zero receivables.</li>' +
+        '<li><b>' + Math.round(GM * 100) + '% contribution margin</b> from a structurally cheaper operating model.</li>' +
+        '<li>Modular ' + fmt$(CAPEX) + ' build-outs make expansion a <b>repeatable playbook</b>, not a bet.</li></ul>') +
+
+      slide(4, 'MARKET', 'A ' + fmt$(TAM) + ' market. We need ' + ((SOM_Y3 / SAM) * 100).toFixed(1) + '% of what we can reach.',
+        '<div class="bignum"><div><div class="v accent-gold">' + fmt$(TAM) + '</div><div class="k">TAM</div></div>' +
+        '<div><div class="v">' + fmt$(SAM) + '</div><div class="k">SAM · serviceable</div></div>' +
+        '<div><div class="v accent-teal">' + fmt$(SOM_Y3) + '</div><div class="k">SOM · Year-3 plan</div></div></div>') +
+
+      slide(5, 'HOW IT WORKS', 'Three moves, one margin machine.',
+        '<ul><li><b>1 · Prepay.</b> Customers buy unit credits via mobile money.</li>' +
+        '<li><b>2 · Serve.</b> Each transaction runs at ' + Math.round(GM * 100) + '% contribution margin.</li>' +
+        '<li><b>3 · Redeploy.</b> Cash from ' + fmtN(Math.ceil(CAPEX / (UNIT_PRICE * GM))) + ' transactions funds the next build-out.</li></ul>') +
+
+      slide(6, 'BUSINESS MODEL', 'Unit economics that survive contact with reality.',
+        '<div class="bignum"><div><div class="v">' + fmt$(UNIT_PRICE) + '</div><div class="k">Revenue / unit</div></div>' +
+        '<div><div class="v accent-teal">' + fmt$(UNIT_PRICE * GM) + '</div><div class="k">Contribution / unit</div></div>' +
+        '<div><div class="v">' + fmt$(CAPEX) + '</div><div class="k">Cost per build-out</div></div>' +
+        '<div><div class="v accent-gold">Mo ' + BREAKEVEN_M + '</div><div class="k">Break-even</div></div></div>') +
+
+      slide(7, 'VALIDATION', 'Scored ' + P.score + '/100 by the venture intelligence engine.',
+        '<ul>' + Object.keys(P.sub || {}).map(function(k){
+          return '<li><b>' + esc(k) + ':</b> ' + P.sub[k] + '/100</li>';
+        }).join('') + '<li>Full evidence in the Market Validation Report.</li></ul>') +
+
+      slide(8, 'COMPETITION', 'Incumbents are stuck with a 3× cost base.',
+        '<ul><li><b>Informal incumbents</b> — coverage without reliability.</li>' +
+        '<li><b>Legacy operators</b> — reliability at triple the cost.</li>' +
+        '<li><b>This venture</b> — reliability at a structural cost advantage. Pick two? We picked all three.</li></ul>') +
+
+      slide(9, 'FINANCIALS', fmt$(P.fin.revenue[0]) + ' → ' + fmt$(P.fin.revenue[2]) + ' in 36 months.',
+        '<canvas id="deckFin"></canvas>') +
+
+      slide(10, 'ROADMAP', 'From validated wedge to multi-unit operation.',
+        '<ul>' + (P.roadmap || []).slice(0, 4).map(function(s, i){
+          return '<li><b>' + esc(s.tm) + ':</b> ' + esc(s.t) + '</li>';
+        }).join('') + '</ul>') +
+
+      slide(11, 'TEAM & EXECUTION', 'Operator-led. Data-backed. OS-supported.',
+        '<ul><li><b>Founding operator</b> — [your name here], domain access and local execution.</li>' +
+        '<li><b>Niche Finder OS</b> — continuous market intelligence, financial modeling, and investor reporting.</li>' +
+        '<li><b>Hiring plan</b> — operations lead at month 4, funded within the model.</li></ul>') +
+
+      slide(12, 'THE ASK', fmt$(ASK) + ' to reach break-even without another raise.',
+        '<div class="bignum"><div><div class="v accent-gold">' + fmt$(ASK) + '</div><div class="k">Seed round</div></div>' +
+        '<div><div class="v">40%</div><div class="k">Expansion build-outs</div></div>' +
+        '<div><div class="v">25%</div><div class="k">Working capital</div></div>' +
+        '<div><div class="v accent-teal">Mo ' + BREAKEVEN_M + '</div><div class="k">Break-even</div></div></div>') +
+      '</div>';
+
+    var cv = document.getElementById('deckFin');
+    if (cv){
+      var DPR = Math.min(devicePixelRatio || 1, 2);
+      var w = cv.clientWidth, h = Math.max(160, cv.clientHeight || 220);
+      cv.width = w * DPR; cv.height = h * DPR;
+      var g = cv.getContext('2d');
+      g.setTransform(DPR, 0, 0, DPR, 0, 0);
+      var pad = { l: 10, r: 10, t: 12, b: 24 };
+      var max = P.fin.revenue[2] * 1.1, n = 3, gw = (w - pad.l - pad.r) / n;
+      var cols = ['rgba(217,164,65,.9)', 'rgba(63,167,155,.85)'];
+      var series = [P.fin.revenue, EBITDA];
+      series.forEach(function(s, si){
+        s.forEach(function(v, i){
+          var bw = Math.min(64, gw / 3.4);
+          var x = pad.l + (i + .5) * gw + (si - 1) * (bw + 5) + 2;
+          var y = pad.t + (1 - Math.max(0, v) / max) * (h - pad.t - pad.b);
+          g.fillStyle = cols[si];
+          g.fillRect(x, y, bw, h - pad.b - y);
+        });
+      });
+      g.fillStyle = 'rgba(139,147,165,.95)';
+      g.font = '11px ' + getComputedStyle(document.body).fontFamily;
+      g.textAlign = 'center';
+      P.fin.years.forEach(function(yl, i){ g.fillText(yl, pad.l + (i + .5) * gw, h - 6); });
+      g.textAlign = 'left';
+      g.fillStyle = 'rgba(217,164,65,.95)'; g.fillRect(pad.l, 0, 9, 9);
+      g.fillStyle = 'rgba(139,147,165,.95)'; g.fillText('Revenue', pad.l + 13, 8);
+      g.fillStyle = 'rgba(63,167,155,.95)'; g.fillRect(pad.l + 80, 0, 9, 9);
+      g.fillStyle = 'rgba(139,147,165,.95)'; g.fillText('EBITDA', pad.l + 93, 8);
+    }
+
+    // template picker: persist and re-render with the chosen theme
+    document.querySelectorAll('.theme-pick').forEach(function(b){
+      b.addEventListener('click', function(){
+        localStorage.setItem('nf_deck_theme', b.dataset.theme);
+        render.pitch();
+        scrollTo({ top: 0 });
+      });
+    });
+  };
+
+  render.riskmap = function(){
+    // Position each project risk on a probability × impact grid. Severity from
+    // the deep-dive maps to impact; probability is scored per risk category.
+    var risks = (P.risks && P.risks.length ? P.risks : []).map(function(r, i){
+      var impact = r.sev === 'high' ? 4 : r.sev === 'med' ? 3 : 2;
+      var prob = [4, 3, 2, 3, 2][i % 5] - (r.sev === 'low' ? 1 : 0);
+      return { t: r.t, p: r.p, sev: r.sev, impact: impact, prob: Math.max(1, prob), exposure: impact * Math.max(1, prob) };
+    }).sort(function(a, b){ return b.exposure - a.exposure; });
+
+    var cells = '';
+    for (var im = 5; im >= 1; im--){
+      for (var pr = 1; pr <= 5; pr++){
+        var score = im * pr;
+        var bg = score >= 15 ? 'rgba(196,96,79,.85)' : score >= 9 ? 'rgba(184,134,31,.8)' : score >= 5 ? 'rgba(184,134,31,.35)' : 'rgba(31,122,111,.45)';
+        var here = risks.filter(function(r){ return r.impact === im && r.prob === pr; });
+        cells += '<div style="background:' + bg + ';border-radius:4px;min-height:58px;position:relative;padding:4px">' +
+          here.map(function(r){
+            var idx = risks.indexOf(r) + 1;
+            return '<span style="display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#1C2233;color:#fff;font-family:var(--mono);font-size:.66rem;margin:2px" title="' + esc(r.t) + '">R' + idx + '</span>';
+          }).join('') + '</div>';
+      }
+    }
+    root.innerHTML = docShell(
+      sec('01', 'Exposure Matrix', '<p>Each risk is plotted by <b>probability</b> (→) and <b>impact</b> (↑). Exposure = probability × impact; anything in the red zone requires an active mitigation owner before capital deployment.</p>' +
+        '<div style="display:grid;grid-template-columns:26px 1fr;gap:8px;margin-top:20px">' +
+          '<div style="writing-mode:vertical-rl;transform:rotate(180deg);text-align:center;font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;color:var(--doc-muted)">IMPACT →</div>' +
+          '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px">' + cells + '</div>' +
+          '<div></div>' +
+          '<div style="text-align:center;font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;color:var(--doc-muted);margin-top:4px">PROBABILITY →</div>' +
+        '</div>' +
+        '<div class="legend"><span><i style="background:rgba(196,96,79,.85)"></i>Critical (≥15)</span><span><i style="background:rgba(184,134,31,.8)"></i>Elevated (9–14)</span><span><i style="background:rgba(184,134,31,.35)"></i>Moderate (5–8)</span><span><i style="background:rgba(31,122,111,.45)"></i>Managed (<5)</span></div>') +
+
+      sec('02', 'Risk Register', '<table class="doc-t"><tr><th>#</th><th style="text-align:left">Risk</th><th>Probability</th><th>Impact</th><th>Exposure</th><th style="text-align:left">Mitigation</th></tr>' +
+        risks.map(function(r, i){
+          var col = r.exposure >= 15 ? C.coral : r.exposure >= 9 ? C.brand : C.teal;
+          return '<tr><td style="font-weight:700;color:' + col + '">R' + (i + 1) + '</td>' +
+            '<td style="text-align:left;font-family:var(--sans)">' + esc(r.t) + '</td>' +
+            '<td>' + r.prob + ' / 5</td><td>' + r.impact + ' / 5</td>' +
+            '<td style="font-weight:700;color:' + col + '">' + r.exposure + '</td>' +
+            '<td style="text-align:left;font-family:var(--sans);color:var(--doc-muted)">' + esc(r.p) + '</td></tr>';
+        }).join('') + '</table>') +
+
+      sec('03', 'Category Exposure', '<canvas class="chart" id="riskCat"></canvas>') +
+      DISCLAIMER
+    );
+    hbars(document.getElementById('riskCat'), [
+      { k: 'Operational', v: Math.max.apply(null, risks.filter(function(r){ return /supply|equipment|import|operat/i.test(r.t); }).map(function(r){ return r.exposure; }).concat([6])), c: C.coral, lab: 'primary exposure' },
+      { k: 'Market / Demand', v: risks.length > 2 ? risks[2].exposure : 5, c: C.brand, lab: 'monitored' },
+      { k: 'Financial', v: risks.length > 1 ? risks[1].exposure : 6, c: C.violet, lab: 'monitored' },
+      { k: 'Regulatory', v: 4, c: C.blue, lab: 'managed' },
+      { k: 'Competitive', v: risks.length > 3 ? risks[3].exposure : 3, c: C.teal, lab: 'managed' }
+    ], { labelW: 150 });
+  };
+
+  render.export = function(){
+    root.innerHTML = docShell(
+      sec('01', 'Your Export Pack', '<p>Every asset generated for <b>' + esc(P.title) + '</b>, packaged for sharing with co-founders, advisors, and investors. Use <b>Export PDF</b> in the top bar on any document for a print-quality copy.</p>' +
+        '<div class="dl-grid">' +
+        dl('Financial Model', 'Full 36-month model: monthly revenue, cost lines, cashflow, and cumulative cash.', 'CSV · EXCEL-READY', 'dlModel', 'financial-model.csv') +
+        dl('P&L Summary', 'Three-year profit & loss with cost decomposition and margins.', 'CSV · EXCEL-READY', 'dlPl', 'pnl-summary.csv') +
+        dl('Project Data Pack', 'Complete structured data: scores, market sizing, assumptions, risks, roadmap.', 'JSON', 'dlJson', 'project-data.json') +
+        '</div>' +
+        '<div class="dl-grid" style="margin-top:14px">' +
+        dlLink('Market Validation Report', 'Open the report, then Export PDF.', 'validation') +
+        dlLink('3-Year Financial Forecast', 'Open the forecast, then Export PDF.', 'forecast') +
+        dlLink('Business Plan', 'Open the plan, then Export PDF.', 'bizplan') +
+        dlLink('Risk Heatmap', 'Open the heatmap, then Export PDF.', 'riskmap') +
+        dlLink('Investor Pitch Deck', 'Open the deck, then Export PDF — one slide per page.', 'pitch') +
+        '</div>') +
+      DISCLAIMER
+    );
+    function dl(b, p, fmt, id, fname){
+      return '<div class="dl"><span class="fmt">' + fmt + '</span><b>' + b + '</b><p>' + p + '</p><button id="' + id + '" data-fname="' + fname + '">Download</button></div>';
+    }
+    function dlLink(b, p, t){
+      return '<div class="dl"><span class="fmt">PDF VIA PRINT</span><b>' + b + '</b><p>' + p + '</p><a class="btn" href="asset.html?type=' + t + '">Open document</a></div>';
+    }
+
+    function download(name, mime, content){
+      var blob = new Blob([content], { type: mime });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+    }
+
+    document.getElementById('dlModel').addEventListener('click', function(){
+      var rows = ['Month,Revenue (USD),Operating Costs (USD),Net Cash (USD),Cumulative Cash (USD)'];
+      for (var m = 0; m < 36; m++){
+        var y = Math.floor(m / 12), cost = P.fin.costs[y] / 12;
+        rows.push([m + 1, REV_M[m].toFixed(0), cost.toFixed(0), (REV_M[m] - cost).toFixed(0), CUM[m].toFixed(0)].join(','));
+      }
+      download('financial-model.csv', 'text/csv', rows.join('\n'));
+    });
+    document.getElementById('dlPl').addEventListener('click', function(){
+      var rows = ['Line,Year 1,Year 2,Year 3'];
+      rows.push(['Revenue'].concat(P.fin.revenue).join(','));
+      rows.push(['COGS'].concat(COSTS.map(function(c){ return -c.cogs; })).join(','));
+      rows.push(['Gross Profit'].concat(P.fin.revenue.map(function(r, i){ return r - COSTS[i].cogs; })).join(','));
+      rows.push(['Staffing'].concat(COSTS.map(function(c){ return -c.staffing; })).join(','));
+      rows.push(['Logistics'].concat(COSTS.map(function(c){ return -c.logistics; })).join(','));
+      rows.push(['Marketing'].concat(COSTS.map(function(c){ return -c.marketing; })).join(','));
+      rows.push(['Admin'].concat(COSTS.map(function(c){ return -c.admin; })).join(','));
+      rows.push(['EBITDA'].concat(EBITDA).join(','));
+      download('pnl-summary.csv', 'text/csv', rows.join('\n'));
+    });
+    document.getElementById('dlJson').addEventListener('click', function(){
+      download('project-data.json', 'application/json', JSON.stringify({
+        project: P,
+        derived: {
+          grossMargin: GM, capex: CAPEX, tam: TAM, sam: SAM, somYear3: SOM_Y3,
+          unitPrice: UNIT_PRICE, breakEvenMonth: BREAKEVEN_M, seedAsk: ASK,
+          ebitda: EBITDA, costDecomposition: COSTS
+        },
+        generatedAt: new Date().toISOString(),
+        generator: 'Niche Finder Venture Intelligence OS'
+      }, null, 2));
+    });
+  };
+
+  function stripTags(s){ return String(s).replace(/<[^>]*>/g, ''); }
+
+  render[type]();
+  addEventListener('resize', function(){ render[type](); });
+})();
+</script>
+</body>
+</html>

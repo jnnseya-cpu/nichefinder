@@ -21,6 +21,9 @@ export async function generate(req) {
     maxOutputTokens: req.maxTokens || config.defaults.maxTokens,
   };
   if (req.system) generationConfig.systemInstruction = req.system;
+  if (req.effort === 'xhigh' || req.effort === 'max' || req.effort === 'high') {
+    generationConfig.thinkingConfig = { thinkingBudget: -1 }; // dynamic thinking, model decides depth
+  }
   if (req.jsonSchema) {
     generationConfig.responseMimeType = 'application/json';
     generationConfig.responseSchema = req.jsonSchema;

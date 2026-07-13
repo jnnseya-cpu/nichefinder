@@ -22,9 +22,11 @@ export async function generate(req) {
     system: req.system,
     messages: req.messages.map((m) => ({ role: m.role, content: m.content })),
     thinking: { type: 'adaptive' },
+    // Deep reasoning by default: venture analysis quality tracks effort.
+    output_config: { effort: ['low', 'medium', 'high', 'xhigh', 'max'].includes(req.effort) ? req.effort : 'high' },
   };
   if (req.jsonSchema) {
-    params.output_config = { format: { type: 'json_schema', schema: req.jsonSchema } };
+    params.output_config.format = { type: 'json_schema', schema: req.jsonSchema };
   }
 
   let response;

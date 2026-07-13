@@ -22,6 +22,10 @@ export async function generate(req) {
     messages,
     max_completion_tokens: req.maxTokens || config.defaults.maxTokens,
   };
+  if (req.effort && /^(gpt-5|o\d)/.test(model)) {
+    // reasoning models accept low|medium|high; clamp our wider scale
+    params.reasoning_effort = req.effort === 'xhigh' || req.effort === 'max' ? 'high' : req.effort;
+  }
   if (req.jsonSchema) {
     params.response_format = {
       type: 'json_schema',
