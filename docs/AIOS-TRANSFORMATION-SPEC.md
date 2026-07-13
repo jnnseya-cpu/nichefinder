@@ -275,6 +275,16 @@ Every user type on the Niche Finder AI-OS receives a dedicated, personalised AI 
 - **APIs USED:** OneTrust or Cookiebot (consent), custom audit log system, Anthropic Claude API (policy interpretation)
 - **BUSINESS VALUE:** Essential for UK/EU market operation. Incubator and Enterprise clients require demonstrable compliance before procurement. Reduces legal risk exposure to near-zero.
 
+### AGENT: Revenue Optimisation Agent
+
+- **PURPOSE:** Analyses ACU consumption patterns, conversion funnels, churn signals, and pricing elasticity to recommend and execute revenue optimisation actions across the platform.
+- **INPUTS:** ACU purchase data, conversion rates at each funnel stage, churn signals, feature adoption rates, ARPU by cohort, pricing experiment data
+- **OUTPUTS:** Pricing optimisation recommendations, promotional ACU campaign triggers, churn prevention alerts, upsell timing recommendations, LTV projections by segment
+- **TRIGGERS:** Weekly revenue analysis cycle; user inactivity trigger (7-day no-login); ACU balance depletion event; failed ACU purchase attempt
+- **APIs USED:** Stripe (billing data), Anthropic Claude API (pattern analysis), SendGrid (campaign execution), Mixpanel (behavioural analytics)
+- **BUSINESS VALUE:** Directly optimises platform profitability. Each percentage point improvement in ACU-to-purchase conversion rate represents significant MRR uplift at scale.
+- **ACU guardrail (standing rule):** this agent recommends; it cannot mutate the canonical constants. Package prices, the action schedule, and the capital-bracket law (3–10× provider cost at ≤ £10k, doubling per £10k bracket) change only by S-ADMIN governance decision, versioned in this document. Promotional ACUs are issued as audited admin credits, never as price rewrites.
+
 ---
 
 # ENGINEERING ANNEX — TRANSFORMATION PILLARS
