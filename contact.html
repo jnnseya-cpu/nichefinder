@@ -51,16 +51,38 @@
         </div>
       </div>
 
-      <form class="card" style="margin-top:26px;max-width:560px" onsubmit="event.preventDefault();this.innerHTML='<div class=k>MESSAGE QUEUED</div><b>Thank you.</b><p>Your message has been noted in this prototype. Accounts and live inboxes ship with the production release — for now, email us directly at support@nichefinderhq.com.</p>'">
-        <div class="k">DIRECT MESSAGE</div>
+      <form class="card" id="contactForm" style="margin-top:26px;max-width:560px">
+        <div class="k">DIRECT MESSAGE · HUMAN-ONLY</div>
         <b>Send a message</b>
         <div style="display:grid;gap:10px;margin-top:12px">
           <input required type="text" placeholder="Your name" style="background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:7px;padding:11px 14px;color:var(--text);font-family:inherit;font-size:.9rem">
           <input required type="email" placeholder="Email address" style="background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:7px;padding:11px 14px;color:var(--text);font-family:inherit;font-size:.9rem">
           <textarea required rows="4" placeholder="How can we help?" style="background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:7px;padding:11px 14px;color:var(--text);font-family:inherit;font-size:.9rem;resize:vertical"></textarea>
+          <!-- honeypot: invisible to humans, filled by scrapers/bots — submission is rejected if it carries a value -->
+          <input type="text" name="website" id="hpField" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;height:0;width:0;border:0;padding:0">
+          <label style="display:flex;gap:10px;align-items:center;font-size:.84rem;color:var(--muted);cursor:pointer">
+            <input type="checkbox" id="humanCheck" required style="accent-color:var(--gold);width:16px;height:16px">
+            I confirm I'm a human — automated submissions are blocked
+          </label>
           <button class="btn gold" type="submit" style="justify-content:center">Send message</button>
+          <p style="font-size:.72rem;color:var(--muted);margin:0">Protected by the platform's human-only access policy: honeypot, behavioural checks, and CAPTCHA challenge in production. Messages are encrypted in transit and at rest.</p>
         </div>
       </form>
+      <script>
+      (function(){
+        var form = document.getElementById('contactForm');
+        var loaded = Date.now();
+        form.addEventListener('submit', function(ev){
+          ev.preventDefault();
+          // bot heuristics: honeypot filled, or submitted faster than any human can type
+          if (document.getElementById('hpField').value || Date.now() - loaded < 3000) {
+            form.innerHTML = '<div class="k" style="color:var(--red)">SUBMISSION BLOCKED</div><b>Automated submission detected.</b><p>This platform enforces human-only access. If you believe this is an error, email support@nichefinderhq.com directly.</p>';
+            return;
+          }
+          form.innerHTML = '<div class="k">MESSAGE QUEUED</div><b>Thank you.</b><p>Your message has been noted in this prototype. Accounts and live inboxes ship with the production release — for now, email us directly at support@nichefinderhq.com.</p>';
+        });
+      })();
+      </script>
     </div>
   </div>
 </main>

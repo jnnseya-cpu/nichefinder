@@ -1099,6 +1099,33 @@ Scoring weights, bands, and the breakthrough formula (§4); ACU economy, action 
 
 ---
 
+# GOVERNANCE ADDENDUM A — END-TO-END ENCRYPTION & HUMAN-ONLY ACCESS
+
+*Ratified by S-ADMIN after master-document completion. Both laws are platform invariants, additive to Section 12.*
+
+## A.1 End-to-End Encryption Law
+
+The OS is end-to-end encrypted. Concretely:
+
+| Layer | Control |
+|---|---|
+| In transit | TLS 1.3 everywhere (client ↔ CDN ↔ gateway ↔ providers); HSTS preload; no plaintext listener anywhere |
+| At rest | AES-256-GCM on all databases, object storage, backups, and queues; keys in cloud KMS with automatic rotation |
+| Generated assets | Every venture document (plans, models, decks) encrypted with a per-user data key (envelope encryption); signed URLs are the only read path and expire |
+| Field level | PII columns (name, email, payment reference) additionally field-encrypted; ledger rows are append-only and tamper-evident (hash-chained) |
+| Keys | No provider or admin path to plaintext user documents without an audited, dual-control break-glass procedure; any key that appears in a transcript or document is rotated immediately (standing secrets law) |
+
+## A.2 Human-Only Access Law
+
+All signup and login is restricted to humans; bots are blocked.
+
+- **At registration and sign-in**: CAPTCHA/Turnstile challenge, behavioural analysis (typing cadence, submission timing), honeypot fields, device and IP reputation signals, disposable-email blocking. Failing clients are rejected and the attempt is logged as a mandatory security event (`security.bot_signup_blocked`, `security.bot_login_blocked` in the comms catalogue).
+- **No automated account operation**: accounts detected operating via scripts or agents are suspended; welcome-credit farming by automation is treated as fraud (Terms §02).
+- **The only machine door is the partner API**: programmatic access exists solely through keyed, scoped, per-call-metered partner API credentials (Section 10) — never through human account sessions. API keys cannot create or operate user accounts.
+- **Prototype implementation today**: honeypot + submission-timing checks live on the public contact form; the human-only policy is published in the Terms of Use and Privacy Policy; the two bot-block events ship in the Comms Engine catalogue as mandatory notices.
+
+---
+
 # NICHE FINDER AI-OS
 
 **Production-Grade AI Infrastructure Operating System**
