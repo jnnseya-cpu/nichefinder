@@ -36,10 +36,22 @@ function resolveChain(requested) {
   return chain;
 }
 
-export function meterAcu(provider, usage, investorMode = false) {
+/* Capital-bracket pricing: the base ACU rates embody the 3x-10x margin band
+   over provider cost for the standard <= £10k class (bracket 1). Every £10k
+   bracket above doubles the band — £10,001-£20k is 6x-20x (factor 2),
+   £20,001-£30k is 12x-40x (factor 4), and so on: factor = 2^(bracket - 1). */
+export function bracketFactor(capitalGBP) {
+  const amount = Number(capitalGBP);
+  if (!Number.isFinite(amount) || amount <= 10000) return 1;
+  const bracket = Math.ceil(amount / 10000);
+  return Math.pow(2, Math.min(bracket, 11) - 1); // clamp: factor caps at 1024 (£110k+)
+}
+
+export function meterAcu(provider, usage, investorMode = false, capitalGBP = 0) {
   const rates = config.acu.ratesPer1K[provider] || config.acu.ratesPer1K.claude;
   let acu = (usage.inputTokens / 1000) * rates.input + (usage.outputTokens / 1000) * rates.output;
   if (investorMode) acu *= config.acu.investorModeMultiplier;
+  acu *= bracketFactor(capitalGBP);
   if (rates.input === 0 && rates.output === 0) return 0;
   return Math.max(config.acu.minimumCharge, Math.ceil(acu));
 }
@@ -54,7 +66,8 @@ export async function route(req) {
       const result = await PROVIDERS[name].generate(req);
       return {
         ...result,
-        acu: meterAcu(result.provider, result.usage, req.investorMode === true),
+        acu: meterAcu(result.provider, result.usage, req.investorMode === true, req.capitalGBP),
+        bracketFactor: bracketFactor(req.capitalGBP),
         attempts: attempts.length ? attempts : undefined,
       };
     } catch (err) {

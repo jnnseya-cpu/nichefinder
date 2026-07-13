@@ -82,10 +82,19 @@ body = await res.json();
 check('estimate returns ACU number', res.status === 200 && typeof body.estimatedAcu === 'number');
 
 // ACU metering math (direct unit check)
-const { meterAcu } = await import('../src/router.js');
+const { meterAcu, bracketFactor } = await import('../src/router.js');
 check('claude 10k-in/2k-out meters correctly', meterAcu('claude', { inputTokens: 10000, outputTokens: 2000 }) === 10);
 check('investor mode adds 40%', meterAcu('claude', { inputTokens: 10000, outputTokens: 2000 }, true) === 14);
 check('minimum charge applies', meterAcu('gemini', { inputTokens: 10, outputTokens: 10 }) === 1);
+
+// capital-bracket pricing: band doubles per £10k bracket
+check('bracket 1 (≤£10k) factor is 1', bracketFactor(10000) === 1 && bracketFactor(0) === 1 && bracketFactor(undefined) === 1);
+check('bracket 2 (£10,001–£20k) factor is 2', bracketFactor(10001) === 2 && bracketFactor(20000) === 2);
+check('bracket 3 (£20,001–£30k) factor is 4', bracketFactor(25000) === 4);
+check('bracket 5 (£45k) factor is 16', bracketFactor(45000) === 16);
+check('bracket factor caps at 1024', bracketFactor(500000) === 1024);
+check('meterAcu doubles in bracket 2', meterAcu('claude', { inputTokens: 10000, outputTokens: 2000 }, false, 15000) === 20);
+check('investor mode stacks on bracket', meterAcu('claude', { inputTokens: 10000, outputTokens: 2000 }, true, 15000) === 28);
 
 console.log(failures === 0 ? '\nAll smoke tests passed.' : `\n${failures} test(s) FAILED.`);
 process.exit(failures === 0 ? 0 : 1);

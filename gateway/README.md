@@ -58,6 +58,7 @@ Response:
 
 - `provider`: `"claude"`, `"gemini"`, `"openai"`, or `"auto"` (default — walks the failover chain).
 - `investorMode: true` applies the +40% ACU multiplier (Investor Production Mode).
+- `capitalGBP`: the venture's capital amount. ACU metering uses capital-bracket pricing — base rates embody the 3×–10× margin band for the standard ≤ £10k class, and every £10k bracket above doubles the band (£10,001–£20k → 6×–20× → ×2 ACU; £20,001–£30k → 12×–40× → ×4; …). Responses include the applied `bracketFactor`.
 - Failed-over requests include an `attempts` array showing which providers were tried.
 
 ### `POST /v1/estimate`

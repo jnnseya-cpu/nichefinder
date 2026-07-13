@@ -65,7 +65,7 @@ const server = http.createServer(async (req, res) => {
       const chars = JSON.stringify(body.messages || '') .length + (body.system?.length || 0);
       const usage = { inputTokens: Math.ceil(chars / 4), outputTokens: body.expectedOutputTokens || 2000 };
       const provider = body.provider && body.provider !== 'auto' ? body.provider : availableProviders()[0] || 'claude';
-      return json(res, 200, { provider, estimatedAcu: meterAcu(provider, usage, body.investorMode === true), usage });
+      return json(res, 200, { provider, estimatedAcu: meterAcu(provider, usage, body.investorMode === true, body.capitalGBP), usage });
     } catch (err) {
       return handleError(res, err);
     }

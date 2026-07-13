@@ -640,6 +640,7 @@
     document.getElementById('budgetVal').textContent = main;
     document.getElementById('budgetLocal').textContent = local ? ' ' + local : '';
     document.getElementById('sumBudget').textContent = main;
+    updAcu(); // bracket (and therefore every ACU price) follows the capital slider
   }
   budget.addEventListener('input', updBudget);
 
@@ -655,9 +656,20 @@
     inv.setAttribute('aria-checked', inv.getAttribute('aria-checked') === 'true' ? 'false' : 'true');
     updAcu();
   });
+  /* Capital-bracket pricing: ACU prices double per £10k bracket above the
+     standard class (3–10× provider cost ≤£10k; 6–20× to £20k; 12–40× …). */
+  function searchCostNow(){
+    var b = NF.bracket(+budget.value);
+    var cost = BASE_ACU * b.factor;
+    if (inv.getAttribute('aria-checked') === 'true') cost *= 1.4;
+    return Math.round(cost);
+  }
   function updAcu(){
-    var cost = inv.getAttribute('aria-checked') === 'true' ? Math.round(BASE_ACU * 1.4) : BASE_ACU;
-    document.getElementById('acuCost').innerHTML = cost + ' <small>ACU</small>';
+    var b = NF.bracket(+budget.value);
+    document.getElementById('acuCost').innerHTML = searchCostNow() + ' <small>ACU</small>';
+    var k = document.querySelector('.acu .k');
+    if (k) k.innerHTML = 'Search Cost <small style="display:block;font-size:.56rem;letter-spacing:.12em;color:' +
+      (b.tier > 1 ? '#F1C97E' : '#8B93A5') + '">BRACKET ' + b.tier + ' · ' + b.band + ' PROVIDER COST</small>';
   }
 
   /* ---------- generate: AI gateway with demo fallback ---------- */
@@ -766,7 +778,8 @@
         messages: [{ role: 'user', content: 'Generate exactly 3 distinct, hyper-specific niche venture opportunities for these constraints. Every financial figure must be derived from explicit reasoning about this specific market:\n' + JSON.stringify(cfg, null, 2) }],
         jsonSchema: NICHE_SCHEMA,
         effort: 'xhigh',
-        investorMode: cfg.investorMode
+        investorMode: cfg.investorMode,
+        capitalGBP: cfg.maxInvestmentUsd
       })
     }).then(function(r){
       clearTimeout(timer);
@@ -826,7 +839,8 @@
   function slug(s){ return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48); }
 
   /* ---------- shared ACU wallet (nf-wallet.js) ---------- */
-  var UNLOCK_COST = NF.COSTS.unlock; // 150 ACU
+  var UNLOCK_COST = NF.COSTS.unlock; // 150 ACU at bracket 1 — doubles per £10k bracket
+  function unlockCostNow(){ return Math.round(UNLOCK_COST * NF.bracket(+budget.value).factor); }
   function renderBalance(){
     var w = NF.wallet();
     var el = document.getElementById('acuBalance');
@@ -841,7 +855,7 @@
   renderBalance();
 
   function unlockProject(m){
-    if (!charge(UNLOCK_COST, 'Deep-Dive unlock')) return;
+    if (!charge(unlockCostNow(), 'Deep-Dive unlock')) return;
     var proj = {
       id: slug(m.t),
       title: m.t,
@@ -854,6 +868,7 @@
     if (m.risks) proj.risks = m.risks;
     if (m.roadmap) proj.roadmap = m.roadmap;
     if (m.fin) proj.fin = m.fin;
+    proj.bracketFactor = NF.bracket(+budget.value).factor; // Build Hub prices inherit the capital bracket
     localStorage.setItem('nf_active_project', JSON.stringify(proj));
     location.href = 'project.html';
   }
@@ -911,7 +926,7 @@
         '<p></p>' +
         '<div class="actions">' +
           '<button class="a primary">Unlock Full Opportunity</button>' +
-          '<span class="cost">' + UNLOCK_COST + ' ACU</span>' +
+          '<span class="cost">' + unlockCostNow() + ' ACU</span>' +
           '<button class="a">Save to Portfolio</button>' +
         '</div>';
       el.querySelector('h3').textContent = m.t;
@@ -950,8 +965,9 @@
       document.getElementById('sumMarket').textContent = 'Select a country — mandatory';
       return;
     }
-    var searchCost = inv.getAttribute('aria-checked') === 'true' ? Math.round(BASE_ACU * 1.4) : BASE_ACU;
-    if (!charge(searchCost, 'niche generation')) return;
+    var b = NF.bracket(+budget.value);
+    var searchCost = searchCostNow();
+    if (!charge(searchCost, 'niche generation' + (b.tier > 1 ? ' · bracket ' + b.tier : ''))) return;
     gen.disabled = true; gen.textContent = 'Discovery Agent Running…';
     nichesEl.innerHTML = ''; thinking.classList.add('on');
     document.getElementById('results').scrollIntoView({behavior: reduced ? 'auto' : 'smooth'});

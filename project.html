@@ -356,7 +356,7 @@
           <input type="checkbox" id="invModeToggle" style="accent-color:#D9A441;width:18px;height:18px">
         </label>
         <div class="actions" id="actions"></div>
-        <p class="rail-note">Each action consumes ACUs, generates a saved asset, and progresses your project status. Costs are shown before you commit.</p>
+        <p class="rail-note" id="railNote">Each action consumes ACUs, generates a saved asset, and progresses your project status. Costs are shown before you commit.</p>
       </div>
     </aside>
   </div>
@@ -609,9 +609,16 @@
     { id: 'pitch', t: 'Investor Pitch Deck', d: '12-slide deck, export-ready', cost: NF.COSTS.pitch, advances: 'investor_ready', hc: '#6B9BD1' },
     { id: 'export', t: 'Export Excel + PDF Pack', d: 'Download all generated assets as an Excel model + PDF pack', cost: NF.COSTS.excel_model, advances: null, hc: '#8B93A5' }
   ];
-  /* Investor Production Mode: ×1.4 on all generation costs (nf_investor_mode persists across pages) */
+  /* Investor Production Mode: ×1.4 on all generation costs (nf_investor_mode persists across pages).
+     Capital-bracket factor: prices double per £10k bracket above the standard
+     class — inherited from the search that unlocked this project. */
   var invMode = localStorage.getItem('nf_investor_mode') === '1';
-  function actionCost(a){ return invMode ? Math.round(a.cost * NF.COSTS.investor_multiplier) : a.cost; }
+  var bFactor = Number(project.bracketFactor) || 1;
+  function actionCost(a){
+    var c = a.cost * bFactor;
+    if (invMode) c *= NF.COSTS.investor_multiplier;
+    return Math.round(c);
+  }
 
   /* ---------- autosave: ledger + reports + memory ---------- */
   function logLedger(label, amt){
@@ -688,6 +695,12 @@
       showToast('<b>' + a.t + '</b> generated · ' + cost + ' ACU consumed · <a href="asset.html?type=' + a.id + '" style="color:var(--gold-bright)">Open document ↗</a>');
       toast.style.pointerEvents = 'auto';
     }, reduced ? 100 : 1600);
+  }
+
+  if (bFactor > 1){
+    var rn = document.getElementById('railNote');
+    if (rn) rn.innerHTML = '<b style="color:var(--gold-bright)">CAPITAL BRACKET ×' + bFactor +
+      '</b> — this venture sits above the standard £10k class, so all ACU prices are multiplied accordingly. ' + rn.textContent;
   }
 
   var invToggle = document.getElementById('invModeToggle');

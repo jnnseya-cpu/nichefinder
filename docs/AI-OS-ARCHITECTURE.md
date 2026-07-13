@@ -498,7 +498,18 @@ Idempotency-Key: 0d1f…
 
 ## 12. Monetisation Model
 
-**Core rule preserved:** £1 = 100 ACU; welcome 100 free ACU read-only; user charge ≥ 3× provider cost (dynamic multiplier 3×–10× by tier, margin floor 60%); prepaid only, hard stop at zero, no overdraft.
+**Core rule preserved:** £1 = 100 ACU; welcome 100 free ACU read-only; prepaid only, hard stop at zero, no overdraft.
+
+**Capital-bracket margin engine (the pricing law).** The user charge is always AI-provider cost × a multiplier band, and the band is set by the venture's capital bracket:
+
+| Bracket | Capital class | Multiplier band | ACU price factor |
+|---|---|---|---|
+| 1 | £0 – £10,000 (standard) | 3×–10× provider cost | ×1 (the published price list) |
+| 2 | £10,001 – £20,000 | 6×–20× | ×2 |
+| 3 | £20,001 – £30,000 | 12×–40× | ×4 |
+| n | each further £10k | doubles again | ×2^(n−1), capped at ×1024 |
+
+Within a bracket the dynamic multiplier moves 3×–10× (base) by action tier and margin-floor pressure; the bracket factor then scales the result. Implemented as `bracketFactor(capitalGBP)` in the gateway meter and `NF.bracket()/NF.costFor()` client-side — one formula, enforced at metering time, displayed before every commit. Every quote, reservation, and ledger row records the bracket so margin telemetry stays auditable per class.
 
 | Stream | Mechanics | Notes |
 |---|---|---|

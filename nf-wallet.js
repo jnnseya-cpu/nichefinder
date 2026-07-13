@@ -43,6 +43,26 @@
 
   var WELCOME_FREE = 100;
 
+  /* ---------- capital-bracket pricing ----------
+     The COSTS table above is priced for the standard ≤ £10k capital class,
+     where the user charge sits 3×–10× above real AI-provider cost. Every £10k
+     bracket above doubles that band — and therefore doubles every ACU price:
+       bracket 1 · £0–£10k        → ×1  (3–10× provider cost)
+       bracket 2 · £10,001–£20k   → ×2  (6–20×)
+       bracket 3 · £20,001–£30k   → ×4  (12–40×)  …and so on. */
+  function bracketFor(amount) {
+    var a = Number(amount);
+    if (!Number.isFinite(a) || a <= 10000) return { tier: 1, factor: 1, band: '3–10×' };
+    var tier = Math.min(Math.ceil(a / 10000), 11); // factor caps at ×1024
+    var f = Math.pow(2, tier - 1);
+    return { tier: tier, factor: f, band: (3 * f) + '–' + (10 * f) + '×' };
+  }
+  function costFor(actionKey, capitalAmount) {
+    var base = COSTS[actionKey];
+    if (base == null) return null;
+    return Math.round(base * bracketFor(capitalAmount).factor);
+  }
+
   function loadWallet() {
     try {
       var w = JSON.parse(localStorage.getItem('nf_wallet'));
@@ -211,6 +231,8 @@
     total: function () { var w = loadWallet(); return w.paid + w.free; },
     charge: function (cost, label, onAfter) { return charge(cost, label, onAfter); },
     chargeSupport: chargeSupport,
+    bracket: bracketFor,
+    costFor: costFor,
     credit: function (pkg) { return credit(pkg); },
     logLedger: logLedger,
     band: band,
