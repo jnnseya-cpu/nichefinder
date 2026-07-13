@@ -734,6 +734,171 @@ At bracket 2 (£10,001–£20,000) every figure in the ACU and revenue columns d
 | Data Exfiltration | Unauthorised bulk data access, insider threat | Row-level security in PostgreSQL, field-level encryption for PII, admin action audit log, data access anomaly alerts |
 | Infrastructure Attacks | DDoS, DNS hijacking, supply chain | Cloudflare DDoS protection, DNSSEC, SRI for CDN assets, dependency vulnerability scanning (Snyk) |
 
+### 12.3 GDPR Operational Controls
+
+| GDPR Requirement | Implementation |
+|---|---|
+| Lawful Basis for Processing | Contract performance (account, ACU transactions); Legitimate interests (fraud prevention, security); Consent (marketing communications) |
+| Data Minimisation | Only collect email, name, country, payment reference; no unnecessary personal data fields; anonymise analytics events within 30 days |
+| Right to Erasure | User-triggered deletion request → Compliance Agent executes: anonymise PII in DB, delete assets from storage, remove from email lists within 30 days |
+| Data Portability | User can export all venture projects, generated assets, and transaction history as structured JSON + ZIP within 30 days of request |
+| Consent Management | OneTrust or Cookiebot integration (the prototype's 30-day three-category consent layer is the interim implementation); separate consent for: functional, analytics, marketing; consent timestamp and version stored in DB |
+| Data Retention | Active accounts: retain all data; Deleted accounts: anonymise PII immediately, retain transaction records for 7 years (legal requirement) |
+| Breach Notification | Automated breach detection triggers 72-hour ICO notification workflow; affected user notification within 72 hours; breach log maintained |
+
+---
+
+# SECTION 13 — ADMIN SUPER CONTROL CENTRE
+
+## 13. Admin Super Control Centre
+
+### 13.1 Control Centre Architecture
+
+The Admin Super Control Centre is a dedicated, access-controlled internal platform built on a separate subdomain (admin.nichefinder.io) with its own authentication stack, RBAC enforcement, and isolated audit logging. It provides real-time visibility and control over every dimension of the Niche Finder AI-OS. The prototype's Super Admin OS (`admin.html`) is its working blueprint — Command Overview, Platform Ops, SEO War Room, and OS Governance carry forward as the four command surfaces.
+
+### 13.2 Control Domains
+
+| Control Domain | Visibility Provided | Actions Available |
+|---|---|---|
+| User Management | All users, registration date, ACU balance, subscription tier, last login, KYC status, fraud risk score | Suspend/restore accounts, adjust ACU balance, force KYC, impersonate for support, export user data, initiate GDPR deletion |
+| Revenue Intelligence | Real-time MRR, ACU purchase velocity, conversion rates per funnel stage, ARPU, LTV cohort analysis, churn rate, payment failure rate | Trigger promotional ACU campaigns, adjust package pricing (governance-gated, see note), issue bonus ACUs, generate revenue reports for investors |
+| Agent Operations | Active agent jobs, queue depths, average completion times, error rates, LLM token consumption, cost per agent action | Pause/resume agents, adjust system prompts, update tool configurations, escalate failed jobs, configure fallback behaviour |
+| Platform Health | Uptime per service, API response time P50/P95/P99, error rates, database connection pool status, Redis memory usage | Trigger PagerDuty alerts, initiate Cloud Run scaling events, rollback failed deployments, force cache clear |
+| Payment & Settlement | All payment transactions, settlement status, refund queue, dispute pipeline, BitriPay reconciliation, Stripe reconciliation | Issue refunds, resolve disputes, adjust settlement schedules, export accounting reports |
+| Compliance & Audit | GDPR request queue, audit log search, data access events, admin action log, AML alerts, KYC verification queue | Process GDPR requests, generate ICO audit packages, review AML flags, approve/reject KYC verification |
+| Content & Quality | Sample of agent-generated outputs, quality scoring metrics, user feedback signals, low-confidence score alerts | Flag outputs for review, retrigger generation, adjust scoring thresholds, update scoring evidence configuration (see note) |
+| Enterprise Accounts | All enterprise and incubator accounts, ACU pool usage, member activity, contract renewal dates, SLA compliance | Adjust pool sizes, update contract terms, generate account reports, trigger renewal communications |
+
+*Governance guardrails (standing rules): "adjust package pricing" and "update scoring model weights" are governance-gated, not free-form controls. The £1 = 100 ACU anchor, canonical action schedule, package table, and capital-bracket law change only by versioned S-ADMIN governance decision recorded in this document; the deterministic pillar weights (PRS 35% / CS 30% / PSS 35%) and decision bands are invariant — admin tuning applies to evidence configuration and thresholds around them, never the core arithmetic. Every control action lands in the immutable admin audit log.*
+
+### 13.3 Real-Time Dashboard KPIs
+
+| KPI | Definition | Alert Threshold |
+|---|---|---|
+| Daily Active Users (DAU) | Unique users completing at least one action per day | Alert if DAU drops >15% vs 7-day average |
+| ACU Purchase Conversion | % of users with Welcome ACU balance who purchase Paid ACUs | Alert if conversion falls below 8% |
+| Agent Success Rate | % of agent jobs completing without error | Alert if success rate drops below 95% |
+| Average Generation Time | Time from agent trigger to asset delivery | Alert if avg exceeds 90 seconds |
+| Payment Success Rate | % of payment attempts completing successfully | Alert if success rate drops below 92% |
+| Churn Rate | Monthly subscriber churn as % of active subscribers | Alert if monthly churn exceeds 5% |
+| LLM Cost per ACU | Actual LLM API cost per ACU consumed | Alert if cost exceeds £0.0033/ACU — the point where the 3× floor of the 3–10× bracket-1 margin band is breached (conformed from the draft's £0.03, which would sit 3× above the £0.01/ACU sale price) |
+| GDPR Queue Age | Maximum age of unprocessed GDPR request | Alert if any request exceeds 25 days (breach risk) |
+
+---
+
+# SECTION 14 — DEVELOPER BUILD ROADMAP
+
+## 14. Developer Build Roadmap
+
+*This five-phase roadmap supersedes and expands the annex's P0–P3 sequencing (the annex phases map to Phases 1–3 here). The working prototype already delivers reference implementations of: Search Canvas UI, results view, portfolio view, dual-balance ACU wallet with welcome allocation and transaction logging, capital-bracket metering, the provider-failover gateway, Admin Control Centre v1's four surfaces, Government Mode, consent, and the PWA shell — Phase 1 productionises these, it does not reinvent them.*
+
+**Phase 1: MVP**
+
+| Component | Specification |
+|---|---|
+| Core Infrastructure | GCP project setup, Cloud Run services, PostgreSQL (Cloud SQL), Firebase Auth, Redis (Memorystore), Cloudflare CDN |
+| Frontend | Next.js 14 scaffold, Auth pages (register/login/forgot password), Search Canvas UI, Results list view, Project portfolio view |
+| Opportunity Discovery Agent | LangChain integration, Anthropic Claude API, basic search parameter processing, 5–10 opportunity generation |
+| Venture Scoring Agent | 8-dimension scoring model feeding the deterministic PRS/CS/PSS core, confidence score calculation, results ranking |
+| ACU Wallet System | Welcome ACU allocation (100, read-only), ACU balance display, transaction logging with bracket factor and pool snapshots |
+| Stripe Payment Integration | Canonical ACU package checkout, payment intent, webhook processing, ACU credit on success |
+| Basic Notifications | SendGrid transactional email: welcome, payment confirmation, asset ready |
+| Commercial Objective | First 100 paying users; validate ACU pricing elasticity (within the governance-versioned economy); confirm discovery agent output quality |
+
+**Phase 2: Beta**
+
+| Component | Specification |
+|---|---|
+| Deep-Dive Analysis Agent | Full TAM/SAM/SOM analysis, competitive landscape, regulatory overview, go-to-market outline |
+| Financial Modelling Agent | 3-year P&L model, cashflow projection, Excel download, PDF summary |
+| Venture Memory Layer | Pinecone vector DB integration, user preference embedding, personalised opportunity weighting (ordering only — never score arithmetic) |
+| BitriPay Integration | QR payment flow, wallet payments, mobile money (M-Pesa/Airtel), webhook processing |
+| Business Plan Agent | Full business plan generation, PDF + DOCX output, Cloudflare R2 storage |
+| Admin Control Centre v1 | User management, revenue dashboard, payment transaction view, basic agent monitoring |
+| Comparison Mode | Side-by-side venture scoring comparison (up to 3 projects) |
+| Commercial Objective | 1,000 paying users; first enterprise account; £15K MRR; product-market fit validation |
+
+**Phase 3: Commercial Launch**
+
+| Component | Specification |
+|---|---|
+| Pitch Deck Agent | PPTX generation, branded templates, investor narrative structure, Anthropic-powered content |
+| Subscription Plans | Stripe Billing integration, all 5 plan tiers, ACU rollover logic, plan upgrade/downgrade |
+| Incubator / Enterprise Portal | ACU pool management, member allocation, cohort dashboard, bulk processing |
+| Revenue Optimisation Agent | Churn prediction, upsell timing, promotional campaign automation |
+| Compliance Module | Full GDPR workflow, right-to-erasure, data portability, consent management |
+| Mobile Applications | React Native iOS and Android apps; core search + portfolio + wallet features |
+| Commercial Objective | 5,000 active users; 3+ enterprise accounts; £75K MRR; Series A deck ready |
+
+**Phase 4: Enterprise Version**
+
+| Component | Specification |
+|---|---|
+| White-Label Platform | Custom domain + branding configuration; enterprise admin portal; API-first white-label delivery |
+| API Partner Programme | Developer portal, API key management, per-call billing, Stripe Connect for partner payouts |
+| Advanced AI Agents | Market monitoring agent (auto-alerts on niche changes), competitor tracking agent, sector heatmap agent |
+| Self-Managing Platform Layer | System health agent, auto-scaling triggers, error recovery agent, performance optimisation agent |
+| SSO & Enterprise Auth | SAML 2.0 / OIDC integration for enterprise IdPs (Azure AD, Okta, Google Workspace) |
+| Commercial Objective | 20,000 active users; £300K MRR; 10+ enterprise accounts; white-label partners live |
+
+**Phase 5: Global Scale**
+
+| Component | Specification |
+|---|---|
+| Multi-Region Deployment | GCP multi-region active-active deployment; data residency compliance for EU, UK, US, Africa |
+| African Market Expansion | BitriPay full mobile money integration; localised opportunity scoring models for DRC, Nigeria, Kenya, Ghana, South Africa |
+| Venture Marketplace | Founder ↔ Investor matching layer; venture listing marketplace; deal flow management for VCs |
+| AI Governance Framework | Model governance agent, output quality auditing, bias detection in scoring models, regulatory AI compliance |
+| Knowledge Graph | Cross-venture intelligence network; sector opportunity correlation engine; global market signal aggregation |
+| Commercial Objective | 100,000 active users; £2M+ MRR; 50+ enterprise accounts; Series B fundraise |
+
+---
+
+# SECTION 15 — COMPETITIVE ADVANTAGE ARCHITECTURE
+
+## 15. Competitive Advantage Architecture
+
+### 15.1 Structural Moats
+
+| Moat Type | How Niche Finder Builds It | Defensibility Timeline |
+|---|---|---|
+| Data Network Effect | Every user search, unlock, and feedback signal enriches the venture scoring model; more users = higher scoring accuracy = better outcomes = more users | Significant moat from 10,000+ users (~Month 18) |
+| Venture Memory Lock-In | User's personalised AI memory grows more valuable with every session; switching means losing a bespoke intelligence layer built over time | Lock-in begins at ~5 sessions; strong by 20+ sessions |
+| ACU Ecosystem Stickiness | Unused paid ACUs create return motivation; enterprise ACU pools create organisational commitment; ACU gifting creates viral loops | Immediate; strengthens with each purchase event |
+| Document IP Ownership | All generated assets (business plans, financial models, pitch decks) created within the platform create a natural asset library that anchors users | Immediate lock-in from first document generation |
+| Enterprise Contract Depth | Incubator and enterprise contracts embed Niche Finder into institutional workflows; switching costs are process, not just preference | Strong moat from Month 24 as enterprise base grows |
+| White-Label Distribution | Partners who embed Niche Finder extend its reach without adding user acquisition cost; partner success = platform growth | Exponential distribution effect from Phase 4 |
+
+### 15.2 Why No Existing Platform Can Replicate This
+
+| Replication Challenge | Why This Is Hard |
+|---|---|
+| Multi-Agent Architecture | Building 15+ coordinated specialised agents with reliable orchestration, memory sharing, and quality consistency requires 12–18 months of engineering; most competitors use single-prompt LLM calls |
+| Proprietary Venture Scorecard | The 8-dimension scoring model (feeding the deterministic PRS/CS/PSS core) trained on venture outcome data creates a defensible intelligence layer; competitors would need equivalent historical data to replicate |
+| Full Document Pipeline | The complete chain from discovery → validation → financial model → business plan → pitch deck with consistent quality across all outputs requires deep product engineering; no competitor has this chain |
+| ACU Economics | The metered credit model requires sophisticated wallet infrastructure, billing integration, and consumption tracking; incumbents are locked into subscription models with different unit economics. The capital-bracket margin law adds a second layer competitors lack entirely: price anchored to provider cost, scaling with venture capital class |
+| African Market Infrastructure | BitriPay + mobile money integration for DRC and Sub-Saharan Africa is a market most Western platforms ignore entirely; this creates a blue-ocean segment with no competition |
+| Venture Memory Layer | A vector-stored, continuously learning user preference model requires LLMOps infrastructure that most venture tools have never contemplated; this creates personalisation that compounds over time |
+
+---
+
+# SECTION 16 — SELF-MANAGING PLATFORM LAYER
+
+## 16. Self-Managing Platform Layer
+
+### 16.1 Autonomous Platform Agents
+
+| Agent | Monitors | Autonomous Actions | Escalation Trigger |
+|---|---|---|---|
+| System Health Agent | Uptime, latency P99, error rates, queue depths, DB connection pool | Auto-scale Cloud Run instances, flush stale cache, restart hung workers | Error rate >2% for 5 min → PagerDuty alert |
+| Bug Detection Agent | Error logs (Sentry), agent failure patterns, API response anomalies | Auto-tag errors by category, group related failures, identify root cause patterns | New error class affecting >10 users/hour → admin alert |
+| Auto-Repair Agent | Failed job queue, stuck agent workflows, payment webhook failures | Retry failed jobs with adjusted parameters, replay failed webhooks, restart failed Cloud Run revisions | Repair attempt >3 fails → human escalation |
+| Infrastructure Optimisation Agent | Cloud Run CPU/memory utilisation, GCP cost dashboard, Redis memory usage | Adjust Cloud Run min/max instances, optimise query execution plans, recommend storage tiering | Monthly cost exceeds budget +15% → finance alert |
+| Release Management Agent | CI/CD pipeline status, deployment health checks, error rate post-deploy | Automatic rollback if error rate >1% within 10 min of deploy | Rollback triggers → engineering team notification |
+| AI Governance Agent | Agent output quality scores, user feedback signals, LLM cost per action | Adjust system prompt parameters, update tool configurations, flag outputs for human review | Quality score drops below threshold → product team alert |
+
+*Guardrails: autonomous actions are bounded to infrastructure and quality operations. No self-managing agent may mutate the ACU economy, the canonical action schedule, the bracket law, or the deterministic scoring arithmetic — those remain governance-versioned constants; retried jobs reuse their original idempotency keys so no user is ever double-charged by an auto-repair.*
+
 ---
 
 # ENGINEERING ANNEX — TRANSFORMATION PILLARS
