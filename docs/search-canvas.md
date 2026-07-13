@@ -127,9 +127,14 @@ Focus the AI on specific sectors for more targeted niche ideas.
 
 ### Max Startup Investment
 
-Slider — e.g., US$1,000
+Slider — e.g., US$10,000
 
 > Standard Rule: Constraints mapped to 10k USD global equivalent (Local Parity logic active).
+
+**Currency display rules:**
+
+- **UK, EU, Canada, US** — the slider automatically displays in the user's local currency (GBP, EUR, CAD, USD respectively).
+- **All other countries** — the slider displays in USD by default, with the amount mapped to the 10k USD global equivalent for the country where the user is based (Local Parity logic).
 
 ### Additional Context & Keywords
 
