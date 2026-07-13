@@ -580,6 +580,23 @@ The Niche Finder AI-OS is built on a cloud-native, event-driven, microservices a
 | created_at | TIMESTAMPTZ | DEFAULT NOW() |
 | completed_at | TIMESTAMPTZ | Timestamp of successful payment |
 
+**Table: generated_assets**
+
+| Column | Type | Constraints / Notes |
+|---|---|---|
+| id | UUID | PRIMARY KEY |
+| project_id | UUID | FOREIGN KEY → venture_projects.id |
+| user_id | UUID | FOREIGN KEY → users.id |
+| asset_type | ENUM | validation_report, financial_model_excel, financial_model_pdf, business_plan_docx, business_plan_pdf, pitch_deck_pptx (extends to every deliverable in the canonical schedule: pnl_statement, risk_heatmap, scenario_report, benchmark_report, confidence_report, investor_memo, execution_roadmap, market_entry_plan, full_investor_package) |
+| storage_url | TEXT | Cloudflare R2 or GCP Storage signed URL |
+| storage_key | TEXT | Internal storage object key |
+| file_size_bytes | INTEGER | File size for storage management |
+| generation_agent | VARCHAR(100) | Agent that produced the asset |
+| acu_consumed | INTEGER | ACUs consumed to generate this asset (canonical price × bracket_factor × Investor Mode where active) |
+| version | INTEGER | Asset version number; increments on regeneration (regeneration charged at ⌈½ price⌉ per the existing regen rule) |
+| expires_at | TIMESTAMPTZ | Signed URL expiry; auto-refreshed on access |
+| created_at | TIMESTAMPTZ | DEFAULT NOW() |
+
 ---
 
 # ENGINEERING ANNEX — TRANSFORMATION PILLARS
