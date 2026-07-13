@@ -78,7 +78,9 @@ const server = http.createServer(async (req, res) => {
     } catch (err) { return handleError(res, err); }
   }
 
-  if (req.method === 'GET' && url.pathname === '/v1/wallet/ledger') {
+  // /transactions is the spec-facing alias (§10.2 GET /wallet/transactions);
+  // /ledger remains for existing clients. Same enriched entries either way.
+  if (req.method === 'GET' && (url.pathname === '/v1/wallet/ledger' || url.pathname === '/v1/wallet/transactions')) {
     try {
       return json(res, 200, { ledger: getLedger(url.searchParams.get('user'), url.searchParams.get('limit')) });
     } catch (err) { return handleError(res, err); }

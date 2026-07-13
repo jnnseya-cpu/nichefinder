@@ -446,6 +446,12 @@
                 <option>High Margin</option><option>Low Startup Cost</option><option>Scalable</option><option>Any</option>
               </select>
             </div>
+            <div>
+              <label class="lab" for="risk">Risk Tolerance</label>
+              <select id="risk">
+                <option>Balanced</option><option>Conservative</option><option>Aggressive</option>
+              </select>
+            </div>
           </div>
 
           <div class="slider-row">
@@ -503,6 +509,11 @@
         </div>
         <button class="btn-generate" id="generate">Run Discovery</button>
         <p class="rail-note">All outputs are probabilistic and require your critical review. You are the final decision-maker.</p>
+      </div>
+      <div class="rail-card" id="histCard" style="margin-top:14px" hidden>
+        <h3>Recent Searches</h3>
+        <div id="histList" style="display:flex;flex-direction:column;gap:8px;margin-top:10px"></div>
+        <p class="rail-note" style="margin-top:10px">Last 10 runs. One click restores the parameters — review, then run.</p>
       </div>
     </aside>
   </div>
@@ -693,6 +704,7 @@
       fundingGoal: document.getElementById('fund').value,
       timeline: document.getElementById('time').value,
       modelPreference: document.getElementById('model').value,
+      riskTolerance: document.getElementById('risk').value,
       maxInvestmentUsd: +budget.value,
       context: ctx.value.trim() || null,
       investorMode: inv.getAttribute('aria-checked') === 'true'
@@ -955,11 +967,44 @@
       hist.unshift({
         country: document.getElementById('country').value,
         routing: (document.querySelector('#routeGrid [aria-pressed="true"] .t') || {}).textContent || 'balanced',
+        budget: +budget.value,
+        risk: (document.getElementById('risk') || {}).value || 'Balanced',
         count: list.length, live: !!live, ts: Date.now()
       });
       localStorage.setItem('nf_history', JSON.stringify(hist.slice(0, 100)));
     } catch (e) {}
+    renderHistory();
   }
+
+  // Recent searches: last 10 runs, one-click parameter restore (spec §6.1).
+  function renderHistory(){
+    var card = document.getElementById('histCard'), listEl = document.getElementById('histList');
+    var hist;
+    try { hist = JSON.parse(localStorage.getItem('nf_history') || '[]'); } catch (e) { hist = []; }
+    hist = hist.slice(0, 10);
+    if (!hist.length) { card.hidden = true; return; }
+    card.hidden = false;
+    listEl.innerHTML = '';
+    hist.forEach(function(h){
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.style.cssText = 'text-align:left;background:rgba(255,255,255,.03);border:1px solid var(--line-soft);border-radius:7px;padding:8px 12px;color:var(--text);cursor:pointer;font-size:.78rem;font-family:inherit';
+      var when = new Date(h.ts).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+      b.innerHTML = '<b>' + (h.country || '—') + '</b> · ' + (h.count || 0) + ' results' +
+        '<span style="display:block;font-family:var(--mono);font-size:.6rem;color:var(--muted);margin-top:2px">' +
+        when + ' · ' + (h.routing || 'balanced') + (h.risk ? ' · ' + h.risk : '') + '</span>';
+      b.addEventListener('click', function(){
+        if (h.country) sel.value = h.country;
+        if (h.budget) { budget.value = h.budget; updBudget(); }
+        if (h.risk && document.getElementById('risk')) document.getElementById('risk').value = h.risk;
+        sel.dispatchEvent(new Event('change'));
+        updAcu();
+        window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
+      });
+      listEl.appendChild(b);
+    });
+  }
+  renderHistory();
 
   gen.addEventListener('click', function(){
     if (!sel.value){

@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Niche Finder — Communication Event Architecture</title>
+<meta name="description" content="One event engine, every channel. The Niche Finder OS communication catalogue.">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="stylesheet" href="page.css">
+<style>
+  .comms-head{margin-bottom:6px}
+  .backlink{font-family:var(--mono);font-size:.62rem;letter-spacing:.16em;color:var(--muted);text-decoration:none}
+  .backlink:hover{color:var(--gold)}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin:22px 0 30px}
+  .kpi{border:1px solid var(--line-soft);border-radius:12px;padding:18px 20px;background:linear-gradient(170deg,var(--panel-2),var(--panel) 65%);border-top:3px solid var(--kc,var(--gold))}
+  .kpi .v{font-family:var(--serif);font-size:1.9rem;line-height:1.1}
+  .kpi .k{font-family:var(--mono);font-size:.56rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-top:4px;display:block}
+  .panel2{border:1px solid var(--line-soft);border-radius:12px;padding:22px;background:linear-gradient(170deg,var(--panel-2),var(--panel) 70%);margin-bottom:26px}
+  .panel2 h2{font-family:var(--serif);font-weight:400;font-size:1.25rem;margin-bottom:4px}
+  .panel2 .sub{font-size:.8rem;color:var(--muted);margin-bottom:16px}
+  .covrow{display:grid;grid-template-columns:90px 1fr 84px;gap:12px;align-items:center;margin-bottom:10px}
+  .covrow .cn{font-family:var(--mono);font-size:.66rem;letter-spacing:.14em;color:var(--text)}
+  .covbar{height:8px;border-radius:4px;background:rgba(255,255,255,.05);overflow:hidden}
+  .covbar i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,var(--gold),var(--blue))}
+  .covrow .cv{font-family:var(--mono);font-size:.66rem;color:var(--muted);text-align:right}
+  .qa-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  @media(max-width:900px){.qa-grid{grid-template-columns:1fr}}
+  label.f{font-family:var(--mono);font-size:.58rem;letter-spacing:.18em;color:var(--gold);display:block;margin:0 0 6px}
+  select.field,input.field{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:7px;padding:10px 14px;color:var(--text);font-family:inherit;font-size:.88rem}
+  .qa-actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+  .mailwrap{border:1px solid var(--line-soft);border-radius:10px;overflow:hidden;background:#EFF1F4;color:#1A2233;min-height:280px}
+  .mail{max-width:520px;margin:0 auto;padding:26px 22px;font-size:.86rem;line-height:1.55}
+  .mail .mhead{display:flex;align-items:center;gap:10px;padding-bottom:14px;border-bottom:2px solid #E8A61A;margin-bottom:16px}
+  .mail .mhead b{font-family:var(--serif);font-size:1.05rem;color:#0B1524}
+  .mail .mhead b em{font-style:normal;color:#2F5FA8}
+  .mail .msub{font-weight:700;font-size:1rem;color:#0B1524;margin-bottom:12px}
+  .mail p{color:#33405A;margin-bottom:12px}
+  .mail .cta{display:inline-block;background:#E8A61A;color:#0B1524;font-weight:700;border-radius:6px;padding:10px 22px;text-decoration:none;font-size:.84rem}
+  .mail .mfoot{margin-top:22px;padding-top:12px;border-top:1px solid #D7DCE5;font-size:.68rem;color:#7A8598}
+  .mail .badge-m{display:inline-block;font-size:.6rem;font-weight:700;letter-spacing:.1em;color:#8C2F1F;background:#F6DCD5;border-radius:4px;padding:2px 8px;margin-left:8px;vertical-align:middle}
+  .deliv{border:1px solid var(--line-soft);border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:8px;font-size:.8rem}
+  .deliv .dk{font-family:var(--mono);font-size:.62rem;color:var(--muted)}
+  .empty{font-size:.82rem;color:var(--muted);border:1px dashed var(--line);border-radius:8px;padding:16px;text-align:center}
+  .cat{border:1px solid var(--line-soft);border-radius:12px;background:linear-gradient(170deg,var(--panel-2),var(--panel) 75%);margin-bottom:14px;overflow:hidden}
+  .cat summary{list-style:none;cursor:pointer;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .cat summary::-webkit-details-marker{display:none}
+  .cat summary h3{font-family:var(--serif);font-weight:400;font-size:1.05rem}
+  .cat summary .cnt{font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;color:var(--muted)}
+  .ev{padding:12px 20px;border-top:1px solid var(--line-soft);display:grid;grid-template-columns:1fr auto;gap:8px 14px;align-items:center}
+  .ev .en{font-size:.86rem;font-weight:600}
+  .ev .ek{font-family:var(--mono);font-size:.62rem;color:var(--muted);display:block;margin-top:2px;word-break:break-all}
+  .chips{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+  .chip-ch{font-family:var(--mono);font-size:.56rem;letter-spacing:.1em;border-radius:99px;padding:3px 9px;border:1px solid var(--line)}
+  .ch-email{color:var(--gold);border-color:rgba(232,166,26,.4)}
+  .ch-inapp{color:var(--teal);border-color:rgba(63,167,155,.4)}
+  .ch-sms{color:var(--blue);border-color:rgba(61,133,224,.4)}
+  .ch-push{color:#B39CE0;border-color:rgba(139,123,199,.45)}
+  .ch-whatsapp{color:#7CC98F;border-color:rgba(94,180,112,.45)}
+  .mand{font-family:var(--mono);font-size:.54rem;letter-spacing:.12em;color:var(--red);border:1px solid rgba(196,96,79,.5);border-radius:4px;padding:2px 7px;margin-left:8px;vertical-align:middle}
+  .note-consent{border:1px solid var(--line-soft);border-left:3px solid var(--teal);border-radius:8px;padding:12px 16px;background:linear-gradient(170deg,var(--panel-2),var(--panel) 70%);font-size:.8rem;color:var(--muted);margin:18px 0 26px;max-width:74ch}
+</style>
+<link rel="stylesheet" href="nf-polish.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"><i></i></span><span>Niche<em>Finder</em></span></a>
+    <nav class="main">
+      <a href="admin.html">Super Admin OS</a>
+      <a href="dashboard.html">Command Center</a>
+      <a href="comms.html" aria-current="page">Comms Engine</a>
+    </nav>
+    <a class="btn gold" href="admin.html">← Back to Admin</a>
+  </div>
+</header>
+
+<main class="page">
+  <div class="wrap">
+    <div class="comms-head">
+      <span class="kicker">PLATFORM OPS · COMMUNICATIONS</span>
+      <h1 class="page-title">Communication Event Architecture</h1>
+      <p class="lede">One event engine, every channel. <span id="ledeCount">—</span> catalogue events fan out across email, in-app, SMS, push and WhatsApp — with mandatory notices that bypass user opt-outs.</p>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi" style="--kc:var(--gold)"><div class="v" id="kEvents">—</div><span class="k" id="kCats">— categories</span></div>
+      <div class="kpi" style="--kc:var(--red)"><div class="v" id="kMand">—</div><span class="k">Mandatory notices · bypass opt-outs</span></div>
+      <div class="kpi" style="--kc:var(--teal)"><div class="v" id="kDeliv">0</div><span class="k" id="kAttempt">Messages delivered · of 0 attempted</span></div>
+      <div class="kpi" style="--kc:var(--blue)"><div class="v">5</div><span class="k">Channels wired · email · in-app · sms · push · whatsapp</span></div>
+    </div>
+
+    <div class="note-consent">Mandatory notices are security, billing, and legal communications delivered on the platform's <strong>necessary</strong> basis — they ignore marketing opt-outs by design. All other events respect the user's 30-day consent categories and per-channel preferences. Every delivery is written to the immutable audit log.</div>
+
+    <section class="panel2">
+      <h2>Channel coverage</h2>
+      <p class="sub">How many catalogue events fire on each channel by default</p>
+      <div id="coverage"></div>
+    </section>
+
+    <section class="panel2">
+      <h2>Template QA</h2>
+      <p class="sub">Preview the branded email or fire any event to yourself across its channels.</p>
+      <div class="qa-grid">
+        <div>
+          <label class="f" for="evSel">EVENT</label>
+          <select class="field" id="evSel"></select>
+          <label class="f" for="brand" style="margin-top:14px">COMPANY BRAND</label>
+          <input class="field" id="brand" value="Niche Finder" readonly>
+          <div class="qa-actions">
+            <button class="btn gold" id="btnPreview" type="button">Preview email</button>
+            <button class="btn" id="btnSend" type="button">Send test to me</button>
+          </div>
+          <h2 style="margin-top:26px">Recent deliveries</h2>
+          <p class="sub">Latest test fires from this console</p>
+          <div id="delivList"><div class="empty">No deliveries yet — fire a test below.</div></div>
+        </div>
+        <div>
+          <div class="mailwrap" id="mailPreview">
+            <div class="mail" style="text-align:center;color:#7A8598;padding-top:110px">Select an event and press <b>Preview email</b>.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <h2 style="font-family:var(--serif);font-weight:400;font-size:1.35rem;margin:34px 0 4px">Event catalogue</h2>
+    <p class="sub" style="font-size:.8rem;color:var(--muted);margin-bottom:18px" id="catSub">—</p>
+    <div id="catalogue"></div>
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   Niche Finder OS · communication event catalogue.
+   Channels: email, inapp, sms, push, whatsapp.
+   m:true = mandatory notice (security/billing/legal) — bypasses opt-outs.
+   ============================================================ */
+var CATS = [
+{name:'Identity & Account', ev:[
+ ['Account requested','account.registration.requested','Welcome to Niche Finder — confirm your account',['email','inapp']],
+ ['Registration received','account.registration.received','We received your registration',['email','inapp']],
+ ['Email verification required','account.email_verification_required','Verify your email address',['email','inapp']],
+ ['Verification successful','account.verification.successful','Your account is verified — 100 welcome ACUs inside',['email','inapp']],
+ ['Verification failed','account.verification.failed','Verification could not be completed',['email','inapp']],
+ ['Verification expired','account.verification.expired','Your verification link expired',['email','inapp']],
+ ['Registration abandoned','account.registration.abandoned','Finish setting up your Niche Finder account',['email','inapp']],
+ ['Profile updated','account.profile.updated','Your profile was updated',['inapp']],
+ ['Country changed','account.country.changed','Your market country was changed to {{country}}',['email','inapp']],
+ ['KYC required','account.kyc.required','Identity verification needed for your account',['email','inapp'],1],
+ ['KYC approved','account.kyc.approved','Your identity is verified',['email','inapp']],
+ ['KYC rejected','account.kyc.rejected','We could not verify your identity',['email','inapp'],1],
+ ['Account reactivated','account.reactivated','Welcome back to Niche Finder',['email','inapp']],
+ ['Inactivity notice','account.inactivity','Your ventures are waiting — portfolio summary inside',['email']]
+]},
+{name:'Login & Security', ev:[
+ ['Successful login','auth.login.success','New sign-in to your Niche Finder account',['inapp']],
+ ['Failed login','auth.login.failed','Failed sign-in attempt',['inapp']],
+ ['Suspicious login','auth.login.suspicious','Unusual sign-in detected',['email','inapp','sms'],1],
+ ['New device detected','auth.device.new','New device signed in',['email','inapp'],1],
+ ['Device approved','auth.device.approved','Device approved',['inapp']],
+ ['Device rejected','auth.device.rejected','Device rejected',['email','inapp']],
+ ['Forgot password','password.forgot','Reset your Niche Finder password',['email','inapp']],
+ ['Password reset link','password.reset_link','Your password reset link',['email','inapp']],
+ ['Password reset successful','password.reset.successful','Your password was reset',['email','inapp','sms'],1],
+ ['Password changed','password.changed','Your password was changed',['email','inapp'],1],
+ ['OTP code','mfa.otp_code','Your Niche Finder verification code',['email','inapp','sms','whatsapp']],
+ ['MFA enabled','mfa.enabled','Two-factor authentication enabled',['email','inapp'],1],
+ ['MFA disabled','mfa.disabled','Two-factor authentication disabled',['email','inapp','sms'],1],
+ ['Backup codes generated','mfa.backup_code_generated','New MFA backup codes generated',['email','inapp']],
+ ['Security alert','security.alert','Security alert on your account',['email','inapp','sms'],1],
+ ['Account locked','account.locked','Your account has been locked',['email','inapp','sms','whatsapp'],1],
+ ['Account unlocked','account.unlocked','Your account is unlocked',['email','inapp']],
+ ['Too many attempts','security.too_many_attempts','Too many attempts',['inapp']],
+ ['Session revoked','session.revoked','A session was signed out',['email','inapp'],1]
+]},
+{name:'ACU Wallet & Billing', ev:[
+ ['Welcome ACUs granted','wallet.welcome_granted','Your 100 free welcome ACUs are ready',['email','inapp']],
+ ['Low ACU balance','wallet.balance_low','Your ACU balance is below 50',['email','inapp']],
+ ['ACU balance depleted','wallet.balance_depleted','Your ACU balance has reached 0',['email','inapp','push']],
+ ['Top-up initiated','wallet.topup_initiated','Your ACU top-up is processing',['inapp']],
+ ['Payment pending','payment.pending','Payment is processing',['inapp']],
+ ['Payment successful','payment.successful','Payment received — {{package}} credited',['email','inapp','whatsapp']],
+ ['Payment failed','payment.failed','Your payment failed',['email','inapp','sms'],1],
+ ['Payment retry','payment.retry','We’ll retry your payment',['email','inapp']],
+ ['Mobile money confirmed','payment.mobile_money.confirmed','Mobile money payment confirmed — {{package}}',['inapp','sms','whatsapp']],
+ ['Auto top-up executed','wallet.auto_topup.executed','Auto top-up: {{package}} added',['email','inapp']],
+ ['Auto top-up failed','wallet.auto_topup.failed','Auto top-up could not complete',['email','inapp'],1],
+ ['Promotional ACUs granted','wallet.promo_granted','Bonus ACUs added to your wallet',['email','inapp','push']],
+ ['Capital bracket changed','wallet.bracket_changed','Your project moved to capital bracket {{bracket}} — prices updated',['inapp']],
+ ['Refund processed','payment.refund_processed','Your refund was processed',['email','inapp']],
+ ['Chargeback opened','payment.chargeback_opened','A payment dispute was opened',['email','inapp'],1],
+ ['Invoice generated','invoice.generated','Invoice {{number}} is ready',['email','inapp']],
+ ['Invoice overdue','invoice.overdue','Invoice {{number}} is overdue',['email','inapp','sms'],1],
+ ['Invoice paid','invoice.paid','Invoice {{number}} paid',['email','inapp']],
+ ['Enterprise pool allocated','wallet.pool_allocated','{{amount}} ACUs allocated to your workspace',['email','inapp']],
+ ['Pool cap reached','wallet.pool_cap_reached','Your ACU allocation cap was reached',['email','inapp']]
+]},
+{name:'Subscription Plans', ev:[
+ ['Trial started','subscription.trial_started','Your Niche Finder trial has started',['email','inapp']],
+ ['Trial ending','subscription.trial_ending','Your trial ends in 3 days',['email','inapp']],
+ ['Trial expired','subscription.trial_expired','Your trial has ended',['email','inapp']],
+ ['Plan activated','subscription.activated','Your {{plan}} plan is active',['email','inapp']],
+ ['Monthly ACUs credited','subscription.allowance_credited','{{amount}} plan ACUs credited for this cycle',['email','inapp']],
+ ['Rollover applied','subscription.rollover_applied','Unused ACUs rolled over',['inapp']],
+ ['Plan renewed','subscription.renewed','Your subscription renewed',['email','inapp']],
+ ['Plan upgraded','subscription.upgraded','Welcome to {{plan}}',['email','inapp']],
+ ['Plan downgraded','subscription.downgraded','Your plan was changed to {{plan}}',['email','inapp']],
+ ['Plan cancelled','subscription.cancelled','Your subscription was cancelled',['email','inapp']],
+ ['Plan reactivated','subscription.reactivated','Your subscription is reactivated',['email','inapp']]
+]},
+{name:'Discovery & Scoring', ev:[
+ ['Search completed','discovery.search_completed','Your opportunities are ready',['inapp','push']],
+ ['Opportunities ready','discovery.results_ready','{{count}} scored opportunities for {{country}}',['email','inapp']],
+ ['Breakthrough found','discovery.breakthrough_found','A breakthrough opportunity cleared both gates',['email','inapp','push']],
+ ['Breakthrough fallback','discovery.breakthrough_fallback','Strongest realistic opportunities shown for your filters',['inapp']],
+ ['Score updated','scoring.score_updated','A saved opportunity’s score changed',['inapp']],
+ ['Market alert','market.alert','Significant change in a shortlisted niche market',['email','inapp']],
+ ['Re-validation recommended','market.revalidate_recommended','Time to re-validate {{project}}',['email','inapp']],
+ ['Weekly digest','discovery.weekly_digest','Your weekly venture intelligence digest',['email']],
+ ['Comparison ready','discovery.comparison_ready','Your side-by-side comparison is ready',['inapp']],
+ ['Saved niche update','discovery.saved_update','An update on a saved niche',['inapp']]
+]},
+{name:'Venture Projects & Build Hub', ev:[
+ ['Project unlocked','project.unlocked','Deep-dive workspace open: {{project}}',['email','inapp']],
+ ['Status advanced','project.status_advanced','{{project}} advanced to {{status}}',['inapp','push']],
+ ['Validation ready','build.validation_ready','Market validation report ready',['email','inapp','push']],
+ ['Forecast ready','build.forecast_ready','3-year forecast ready',['email','inapp','push']],
+ ['P&L ready','build.pnl_ready','Profit & loss statement ready',['email','inapp']],
+ ['Risk map ready','build.riskmap_ready','Risk heatmap ready',['email','inapp']],
+ ['Business plan ready','build.bizplan_ready','Business plan ready',['email','inapp','push']],
+ ['Pitch deck ready','build.pitch_ready','Investor pitch deck ready',['email','inapp','push']],
+ ['Full package ready','build.full_package_ready','Full investor package assembled',['email','inapp','push']],
+ ['Regeneration complete','build.regen_complete','Updated document version ready',['inapp']],
+ ['Generation failed','build.generation_failed','Generation failed — ACUs not charged',['email','inapp'],1],
+ ['Investor mode enabled','project.investor_mode','Investor Mode active on {{project}}',['inapp']]
+]},
+{name:'Documents & Assets', ev:[
+ ['Asset ready','asset.ready','Your download is ready: {{item}}',['email','inapp']],
+ ['Export completed','asset.export_completed','Your export is ready',['email','inapp']],
+ ['Bulk ZIP ready','asset.zip_ready','Your project archive is ready',['email','inapp']],
+ ['Share link created','asset.share_link_created','Share link created for {{item}}',['inapp']],
+ ['Share link expiring','asset.share_link_expiring','A share link expires soon',['email','inapp']],
+ ['Version updated','asset.version_updated','New version of {{item}} saved',['inapp']],
+ ['Download receipt','asset.download_receipt','Asset downloaded from your repository',['inapp']]
+]},
+{name:'AI Agents', ev:[
+ ['Insight generated','ai.insight_generated','New insight from your Venture Analyst',['inapp','push']],
+ ['Recommendation available','ai.recommendation_available','A recommendation is ready',['inapp','push']],
+ ['Opportunity identified','ai.opportunity_identified','Opportunity identified in {{country}}',['email','inapp']],
+ ['Risk detected','ai.risk_detected','Agent risk alert on {{project}}',['email','inapp','push']],
+ ['Budget risk','ai.budget_risk','Budget risk flagged on {{project}}',['email','inapp','push']],
+ ['Memory profile updated','ai.memory_updated','Your venture memory got smarter',['inapp']],
+ ['Workflow completed','ai.workflow_completed','Agent workflow completed',['inapp']],
+ ['Workflow failed','ai.workflow_failed','Agent workflow failed',['email','inapp','push']],
+ ['Human intervention required','ai.human_intervention_required','Action needed: {{item}}',['email','inapp','push'],1],
+ ['Quality flag raised','ai.quality_flag','An output was flagged for review',['inapp']]
+]},
+{name:'Support & Success', ev:[
+ ['Ticket created','support.ticket_created','Support case {{number}} created',['email','inapp']],
+ ['Ticket assigned','support.ticket_assigned','Case {{number}} assigned',['inapp']],
+ ['Ticket updated','support.ticket_updated','Update on case {{number}}',['email','inapp']],
+ ['Ticket resolved','support.ticket_resolved','Case {{number}} resolved',['email','inapp']],
+ ['Ticket closed','support.ticket_closed','Case {{number}} closed',['inapp']],
+ ['Escalated to human','support.escalated','Your case reached our team',['email','inapp']],
+ ['Onboarding started','cs.onboarding_started','Welcome — let’s find your first venture',['email','inapp']],
+ ['Onboarding completed','cs.onboarding_completed','You’re all set up',['email','inapp']],
+ ['Health check-in','cs.health_check','Let’s check in on your venture pipeline',['email','inapp']]
+]},
+{name:'Enterprise & Incubator', ev:[
+ ['Application received','enterprise.application_received','Your enterprise application was received',['email','inapp']],
+ ['Verification started','enterprise.verification_started','Verification of {{enterprise}} has started',['email','inapp']],
+ ['Documents requested','enterprise.documents_requested','Documents needed to verify {{enterprise}}',['email','inapp']],
+ ['Documents approved','enterprise.documents_approved','Your documents were approved',['email','inapp']],
+ ['Documents rejected','enterprise.documents_rejected','Documents need attention',['email','inapp']],
+ ['Enterprise activated','enterprise.activated','{{enterprise}} is now live on Niche Finder',['email','inapp','push']],
+ ['Admin invitation','enterprise.admin_invitation','You’re the administrator for {{enterprise}}',['email','inapp']],
+ ['Member invited','enterprise.member_invited','Join {{enterprise}} on Niche Finder',['email','inapp']],
+ ['Member activated','enterprise.member_activated','Member activated',['inapp']],
+ ['Cohort report ready','enterprise.cohort_report_ready','Your cohort intelligence report is ready',['email','inapp']],
+ ['Pool report ready','enterprise.pool_report_ready','Monthly ACU pool report',['email','inapp']],
+ ['Renewal reminder','enterprise.renewal_reminder','Your contract renewal is coming up',['email','inapp']]
+]},
+{name:'Partner & API', ev:[
+ ['Partner application received','partner.application_received','Your partner application was received',['email','inapp']],
+ ['Partner approved','partner.approved','Welcome to the partner programme',['email','inapp']],
+ ['API key created','api.key_created','A new API key was created',['email','inapp'],1],
+ ['API key rotated','api.key_rotated','Your API key was rotated',['email','inapp']],
+ ['API key revoked','api.key_revoked','An API key was revoked',['email','inapp'],1],
+ ['Rate limit warning','api.rate_limit_warning','Approaching your API rate limit',['email','inapp']],
+ ['Commission earned','partner.commission_earned','Commission earned: {{amount}}',['email','inapp','push']],
+ ['Payout processed','partner.payout_processed','Your payout was processed',['email','inapp','whatsapp']],
+ ['Referral converted','partner.referral_converted','Your referral became a customer',['inapp','push']],
+ ['White-label go-live','partner.whitelabel_live','Your white-label instance is live',['email','inapp']]
+]},
+{name:'Government Mode', ev:[
+ ['Access granted','gov.access_granted','Observatory access granted',['email','inapp']],
+ ['Dataset updated','gov.dataset_updated','Venture demand dataset refreshed for {{country}}',['email','inapp']],
+ ['Quarterly brief ready','gov.quarterly_brief_ready','Your quarterly policy brief is ready',['email','inapp']],
+ ['Policy alert','gov.policy_alert','Notable shift in venture demand signals',['email','inapp']],
+ ['Export ready','gov.export_ready','Aggregated export ready (k-anonymised)',['email','inapp']],
+ ['Access review','gov.access_review','Scheduled access review for your observatory seat',['email','inapp'],1]
+]},
+{name:'Platform Administration', ev:[
+ ['Scheduled maintenance','system.maintenance_scheduled','Scheduled maintenance on {{date}}',['email','inapp']],
+ ['Emergency maintenance','system.maintenance_emergency','Emergency maintenance in progress',['email','inapp','sms'],1],
+ ['System outage','system.outage','Service disruption',['email','inapp','sms'],1],
+ ['Service restored','system.service_restored','Service restored',['email','inapp']],
+ ['Audit completed','audit.completed','Audit completed',['inapp']],
+ ['Policy violation','audit.policy_violation','Policy violation detected',['email','inapp','sms'],1],
+ ['Investigation opened','audit.investigation_opened','Investigation opened',['email','inapp'],1],
+ ['Release notes','system.release_notes','What’s new in Niche Finder',['email','inapp']]
+]},
+{name:'Legal & Privacy', ev:[
+ ['Consent request','privacy.consent_request','We need your consent',['email','inapp'],1],
+ ['Consent updated','privacy.consent_updated','Your consent preferences were updated',['email','inapp']],
+ ['Data export ready','privacy.data_export_ready','Your data export is ready',['email','inapp']],
+ ['Deletion requested','privacy.account_deletion_requested','Account deletion requested',['email','inapp'],1],
+ ['Deletion completed','privacy.account_deletion_completed','Your account has been deleted',['email'],1],
+ ['Terms updated','legal.terms_updated','Our Terms of Use have changed',['email','inapp'],1],
+ ['Privacy policy updated','legal.privacy_updated','Our Privacy Policy has changed',['email','inapp'],1],
+ ['Regulatory update','regulatory.update','Regulatory update',['email','inapp']]
+]},
+{name:'Reporting & BI', ev:[
+ ['Report generated','report.generated','Report ready: {{item}}',['inapp']],
+ ['Scheduled report ready','report.scheduled_ready','Your scheduled report is ready',['email','inapp']],
+ ['Export completed','report.export_completed','Your export is ready',['email','inapp']],
+ ['KPI threshold breached','kpi.threshold_breached','KPI alert: {{item}}',['email','inapp','push']],
+ ['KPI recovered','kpi.recovered','KPI recovered: {{item}}',['inapp']],
+ ['Executive alert','executive.alert','Executive alert',['email','inapp','sms'],1],
+ ['Revenue digest','report.revenue_digest','Weekly revenue & margin digest',['email']]
+]}
+];
+
+var CH_LABEL = {email:'email', inapp:'in-app', sms:'sms', push:'push', whatsapp:'whatsapp'};
+var SAMPLE = {'{{country}}':'DR Congo','{{project}}':'Solar Cold-Chain Depot — Kinshasa','{{package}}':'Builder · £10 = 1,100 ACU','{{plan}}':'Professional','{{number}}':'NF-2481','{{amount}}':'2,500','{{item}}':'3-Year Financial Model (Excel)','{{status}}':'Investor Ready','{{enterprise}}':'Lagos Venture Studio','{{count}}':'8','{{bracket}}':'2','{{date}}':'27 July 2026'};
+
+function fill(s){ return s.replace(/\{\{[a-z]+\}\}/g, function(m){ return SAMPLE[m] || m; }); }
+function esc(s){ var d = document.createElement('i'); d.textContent = s; return d.innerHTML; }
+
+var ALL = [];
+CATS.forEach(function(c){ c.ev.forEach(function(e){ ALL.push({cat:c.name, n:e[0], k:e[1], s:e[2], ch:e[3], m:!!e[4]}); }); });
+
+/* KPIs */
+var mand = ALL.filter(function(e){ return e.m; }).length;
+document.getElementById('kEvents').textContent = ALL.length;
+document.getElementById('kCats').textContent = CATS.length + ' categories';
+document.getElementById('kMand').textContent = mand;
+document.getElementById('ledeCount').textContent = ALL.length;
+document.getElementById('catSub').textContent = ALL.length + ' events · ' + CATS.length + ' categories · ' + mand + ' mandatory';
+
+/* Channel coverage */
+var cov = {email:0, inapp:0, sms:0, push:0, whatsapp:0};
+ALL.forEach(function(e){ e.ch.forEach(function(c){ cov[c]++; }); });
+var covEl = document.getElementById('coverage');
+Object.keys(cov).forEach(function(c){
+  var row = document.createElement('div'); row.className = 'covrow';
+  row.innerHTML = '<span class="cn">' + CH_LABEL[c] + '</span><span class="covbar"><i style="width:' +
+    Math.round(cov[c] / ALL.length * 100) + '%"></i></span><span class="cv">' + cov[c] + ' events</span>';
+  covEl.appendChild(row);
+});
+
+/* Event selector */
+var sel = document.getElementById('evSel');
+CATS.forEach(function(c){
+  var og = document.createElement('optgroup'); og.label = c.name;
+  c.ev.forEach(function(e){
+    var o = document.createElement('option');
+    o.value = e[1];
+    o.textContent = c.name + ' · ' + e[0] + ' (' + e[1] + ')';
+    og.appendChild(o);
+  });
+  sel.appendChild(og);
+});
+
+function findEv(key){ for (var i = 0; i < ALL.length; i++) if (ALL[i].k === key) return ALL[i]; return ALL[0]; }
+
+/* Email preview */
+document.getElementById('btnPreview').addEventListener('click', function(){
+  var e = findEv(sel.value);
+  var subj = fill(e.s);
+  document.getElementById('mailPreview').innerHTML =
+    '<div class="mail">' +
+      '<div class="mhead">' +
+        '<svg width="26" height="26" viewBox="0 0 128 128" aria-hidden="true"><path d="M84 34h9v22a2 2 0 0 1-2 2h-5a2 2 0 0 1-2-2z" fill="#E8A61A"/><path d="M97 20h9v36a2 2 0 0 1-2 2h-5a2 2 0 0 1-2-2z" fill="#2F5FA8"/><path d="M33 89L18 104" stroke="#E8A61A" stroke-width="10" stroke-linecap="round"/><circle cx="56" cy="66" r="30" fill="none" stroke="#2F5FA8" stroke-width="7"/><circle cx="56" cy="66" r="20" fill="none" stroke="#E8A61A" stroke-width="4"/><path d="M56 50c-7 0-12 5-12 11.5C44 68.5 50.5 75 56 82c5.5-7 12-13.5 12-20.5C68 55 63 50 56 50z" fill="#E8A61A"/><circle cx="56" cy="62" r="5" fill="#2F5FA8"/></svg>' +
+        '<b>Niche<em>Finder</em></b>' + (e.m ? '<span class="badge-m">MANDATORY NOTICE</span>' : '') +
+      '</div>' +
+      '<div class="msub">' + esc(subj) + '</div>' +
+      '<p>Hi Amara,</p>' +
+      '<p>' + esc(fill(bodyFor(e))) + '</p>' +
+      '<a class="cta" href="#" onclick="return false">Open Niche Finder →</a>' +
+      '<div class="mfoot">Event <span style="font-family:monospace">' + esc(e.k) + '</span> · sent by the Niche Finder OS event engine.' +
+      (e.m ? ' This is a mandatory service notice — it is sent regardless of marketing preferences.' :
+             ' You receive this because of your notification preferences — manage them any time in your account.') +
+      '<br>© 2026 Niche Finder Ltd · The operating system for venture creation.</div>' +
+    '</div>';
+});
+
+function bodyFor(e){
+  var map = {
+    'wallet.balance_low':'Your ACU balance dropped below 50. Top up now so your next discovery or document run is never interrupted — packages start at £5 for 500 ACU.',
+    'payment.successful':'Your payment was received and {{package}} has been credited to your wallet. Your updated balance is available immediately across the OS.',
+    'payment.failed':'We could not process your payment. No ACUs were deducted. Please review your payment method and try again — your venture pipeline is untouched.',
+    'discovery.results_ready':'Your discovery run for {{country}} is complete: {{count}} scored opportunities are ranked and waiting in your Search Canvas.',
+    'build.pitch_ready':'Your investor pitch deck for {{project}} has been generated, versioned, and stored in your repository. It is ready to download and present.',
+    'ai.human_intervention_required':'One of your agent workflows paused and needs your decision on {{item}}. Nothing will be charged or executed until you review it.',
+    'account.locked':'Your account was locked after repeated failed sign-in attempts. If this was you, reset your password to unlock. If not, contact support immediately.'
+  };
+  return map[e.k] || ('This is the "' + e.n + '" notice from the ' + e.cat + ' event family. In production this template carries the full transactional context for the event, rendered per-channel.');
+}
+
+/* Send test + deliveries log */
+function loadLog(){ try { return JSON.parse(localStorage.getItem('nf_comms_log')) || []; } catch (err) { return []; } }
+function renderLog(){
+  var log = loadLog();
+  var delivered = 0;
+  log.forEach(function(d){ delivered += d.ch.length; });
+  document.getElementById('kDeliv').textContent = delivered;
+  document.getElementById('kAttempt').textContent = 'Messages delivered · of ' + delivered + ' attempted';
+  var el = document.getElementById('delivList');
+  if (!log.length) { el.innerHTML = '<div class="empty">No deliveries yet — fire a test below.</div>'; return; }
+  el.innerHTML = '';
+  log.slice(0, 8).forEach(function(d){
+    var row = document.createElement('div'); row.className = 'deliv';
+    row.innerHTML = '<span><b>' + esc(d.n) + '</b><span class="dk"> · ' + esc(d.k) + '</span></span>' +
+      '<span class="dk">' + d.ch.map(function(c){ return CH_LABEL[c]; }).join(' · ') + ' · ' + new Date(d.ts).toLocaleTimeString() + '</span>';
+    el.appendChild(row);
+  });
+}
+document.getElementById('btnSend').addEventListener('click', function(){
+  var e = findEv(sel.value);
+  var log = loadLog();
+  log.unshift({ n: e.n, k: e.k, ch: e.ch, ts: Date.now() });
+  if (log.length > 20) log.length = 20;
+  localStorage.setItem('nf_comms_log', JSON.stringify(log));
+  renderLog();
+  this.textContent = 'Sent ✓ (' + e.ch.map(function(c){ return CH_LABEL[c]; }).join(', ') + ')';
+  var btn = this;
+  setTimeout(function(){ btn.textContent = 'Send test to me'; }, 2600);
+});
+renderLog();
+
+/* Catalogue */
+var cat = document.getElementById('catalogue');
+CATS.forEach(function(c, idx){
+  var d = document.createElement('details'); d.className = 'cat'; if (idx < 2) d.open = true;
+  var mandN = c.ev.filter(function(e){ return e[4]; }).length;
+  var html = '<summary><h3>' + esc(c.name) + '</h3><span class="cnt">' + c.ev.length + ' EVENTS' + (mandN ? ' · ' + mandN + ' MANDATORY' : '') + '</span></summary>';
+  c.ev.forEach(function(e){
+    html += '<div class="ev"><span><span class="en">' + esc(e[0]) + (e[4] ? '<span class="mand">MANDATORY</span>' : '') + '</span>' +
+      '<span class="ek">' + esc(e[1]) + ' · ' + esc(e[2]) + '</span></span>' +
+      '<span class="chips">' + e[3].map(function(ch){ return '<span class="chip-ch ch-' + ch + '">' + CH_LABEL[ch] + '</span>'; }).join('') + '</span></div>';
+  });
+  d.innerHTML = html;
+  cat.appendChild(d);
+});
+</script>
+
+<footer class="site">
+  <div class="wrap">
+    <div class="foot-base">
+      <span>© 2026 Niche Finder Ltd. Internal platform operations console.</span>
+      <span><a href="admin.html" style="color:var(--muted)">← Back to Admin</a></span>
+    </div>
+  </div>
+</footer>
+
+<script src="nf-consent.js" defer></script>
+</body>
+</html>

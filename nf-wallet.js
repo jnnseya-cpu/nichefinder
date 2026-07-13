@@ -102,7 +102,37 @@
     saveWallet(w);
     logLedger('OPERATIONAL_TASK · ' + label, -cost);
     if (onAfter) onAfter();
+    lowBalanceCheck(w);
     return true;
+  }
+
+  /* Low-balance notice (spec §6.5): fires once per session when the paid
+     balance falls below 50 ACU after a charge. Quiet, dismissible, links
+     straight to the canonical top-up packages. */
+  var lowWarned = false;
+  function lowBalanceCheck(w) {
+    if (lowWarned || w.paid >= 50) return;
+    lowWarned = true;
+    try {
+      var n = document.createElement('div');
+      n.setAttribute('role', 'status');
+      n.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:26px;z-index:960;' +
+        'background:#0E1626;border:1px solid rgba(232,166,26,.5);border-radius:9px;padding:13px 18px;' +
+        'color:#EAE5D9;font-size:.84rem;display:flex;gap:14px;align-items:center;box-shadow:0 14px 40px rgba(0,0,0,.5);max-width:92vw';
+      n.innerHTML = '<span>ACU balance low — <b>' + w.paid + ' paid ACU</b> remaining.</span>';
+      var buy = document.createElement('button');
+      buy.textContent = 'Top up';
+      buy.style.cssText = 'background:#E8A61A;color:#070B14;border:none;border-radius:6px;padding:7px 16px;font-weight:700;cursor:pointer;font-family:inherit;font-size:.8rem';
+      buy.onclick = function(){ n.remove(); openTopup(0, 'low balance top-up'); };
+      var x = document.createElement('button');
+      x.textContent = '✕';
+      x.setAttribute('aria-label', 'Dismiss');
+      x.style.cssText = 'background:none;border:none;color:#8B93A5;cursor:pointer;font-size:.9rem';
+      x.onclick = function(){ n.remove(); };
+      n.appendChild(buy); n.appendChild(x);
+      document.body.appendChild(n);
+      setTimeout(function(){ if (n.parentNode) n.remove(); }, 14000);
+    } catch (e) {}
   }
 
   function credit(pkg) {

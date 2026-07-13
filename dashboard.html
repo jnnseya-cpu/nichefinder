@@ -172,6 +172,12 @@
       </div>
     </div>
 
+    <section class="blk" id="plansBlk">
+      <h2>Plans &amp; Allowances <span class="tag" id="planTag">CURRENT: PAY AS YOU GO</span></h2>
+      <p>Monthly plans credit paid-class ACUs each cycle at the same £1 = 100 ACU anchor — every action still prices from the canonical schedule and your capital bracket. Billing activates with the production release; your selection is saved to this account.</p>
+      <div class="bgrid" id="planGrid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr))"></div>
+    </section>
+
     <section class="blk">
       <h2>OS Predictive Intelligence Report <span class="tag" id="piScore">6.0/10 · CONFIDENCE: MEDIUM</span></h2>
       <p>Contextualized reasoning based on behavioral signal ingestion (Rule 13 &amp; 15).</p>
@@ -419,6 +425,43 @@
     localStorage.setItem('nf_invite', code);
   }
   document.getElementById('inviteCode').textContent = code;
+
+  // Plans & allowances (spec §11.3): five tiers, conformed to the canonical
+  // ACU economy. Selection persists; billing wires up at production launch.
+  var PLANS = [
+    { id: 'free',    name: 'Free',         price: '£0',    acu: '100 welcome ACU',   d: 'One-time · read-only · browse & preview' },
+    { id: 'starter', name: 'Starter',      price: '£19/mo', acu: '200 ACU / month',  d: 'Rollover · unlock + validation focus' },
+    { id: 'pro',     name: 'Professional', price: '£49/mo', acu: '600 ACU / month',  d: 'Rollover · all documents · priority generation' },
+    { id: 'growth',  name: 'Growth',       price: '£99/mo', acu: '1,500 ACU / month', d: 'Bulk generation · API access · 3 team seats' },
+    { id: 'ent',     name: 'Enterprise',   price: '£499+/mo', acu: 'Custom ACU pool', d: 'White-label · SSO · SLA · compliance reports' }
+  ];
+  var planGrid = document.getElementById('planGrid');
+  var planTag = document.getElementById('planTag');
+  function renderPlans(){
+    var current = localStorage.getItem('nf_plan') || '';
+    planTag.textContent = 'CURRENT: ' + (current ? (PLANS.filter(function(p){ return p.id === current; })[0] || {name:'PAY AS YOU GO'}).name.toUpperCase() : 'PAY AS YOU GO');
+    planGrid.innerHTML = '';
+    PLANS.forEach(function(p){
+      var active = p.id === current;
+      var c = document.createElement('div');
+      c.className = 'bcard';
+      c.style.cssText = '--bc:' + (active ? 'var(--gold)' : 'var(--line)') + (active ? ';box-shadow:0 0 0 1px rgba(232,166,26,.35)' : '');
+      c.innerHTML = '<span class="bk">' + p.name + (active ? ' · ACTIVE' : '') + '</span>' +
+        '<p style="margin:4px 0 2px"><b style="font-size:1.05rem">' + p.price + '</b> · ' + p.acu + '</p>' +
+        '<p style="font-size:.78rem;color:var(--muted)">' + p.d + '</p>';
+      var btn = document.createElement('button');
+      btn.className = 'top-up';
+      btn.textContent = active ? 'Selected ✓' : 'Select plan';
+      btn.addEventListener('click', function(){
+        localStorage.setItem('nf_plan', p.id);
+        renderPlans();
+        showToast(p.name + ' plan saved — billing activates at production launch.');
+      });
+      c.appendChild(btn);
+      planGrid.appendChild(c);
+    });
+  }
+  renderPlans();
 })();
 </script>
 <script src="nf-consent.js" defer></script>

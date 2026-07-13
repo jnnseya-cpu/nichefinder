@@ -2,13 +2,14 @@
 // one failover decision regardless of which SDK threw.
 
 export class GatewayError extends Error {
-  constructor(message, { provider, status = 500, code = 'provider_error', retryable = false } = {}) {
+  constructor(message, { provider, status = 500, code = 'provider_error', retryable = false, platformCode } = {}) {
     super(message);
     this.name = 'GatewayError';
     this.provider = provider;
     this.status = status;
     this.code = code;
     this.retryable = retryable;
+    this.platformCode = platformCode;
   }
 
   toJSON() {
@@ -18,6 +19,7 @@ export class GatewayError extends Error {
       provider: this.provider,
       status: this.status,
       retryable: this.retryable,
+      ...(this.platformCode ? { platformCode: this.platformCode } : {}),
     };
   }
 }

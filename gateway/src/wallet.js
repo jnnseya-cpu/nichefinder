@@ -48,7 +48,10 @@ function requireUser(userId) {
     store.wallets[userId] = {
       paid: 0,
       free: WELCOME_FREE,
-      ledger: [{ t: 'WELCOME · 100 free read-only ACU', amt: 0, ts: Date.now() }],
+      ledger: [{
+        t: 'WELCOME · 100 free read-only ACU', amt: WELCOME_FREE, ts: Date.now(),
+        type: 'credit_welcome', pool: 'free', balanceBefore: 0, balanceAfter: WELCOME_FREE, bracketFactor: 1,
+      }],
       createdAt: Date.now(),
     };
     persist();
@@ -56,8 +59,15 @@ function requireUser(userId) {
   return store.wallets[userId];
 }
 
-function ledger(wallet, label, amt) {
-  wallet.ledger.unshift({ t: label, amt, ts: Date.now() });
+// Ledger entries follow the acu_transactions contract from the transformation
+// spec (§9): balance snapshots, pool used, and the bracket factor applied.
+function ledger(wallet, label, amt, extra = {}) {
+  const before = wallet.paid + wallet.free - amt;
+  wallet.ledger.unshift({
+    t: label, amt, ts: Date.now(),
+    balanceBefore: before, balanceAfter: before + amt,
+    ...extra,
+  });
   if (wallet.ledger.length > LEDGER_CAP) wallet.ledger.length = LEDGER_CAP;
 }
 
@@ -88,23 +98,32 @@ export function getLedger(userId, limit = 50) {
 }
 
 // Paid ACUs only — welcome ACUs are read-only and can never fund generation.
-export function charge({ user, amount, label, idempotencyKey }) {
+// Optional metadata mirrors acu_transactions (§9): action key, bracket factor, reference.
+export function charge({ user, amount, label, idempotencyKey, action, bracketFactor, referenceId }) {
   const wallet = requireUser(user);
   const cost = Math.floor(Number(amount));
   if (!Number.isFinite(cost) || cost <= 0) {
     throw new GatewayError('"amount" must be a positive integer of ACUs.', { status: 400, code: 'invalid_amount' });
   }
+  const bf = Number.isFinite(Number(bracketFactor)) && Number(bracketFactor) >= 1 ? Number(bracketFactor) : 1;
   return idempotent(idempotencyKey, () => {
     if (wallet.paid < cost) {
+      // platformCode 4001 = "Insufficient ACUs" in the spec's API error registry (§10.1).
       throw new GatewayError(`Insufficient paid ACU: need ${cost}, have ${wallet.paid}. Welcome ACUs are read-only.`, {
         status: 402,
         code: 'insufficient_acu',
+        platformCode: 4001,
       });
     }
     wallet.paid -= cost;
-    ledger(wallet, `OPERATIONAL_TASK · ${String(label || 'action').slice(0, 120)}`, -cost);
+    ledger(wallet, `OPERATIONAL_TASK · ${String(label || 'action').slice(0, 120)}`, -cost, {
+      type: action ? `debit_${String(action).slice(0, 40)}` : 'debit_action',
+      pool: 'paid',
+      bracketFactor: bf,
+      ...(referenceId ? { referenceId: String(referenceId).slice(0, 64) } : {}),
+    });
     persist();
-    return { charged: cost, wallet: view(wallet) };
+    return { charged: cost, bracketFactor: bf, wallet: view(wallet) };
   });
 }
 
@@ -117,7 +136,11 @@ export function credit({ user, packageId, idempotencyKey }) {
   return idempotent(idempotencyKey, () => {
     const total = pkg.acus + pkg.bonus;
     wallet.paid += total;
-    ledger(wallet, `TOP-UP · ${pkg.name} (£${pkg.priceGBP} = ${total.toLocaleString('en-US')} ACU)`, total);
+    ledger(wallet, `TOP-UP · ${pkg.name} (£${pkg.priceGBP} = ${total.toLocaleString('en-US')} ACU)`, total, {
+      type: 'credit_purchase',
+      pool: 'paid',
+      bracketFactor: 1,
+    });
     persist();
     return { credited: total, package: packageId, wallet: view(wallet) };
   });
