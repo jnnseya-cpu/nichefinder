@@ -455,6 +455,34 @@ The Niche Finder AI-OS is built on a cloud-native, event-driven, microservices a
 | Data Warehouse | BigQuery | Analytics events, revenue reporting, cohort analysis, ML training data |
 | Object Storage | Cloudflare R2 / GCP Cloud Storage | Generated documents (PDF, DOCX, XLSX), user exports, backup archives |
 
+### 8.5 AI Orchestration Layer
+
+| Component | Specification |
+|---|---|
+| Orchestration Framework | LangGraph for stateful multi-agent workflows; LangChain for tool integration and prompt management |
+| Primary LLM | Anthropic Claude (Sonnet class) for reasoning-intensive tasks; Claude Haiku for high-volume, low-latency tasks |
+| Fallback LLM | Gemini, then OpenAI GPT-4o — preserving the proven claude → gemini → openai failover chain already implemented in the gateway; circuit breaker pattern with 30-second detection |
+| Agent Memory | Short-term: conversation context window; Long-term: Pinecone vector store (embedded preference model per user) |
+| Tool Registry | Centralised tool registry defining all agent-callable functions: web search, DB queries, document generation, API calls |
+| Prompt Management | LangSmith for prompt versioning, A/B testing, and performance tracking across agent types |
+| Token Budget Management | Per-agent token budget enforcement; automatic context compression on long-running workflows; provider token cost feeds `meterAcu` so every job's ACU charge stays inside the bracket margin band |
+| Streaming Output | SSE-based streaming for real-time agent output display; token-by-token rendering for document generation steps |
+
+### 8.6 Security Architecture
+
+| Security Domain | Implementation |
+|---|---|
+| Zero Trust Architecture | All inter-service communication requires mutual TLS; no implicit trust based on network location; every request authenticated and authorised |
+| API Authentication | JWT Bearer tokens (15-minute expiry); refresh token rotation (7-day sliding window); API key HMAC for partner integrations |
+| Role-Based Access Control | 5 roles: Super Admin, Platform Admin, Enterprise Admin, Standard User, API Partner; permission matrix enforced at API gateway |
+| Encryption at Rest | AES-256 encryption for all database fields containing PII; GCP KMS key management; key rotation every 365 days |
+| Encryption in Transit | TLS 1.3 minimum across all connections; HSTS enforced; certificate pinning for mobile clients |
+| WAF & DDoS Protection | Cloudflare WAF with OWASP Core Rule Set; DDoS protection at L3/L4/L7; rate limiting at edge |
+| Input Validation | JSON schema validation on all API inputs; SQL injection prevention via parameterised queries only; XSS prevention via output encoding |
+| Secrets Management | GCP Secret Manager for all API keys and credentials; no secrets in code repositories or client bundles; standing rotation law — any credential appearing in a transcript or document is treated as compromised and rotated immediately |
+| Audit Logging | Immutable audit log for all admin actions, ACU transactions, data access events, and agent decisions; 7-year retention |
+| Penetration Testing | Quarterly automated pen testing via Burp Suite; annual third-party security audit; bug bounty programme |
+
 ---
 
 # ENGINEERING ANNEX — TRANSFORMATION PILLARS
