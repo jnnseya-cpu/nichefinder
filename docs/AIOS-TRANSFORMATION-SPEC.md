@@ -649,6 +649,37 @@ The Niche Finder AI-OS is built on a cloud-native, event-driven, microservices a
 
 ---
 
+# SECTION 11 — MONETISATION MODEL
+
+## 11. Commercial Monetisation Architecture
+
+### 11.1 Primary Revenue Streams
+
+| Revenue Stream | Mechanism | Unit Economics | Scale Potential |
+|---|---|---|---|
+| ACU Purchase Revenue | Users buy Paid ACU packages via Stripe or BitriPay | Margin is structural under the bracket law: every charge sits 3–10× AI-provider cost at bracket 1 (≈ 67–90% gross margin), doubling per £10k capital bracket | Scales linearly with user base; no fixed cost increase per user |
+| Subscription Plans | Monthly/annual subscription tiers with included ACU allowance + premium features | Predictable MRR base; reduces churn through commitment | Provides revenue floor regardless of ACU consumption volatility |
+| Enterprise Licensing | Incubator/accelerator annual contracts with ACU pool and admin portal | High ACV ($10K–$100K+); long sales cycle but strong retention | B2B segment with highest LTV per account |
+| White-Label Licensing | Partners embed Niche Finder AI-OS under their own brand | Annual license fee + revenue share on ACU consumption | Exponential distribution reach without user acquisition cost |
+| API Revenue | Third-party developers pay per-call ACU rates for API access | Pure margin revenue; no additional support overhead at scale | Developer ecosystem creates compounding distribution effect |
+| BitriPay Gateway Revenue | Transaction fee share on ACU purchases processed via BitriPay | Fee revenue on every African market transaction | Grows with African market penetration — large untapped segment |
+
+### 11.2 ACU Pricing Architecture
+
+*Conformance (standing rule): the draft's bundle table conflicted with the canonical economy and was conformed to it. The anchor is fixed — **£1 = 100 ACU** — and volume reward is delivered as **bonus ACUs**, not discounted unit prices, exactly as implemented in the wallet today.*
+
+| ACU Package | Price (GBP) | ACUs Included | Bonus | Effective price per ACU |
+|---|---|---|---|---|
+| Starter | £5 | 500 | — | £0.0100 |
+| Builder | £10 | 1,100 | +100 (10%) | £0.0091 |
+| Founder | £20 | 2,400 | +400 (20%) | £0.0083 |
+| Investor | £50 | 6,500 | +1,500 (30%) | £0.0077 |
+| Enterprise Pool | Contract | Custom pool, admin-allocated to members | Volume-based bonus by agreement | Negotiated |
+
+Action prices are then charged from the canonical schedule (search 125, unlock 150, …, full investor package 1,500) multiplied by the capital-bracket factor and Investor Mode ×1.4 where active — so revenue per action, and therefore margin, scales with venture capital class while the package table stays flat.
+
+---
+
 # ENGINEERING ANNEX — TRANSFORMATION PILLARS
 
 *The annex below is the engineering-grade transformation layer: audited current state, invariant laws already enforced in code, and the gap-closing work per pillar. Annex numbering (§3–§13) is internal to the annex and independent of the master-document SECTION numbering above. Annex content is additive — master sections land verbatim on top; nothing here is removed.*
