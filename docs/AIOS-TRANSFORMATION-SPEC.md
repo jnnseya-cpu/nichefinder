@@ -287,6 +287,75 @@ Every user type on the Niche Finder AI-OS receives a dedicated, personalised AI 
 
 ---
 
+# SECTION 06 — FULL PLATFORM MODULE SPECIFICATIONS
+
+## 6. Full Platform Module Specifications
+
+*Conformance notes (standing rules): budget brackets and score bands below were conformed to the structures already set — capital brackets follow the £10k bracket law (bracket 1 ≤ £10k/$10k/€10k with parity rule, each further £10k doubling ACU prices), and confidence bands follow the deterministic core (0–10 scale ×10: green 80–100, amber 50–79, red below 50). Risk and timeline preferences shape discovery filtering and evidence, never the invariant 35/30/35 pillar weights.*
+
+### 6.1 Search Canvas Module
+
+| Component | Specification |
+|---|---|
+| Country Selector | Multi-select with 195 countries; GeoIP auto-suggestion; regional market maturity indicators displayed. Country remains mandatory — every result is market-grounded |
+| Industry Selector | Hierarchical NAICS/SIC-aligned taxonomy; AI-assisted category suggestion based on prior searches |
+| Budget Range Input | Slider + manual input; currency auto-localised by country (GBP/EUR zones flat 10k, dollarized $10k, others local $10k-equivalent); capital brackets per the bracket law: ≤ £10k (bracket 1), then £10k steps doubling ACU prices (×2, ×4, …) |
+| Risk Tolerance Selector | Conservative / Balanced / Aggressive; shapes discovery filtering and the evidence weighed within Competitive Gap and execution-cost signals — pillar weights stay invariant |
+| Timeline Input | 3–6 months, 6–12 months, 12–24 months, 24+ months; informs Time-to-Market evidence inside PSS |
+| Advanced Filters | Exclude sectors, require specific regulatory simplicity score, require minimum TAM threshold, B2B/B2C/Both preference |
+| ACU Cost Preview | Real-time ACU cost display before search submission (live bracket + margin band shown, exactly as the Search Canvas renders today); prevents surprise spending |
+| Search History | Last 10 searches saved; one-click re-run with updated parameters |
+
+### 6.2 Opportunity Results Module
+
+| Component | Specification |
+|---|---|
+| Results List View | Ranked cards showing: venture title, one-line summary, Overall Confidence Score badge, 3 key sub-score highlights, estimated capital range, Unlock CTA with ACU cost (150 ACU × bracket factor) |
+| Confidence Score Badge | Colour-coded per the deterministic bands (Green 80–100, Amber 50–79, Red < 50 — i.e. 8–10 / 5–7 / 0–4 on the 0–10 core); hover tooltip explaining score composition |
+| Comparison Mode | Select up to 3 ventures side-by-side; compare all 8 sub-scores in parallel column view |
+| Shortlist Action | Save to Portfolio without spending ACUs; unlimited shortlisting on any plan |
+| Sort & Filter | Sort by: Overall Score, Capital Required, Time-to-Market, Market Readiness; filter by sub-score thresholds |
+| Project Status Tracker | Visual pipeline showing: Shortlisted → Unlocked → Validated → Financial Ready → Pitch Ready → Investor Ready |
+
+### 6.3 Project Portfolio Module
+
+| Component | Specification |
+|---|---|
+| Portfolio Dashboard | Grid/list toggle view of all projects by status; ACU spend per project; last activity timestamp |
+| Project Detail View | Full history of all generated assets; status progression timeline; ACU consumption log |
+| Asset Library | Organised storage of all generated documents (reports, financial models, business plans, pitch decks); version history |
+| Export Centre | Bulk download all assets as ZIP; individual asset download; share link generation with expiry control |
+| Archive Function | Archive inactive projects; restore from archive; permanent delete with confirmation and GDPR audit log |
+
+### 6.4 ACU Wallet & Billing Module
+
+*Conformance note (standing rule): the source draft's bundle sizes (100/500/1000/5000) were conformed to the canonical package table already set — packages are priced in GBP with fixed ACU grants and bonuses; the £1 = 100 ACU anchor and dual Welcome/Paid balance model are unchanged.*
+
+| Component | Specification |
+|---|---|
+| ACU Balance Display | Real-time balance showing Welcome ACUs (100 free, read-only) and Paid ACUs separately; low-balance alerts at configurable thresholds |
+| Top-Up Portal | ACU package purchase via BitriPay (Stripe as secondary rail); canonical packages: **£5 → 500 · £10 → 1,100 · £20 → 2,400 · £50 → 6,500 ACU**; custom enterprise pools above that by agreement |
+| Transaction History | Full log of all ACU credits (purchases, welcome grants, refunds) and debits (agent actions) with timestamps, action labels, and bracket factor applied |
+| Auto Top-Up | Optional: auto-purchase selected package when balance falls below threshold; requires saved payment method |
+| Enterprise Pool Management | Admin view for Incubator/Enterprise users: pool balance, member allocations, individual spending caps, reallocation controls |
+| Invoice Generation | Auto-generated PDF invoices for every ACU purchase; VAT-compliant for UK/EU; downloadable from billing history |
+
+### 6.5 Notification & Communication Module
+
+| Notification Type | Trigger | Channel | Content |
+|---|---|---|---|
+| Welcome Sequence | Registration complete | Email (3-part series) | Platform orientation, first search guide, ACU explanation |
+| ACU Low Balance | Balance falls below 50 ACUs | Email + In-app | Balance alert, recommended top-up package, quick buy CTA |
+| ACU Depleted | Balance reaches 0 | Email + In-app + Push | Urgent top-up prompt, package recommendations, limited-time bonus offer |
+| Asset Ready | Document generation complete | Email + In-app | Download link, asset summary, next action recommendation |
+| Market Alert | Significant change in shortlisted niche market | Email + In-app | Market update summary, recommendation to re-validate |
+| Inactivity Re-engagement | 7 days no login | Email | Portfolio summary, new opportunity hint, limited ACU bonus offer |
+| Project Status Update | Project advances to new status | In-app | Congratulation message, next recommended action with ACU cost |
+
+*ACU note: bonus offers are issued as audited promotional credits; marketing channels respect the 30-day consent categories already enforced by the consent layer.*
+
+---
+
 # ENGINEERING ANNEX — TRANSFORMATION PILLARS
 
 *The annex below is the engineering-grade transformation layer: audited current state, invariant laws already enforced in code, and the gap-closing work per pillar. Annex numbering (§3–§13) is internal to the annex and independent of the master-document SECTION numbering above. Annex content is additive — master sections land verbatim on top; nothing here is removed.*
