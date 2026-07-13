@@ -141,7 +141,7 @@
         <div class="k">Wallet Balance</div>
         <div class="v" id="wallet">— <small>ACU</small></div>
         <div class="d">Available Credits</div>
-        <button class="top-up" id="topUp">+ Top up 500 ACU</button>
+        <button class="top-up" id="topUp">+ Buy ACU · from £5</button>
       </div>
       <div class="tile" style="--tc:var(--teal)">
         <div class="k">Venture Assets</div>
@@ -252,9 +252,9 @@
           <a class="brand" href="index.html" style="margin-bottom:14px"><span class="brand-mark" aria-hidden="true"><i></i></span><span>Niche<em>Finder</em></span></a>
           <p style="font-size:.82rem;margin-top:12px;max-width:34ch">The AI Operating System for Venture Creation. Discover, validate, and build your next investor-ready business.</p>
         </div>
-        <div><h4>Platform</h4><a href="index.html#how">How It Works</a><a href="index.html">About Us</a><a href="#">Blog</a><a href="#">Contact</a></div>
-        <div><h4>Legal</h4><a href="#">Terms of Use</a><a href="#">Privacy Policy</a><a href="#">Disclaimer</a><a href="#">Cookies</a></div>
-        <div><h4>Connect</h4><a href="#">LinkedIn</a><a href="#">Twitter / X</a></div>
+        <div><h4>Platform</h4><a href="how-it-works.html">How It Works</a><a href="about.html">About Us</a><a href="blog.html">Blog</a><a href="contact.html">Contact</a></div>
+        <div><h4>Legal</h4><a href="terms.html">Terms of Use</a><a href="privacy.html">Privacy Policy</a><a href="disclaimer.html">Disclaimer</a><a href="cookies.html">Cookies</a></div>
+        <div><h4>Connect</h4><a href="https://www.linkedin.com/company/nichefinder" rel="noopener">LinkedIn</a><a href="https://x.com/nichefinderhq" rel="noopener">Twitter / X</a></div>
       </div>
       <div class="foot-bottom">
         <span>© 2026 Niche Finder Ltd. All rights reserved.</span>
@@ -266,9 +266,11 @@
 
 <div class="toast" id="toast" role="status"></div>
 
+<script src="nf-wallet.js"></script>
 <script>
 (function(){
   function get(key, fallback){ try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch (e) { return fallback; } }
+  // shared wallet from nf-wallet.js — dual balance: paid (spendable) + free welcome (read-only)
   function ago(ts){
     var s = (Date.now() - ts) / 1000;
     if (s < 90) return 'just now';
@@ -282,8 +284,7 @@
     clearTimeout(toastTimer); toastTimer = setTimeout(function(){ toast.classList.remove('on'); }, 2600);
   }
 
-  var stored = localStorage.getItem('nf_acu_balance');
-  var balance = stored === null ? 500 : (Number(stored) || 0);
+  var w = NF.wallet();
   var ledger = get('nf_ledger', []);
   var saved = get('nf_saved', []);
   var history = get('nf_history', []);
@@ -295,7 +296,11 @@
     if (localStorage.key(i).indexOf('nf_state_') === 0) unlocked++;
   }
 
-  document.getElementById('wallet').innerHTML = balance.toLocaleString('en-US') + ' <small>ACU</small>';
+  var walletEl = document.getElementById('wallet');
+  walletEl.innerHTML = NF.total().toLocaleString('en-US') + ' <small>ACU</small>';
+  walletEl.title = w.paid.toLocaleString('en-US') + ' paid · ' + w.free.toLocaleString('en-US') + ' free (read-only)';
+  var walletDetail = document.querySelector('#wallet + .d');
+  if (walletDetail) walletDetail.textContent = w.paid.toLocaleString('en-US') + ' paid · ' + w.free.toLocaleString('en-US') + ' free (read-only)';
   document.getElementById('statAssets').textContent = reports.length;
   document.getElementById('statSaved').textContent = saved.length + unlocked;
   document.getElementById('statUnlocked').textContent = unlocked + ' unlocked';
@@ -378,11 +383,10 @@
     localStorage.setItem('nf_ledger', JSON.stringify(ledger.slice(0, 200)));
   }
   document.getElementById('topUp').addEventListener('click', function(){
-    balance += 500;
-    localStorage.setItem('nf_acu_balance', String(balance));
-    logLedger('Test account credit for Operator', 500);
-    showToast('+500 ACU credited · balance ' + balance.toLocaleString('en-US') + ' ACU');
-    setTimeout(function(){ location.reload(); }, 900);
+    NF.openTopup(0, null, function(){
+      showToast('Wallet credited · balance ' + NF.total().toLocaleString('en-US') + ' ACU');
+      setTimeout(function(){ location.reload(); }, 900);
+    });
   });
   document.getElementById('refresh').addEventListener('click', function(){ location.reload(); });
   document.getElementById('recal').addEventListener('click', function(){

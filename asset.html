@@ -208,6 +208,7 @@
   <div class="wrap" id="root"></div>
 </main>
 
+<script src="nf-wallet.js"></script>
 <script>
 (function(){
   'use strict';
@@ -427,12 +428,12 @@
 
   /* ================= document scaffolding ================= */
   var TYPES = {
-    validation: { n: 'Market Validation Report', tag: 'VALIDATION · 40 ACU', sub: 'Demand evidence, market sizing, and competitive scan', ac: C.teal },
-    forecast:   { n: '3-Year Financial Forecast', tag: 'FINANCIAL MODEL · 50 ACU', sub: 'Revenue build-up, P&L, cashflow, and sensitivity analysis', ac: C.brand },
-    bizplan:    { n: 'Business Plan', tag: 'BUSINESS PLAN · 80 ACU', sub: 'Investor-grade operating and growth plan', ac: C.violet },
-    pitch:      { n: 'Investor Pitch Deck', tag: 'PITCH DECK · 100 ACU', sub: '12 slides, export-ready', ac: C.blue },
-    riskmap:    { n: 'Risk Heatmap', tag: 'RISK ENGINE · 25 ACU', sub: 'Regulatory, operational, and market exposures mapped by probability and impact', ac: C.coral },
-    export:     { n: 'Export Pack', tag: 'EXPORT · 15 ACU', sub: 'Download every generated asset', ac: C.coral }
+    validation: { n: 'Market Validation Report', tag: 'VALIDATION · ' + NF.COSTS.validation + ' ACU', sub: 'Demand evidence, market sizing, and competitive scan', ac: C.teal },
+    forecast:   { n: '3-Year Financial Forecast', tag: 'FINANCIAL MODEL · ' + NF.COSTS.forecast + ' ACU', sub: 'Revenue build-up, P&L, cashflow, and sensitivity analysis', ac: C.brand },
+    bizplan:    { n: 'Business Plan', tag: 'BUSINESS PLAN · ' + NF.COSTS.bizplan + ' ACU', sub: 'Investor-grade operating and growth plan', ac: C.violet },
+    pitch:      { n: 'Investor Pitch Deck', tag: 'PITCH DECK · ' + NF.COSTS.pitch + ' ACU', sub: '12 slides, export-ready', ac: C.blue },
+    riskmap:    { n: 'Risk Heatmap', tag: 'RISK ENGINE · ' + NF.COSTS.riskmap + ' ACU', sub: 'Regulatory, operational, and market exposures mapped by probability and impact', ac: C.coral },
+    export:     { n: 'Export Pack', tag: 'EXPORT · ' + NF.COSTS.excel_model + ' ACU', sub: 'Download every generated asset', ac: C.coral }
   };
   var type = new URLSearchParams(location.search).get('type');
   if (!TYPES[type]) type = 'validation';

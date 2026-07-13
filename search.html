@@ -509,9 +509,9 @@
         <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"><i></i></span><span>Niche<em>Finder</em></span></a>
         <p style="font-size:.82rem;margin-top:12px;max-width:34ch">The AI Operating System for Venture Creation. Discover, validate, and build your next investor-ready business.</p>
       </div>
-      <div><h4 style="font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">Platform</h4><a href="index.html#how" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">How It Works</a><a href="index.html" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">About Us</a><a href="#" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Blog</a><a href="#" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Contact</a></div>
-      <div><h4 style="font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">Legal</h4><a href="#" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Terms of Use</a><a href="#" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Privacy Policy</a><a href="#" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Disclaimer</a><a href="#" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Cookies</a></div>
-      <div><h4 style="font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">Connect</h4><a href="#" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">LinkedIn</a><a href="#" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Twitter / X</a></div>
+      <div><h4 style="font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">Platform</h4><a href="how-it-works.html" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">How It Works</a><a href="about.html" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">About Us</a><a href="blog.html" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Blog</a><a href="contact.html" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Contact</a></div>
+      <div><h4 style="font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">Legal</h4><a href="terms.html" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Terms of Use</a><a href="privacy.html" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Privacy Policy</a><a href="disclaimer.html" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Disclaimer</a><a href="cookies.html" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Cookies</a></div>
+      <div><h4 style="font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">Connect</h4><a href="https://www.linkedin.com/company/nichefinder" rel="noopener" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">LinkedIn</a><a href="https://x.com/nichefinderhq" rel="noopener" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Twitter / X</a></div>
     </div>
     <div style="margin-top:36px;padding-top:18px;border-top:1px solid var(--line-soft);font-size:.72rem;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap">
       <span>© 2026 Niche Finder Ltd. All rights reserved.</span>
@@ -520,6 +520,7 @@
   </div>
 </footer>
 
+<script src="nf-wallet.js"></script>
 <script>
 (function(){
   /* ---------- data ---------- */
@@ -532,7 +533,7 @@
     "Quaternary":["AI-Powered Services","Data & Analytics","Fintech","Information Technology","Research & Development","Software & SaaS","Venture Capital & Funds"],
     "Quinary":["Executive Management","Government & Public Policy","High-Level Consulting","NGOs & Development Programs"]
   };
-  var BASE_ACU = 25;
+  var BASE_ACU = NF.COSTS.niche_search; // 125 ACU per search · £5 = 500 ACU = 4 searches
 
   /* ---------- country select ---------- */
   var sel = document.getElementById('country');
@@ -680,9 +681,12 @@
             tagline: { type: 'string', description: 'UPPERCASE meta line: SECTOR · LOCATION · MODE' },
             summary: { type: 'string', description: '2-3 sentence commercial rationale' },
             confidence: { type: 'integer', description: 'Overall Confidence Score 0-100, calibrated: only exceptional opportunities exceed 85' },
-            marketReadiness: { type: 'integer', description: 'Sub-score 0-100' },
-            competitiveGap: { type: 'integer', description: 'Sub-score 0-100' },
-            prospectOfSuccess: { type: 'integer', description: 'Sub-score 0-100' },
+            marketReadiness: { type: 'integer', description: 'Project Readiness Score 0-100: regulatory simplicity, infrastructure, skill availability, capital intensity, time to first revenue' },
+            competitiveGap: { type: 'integer', description: 'Competitiveness Score 0-100: direct competitors, substitutes, fragmentation, price sensitivity, differentiation potential' },
+            prospectOfSuccess: { type: 'integer', description: 'Prospect of Success Score 0-100: market pain intensity, revenue frequency, ability to pay, scalability, cashflow stability' },
+            breakthroughPotential: { type: 'integer', description: 'Breakthrough Potential Score 0-100: novelty, unmet demand, technology enablement, timing advantage, defensibility. Never claim "never created before" — score how underbuilt/rarely executed the concept is' },
+            marketSizePotential: { type: 'integer', description: 'Market size potential 0-100 relative to comparable regional opportunities' },
+            profitabilityPotential: { type: 'integer', description: 'Profitability potential 0-100: gross margin quality, LTV:CAC outlook, operating leverage' },
             addressableMarketUsd: { type: 'integer', description: 'Realistic regional TAM in USD, derived from population, spend, and category data' },
             breakEvenMonths: { type: 'integer', description: 'Months to break even, consistent with the financials' },
             grossMarginPct: { type: 'integer', description: 'Realistic steady-state gross margin percent for this business type' },
@@ -721,6 +725,7 @@
             }
           },
           required: ['title', 'tagline', 'summary', 'confidence', 'marketReadiness', 'competitiveGap', 'prospectOfSuccess',
+                     'breakthroughPotential', 'marketSizePotential', 'profitabilityPotential',
                      'addressableMarketUsd', 'breakEvenMonths', 'grossMarginPct', 'startupCapitalUsd',
                      'revenueY1', 'revenueY2', 'revenueY3', 'costsY1', 'costsY2', 'costsY3', 'risks', 'roadmap'],
           additionalProperties: false
@@ -765,6 +770,10 @@
             'Competitive Gap': n.competitiveGap,
             'Prospect of Success': n.prospectOfSuccess
           },
+          scores: {
+            prs: n.marketReadiness, cs: n.competitiveGap, pss: n.prospectOfSuccess,
+            bps: n.breakthroughPotential, msp: n.marketSizePotential, ppp: n.profitabilityPotential
+          },
           market: {
             'Addressable Market': fmtM(n.addressableMarketUsd),
             'Break-even': n.breakEvenMonths + ' mo',
@@ -786,47 +795,32 @@
 
   var MOCKS = [
     { t:'Solar-Powered Cold-Chain Micro-Depots', m:'AGRIBUSINESS · KINSHASA · HYBRID', s:87,
-      p:'Off-grid refrigerated storage hubs serving smallholder produce cooperatives, monetized per-crate with mobile-money settlement. Post-harvest losses above 35% signal strong latent demand.' },
+      p:'Off-grid refrigerated storage hubs serving smallholder produce cooperatives, monetized per-crate with mobile-money settlement. Post-harvest losses above 35% signal strong latent demand.',
+      scores: { prs: 84, cs: 88, pss: 87, bps: 91, msp: 82, ppp: 86 } },
     { t:'Prepaid Water-Point Management SaaS', m:'SOCIAL INFRASTRUCTURE · URBAN · DIGITAL', s:82,
-      p:'Metering and revenue-collection software for community water kiosks, replacing cash reconciliation with USSD prepay. Recurring per-kiosk licensing with NGO partnership channels.' },
+      p:'Metering and revenue-collection software for community water kiosks, replacing cash reconciliation with USSD prepay. Recurring per-kiosk licensing with NGO partnership channels.',
+      scores: { prs: 79, cs: 83, pss: 84, bps: 77, msp: 71, ppp: 88 } },
     { t:'Last-Mile Pharma Logistics Network', m:'HEALTH · LOGISTICS · BORING BUSINESS', s:78,
-      p:'Scheduled motorcycle cold-bag delivery connecting wholesale pharmacies to rural clinics. Route-density economics validated against comparable East African operators.' }
+      p:'Scheduled motorcycle cold-bag delivery connecting wholesale pharmacies to rural clinics. Route-density economics validated against comparable East African operators.',
+      scores: { prs: 81, cs: 74, pss: 79, bps: 58, msp: 66, ppp: 72 } }
   ];
   var gen = document.getElementById('generate'), thinking = document.getElementById('thinking'), nichesEl = document.getElementById('niches');
   var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function slug(s){ return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48); }
 
-  /* ---------- shared ACU wallet ---------- */
-  var UNLOCK_COST = 60;
-  function getBalance(){
-    var stored = localStorage.getItem('nf_acu_balance');
-    var b = stored === null ? 500 : Number(stored); // 500 = welcome bonus
-    return Number.isFinite(b) ? b : 500;
-  }
-  function setBalance(b){
-    localStorage.setItem('nf_acu_balance', String(b));
-    renderBalance();
-  }
+  /* ---------- shared ACU wallet (nf-wallet.js) ---------- */
+  var UNLOCK_COST = NF.COSTS.unlock; // 150 ACU
   function renderBalance(){
-    document.getElementById('acuBalance').textContent = getBalance().toLocaleString('en-US') + ' ACU';
-  }
-  function logLedger(label, amt){
-    try {
-      var l = JSON.parse(localStorage.getItem('nf_ledger') || '[]');
-      l.unshift({ t: label, amt: amt, ts: Date.now() });
-      localStorage.setItem('nf_ledger', JSON.stringify(l.slice(0, 200)));
-    } catch (e) {}
+    var w = NF.wallet();
+    var el = document.getElementById('acuBalance');
+    el.textContent = (w.paid + w.free).toLocaleString('en-US') + ' ACU';
+    el.title = 'Paid: ' + w.paid.toLocaleString('en-US') + ' ACU · Welcome (read-only): ' + w.free.toLocaleString('en-US') + ' ACU';
   }
   function charge(cost, label){
-    var b = getBalance();
-    if (b < cost){
-      alert('Insufficient ACU balance for ' + label + ' (' + cost + ' ACU needed, ' + b + ' available). Top up to continue.');
-      return false;
-    }
-    setBalance(b - cost);
-    logLedger('OPERATIONAL_TASK · ' + label, -cost);
-    return true;
+    var ok = NF.charge(cost, label, renderBalance);
+    renderBalance();
+    return ok;
   }
   renderBalance();
 
@@ -848,20 +842,60 @@
     location.href = 'project.html';
   }
 
+  /* ---------- deterministic scoring: PRS 35% · CS 30% · PSS 35% + optional BPS ---------- */
+  function score10(v){ return Math.round(v) / 10; } // internal 0-100 → display 0-10
+  function overall10(sc){ return Math.round(sc.prs * .35 + sc.cs * .30 + sc.pss * .35) / 10; }
+  function breakthroughRank(sc){
+    // ProspectOfSuccess*0.25 + BreakthroughPotential*0.30 + MarketSize*0.10 + Profitability*0.30 + Readiness*0.05
+    return sc.pss * .25 + sc.bps * .30 + sc.msp * .10 + sc.ppp * .30 + sc.prs * .05;
+  }
+  function scoreChips(sc){
+    var defs = [['PRS', sc.prs], ['CS', sc.cs], ['PSS', sc.pss], ['BPS', sc.bps]];
+    return defs.map(function(d){
+      var v = score10(d[1]);
+      return '<span style="font-family:var(--mono);font-size:.66rem;letter-spacing:.08em;padding:3px 8px;border-radius:20px;border:1px solid ' + NF.band(v) + '55;color:' + NF.band(v) + '">' + d[0] + ' ' + v.toFixed(1) + '</span>';
+    }).join('');
+  }
+
   function renderNiches(list, live){
     thinking.classList.remove('on');
     gen.disabled = false; gen.textContent = 'Generate Niche Ideas';
+    var priority = (document.querySelector('#routeGrid [aria-pressed="true"] .t') || {}).textContent || 'Balanced Results';
+    var fallbackNote = '';
+    if (priority === 'Breakthrough Concepts'){
+      // Breakthrough gate: credible only if BPS ≥ 7.5 AND PSS ≥ 7.5 — otherwise fall back to standard ranking
+      var credible = list.filter(function(m){ return m.scores && m.scores.bps >= 75 && m.scores.pss >= 75; });
+      if (credible.length){
+        list = list.slice().sort(function(a, b){ return breakthroughRank(b.scores) - breakthroughRank(a.scores); });
+      } else {
+        fallbackNote = 'No credible breakthrough opportunity was found for this search. We are showing the strongest realistic opportunities based on your country and selected filters.';
+        list = list.slice().sort(function(a, b){ return b.s - a.s; });
+      }
+    }
     document.getElementById('resCount').textContent =
-      'SHOWING ' + list.length + ' OF ' + list.length + ' SAVED NICHES' + (live ? ' · LIVE AI' : ' · DEMO DATA');
+      'SHOWING ' + list.length + ' OF ' + list.length + ' SAVED NICHES' + (live ? ' · LIVE AI' : ' · DEMO DATA') +
+      (priority === 'Breakthrough Concepts' && !fallbackNote ? ' · BREAKTHROUGH RANKED' : '');
+    if (fallbackNote){
+      var fb = document.createElement('div');
+      fb.style.cssText = 'border:1px solid rgba(217,164,65,.4);background:rgba(217,164,65,.07);border-radius:12px;padding:12px 16px;font-size:.85rem;color:var(--gold-bright);margin-bottom:14px';
+      fb.textContent = fallbackNote;
+      nichesEl.appendChild(fb);
+    }
     list.forEach(function(m, i){
+      var sc = m.scores || { prs: m.s, cs: m.s, pss: m.s, bps: Math.max(0, m.s - 15), msp: m.s, ppp: m.s };
+      var ov = overall10(sc);
+      var verdict = NF.decision(ov);
       var el = document.createElement('article'); el.className = 'niche';
       el.innerHTML =
-        '<div><h3></h3><div class="meta"></div></div>' +
+        '<div><h3></h3><div class="meta"></div>' +
+          '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">' + scoreChips(sc) +
+            '<span style="font-family:var(--mono);font-size:.66rem;letter-spacing:.1em;padding:3px 8px;border-radius:20px;background:' + NF.band(ov) + '22;border:1px solid ' + NF.band(ov) + ';color:' + NF.band(ov) + '">' + verdict + ' · ' + ov.toFixed(1) + '/10</span>' +
+          '</div></div>' +
         '<div class="score"><div class="n"></div><div class="l">Confidence</div></div>' +
         '<p></p>' +
         '<div class="actions">' +
-          '<button class="a primary">Unlock Deep-Dive</button>' +
-          '<span class="cost">60 ACU</span>' +
+          '<button class="a primary">Unlock Full Opportunity</button>' +
+          '<span class="cost">' + UNLOCK_COST + ' ACU</span>' +
           '<button class="a">Save to Portfolio</button>' +
         '</div>';
       el.querySelector('h3').textContent = m.t;

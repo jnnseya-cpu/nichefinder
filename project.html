@@ -390,9 +390,9 @@
         <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"><i></i></span><span>Niche<em>Finder</em></span></a>
         <p style="font-size:.82rem;margin-top:12px;max-width:34ch">The AI Operating System for Venture Creation. Discover, validate, and build your next investor-ready business.</p>
       </div>
-      <div><h4 style="font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">Platform</h4><a href="index.html#how" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">How It Works</a><a href="index.html" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">About Us</a><a href="#" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Blog</a><a href="#" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Contact</a></div>
-      <div><h4 style="font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">Legal</h4><a href="#" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Terms of Use</a><a href="#" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Privacy Policy</a><a href="#" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Disclaimer</a><a href="#" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Cookies</a></div>
-      <div><h4 style="font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">Connect</h4><a href="#" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">LinkedIn</a><a href="#" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Twitter / X</a></div>
+      <div><h4 style="font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">Platform</h4><a href="how-it-works.html" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">How It Works</a><a href="about.html" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">About Us</a><a href="blog.html" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Blog</a><a href="contact.html" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Contact</a></div>
+      <div><h4 style="font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">Legal</h4><a href="terms.html" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Terms of Use</a><a href="privacy.html" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Privacy Policy</a><a href="disclaimer.html" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Disclaimer</a><a href="cookies.html" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Cookies</a></div>
+      <div><h4 style="font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">Connect</h4><a href="https://www.linkedin.com/company/nichefinder" rel="noopener" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">LinkedIn</a><a href="https://x.com/nichefinderhq" rel="noopener" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Twitter / X</a></div>
     </div>
     <div style="margin-top:36px;padding-top:18px;border-top:1px solid var(--line-soft);font-size:.72rem;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap">
       <span>© 2026 Niche Finder Ltd. All rights reserved.</span>
@@ -403,6 +403,7 @@
 
 <div class="toast" id="toast" role="status"></div>
 
+<script src="nf-wallet.js"></script>
 <script>
 (function(){
   var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -466,12 +467,10 @@
   if (!state.status) state.status = 'unlocked';
   if (state.doneActions == null) state.doneActions = [];
 
-  var stored = localStorage.getItem('nf_acu_balance');
-  var balance = stored === null ? 500 : Number(stored); // 500 = welcome bonus
-  if (!Number.isFinite(balance)) balance = 500;
+  /* Dual-balance wallet via nf-wallet.js — paid ACUs fund generation; the 100
+     welcome ACUs are read-only. Insufficient funds opens the GBP top-up modal. */
   function saveAll(){
     localStorage.setItem(stateKey, JSON.stringify(state));
-    localStorage.setItem('nf_acu_balance', String(balance));
     render();
   }
 
@@ -591,12 +590,12 @@
 
   /* ---------- actions ---------- */
   var ACTIONS = [
-    { id: 'validation', t: 'Market Validation Report', d: 'Deep dive into local demand, competition, and timing', cost: 40, advances: 'validated', hc: '#3FA79B' },
-    { id: 'forecast', t: '3-Year Forecast', d: 'Detailed P&L, cashflow, and break-even analysis', cost: 50, advances: 'financial_ready', hc: '#D9A441' },
-    { id: 'riskmap', t: 'Risk Heatmap', d: 'Identify regulatory, operational, and market exposures', cost: 25, advances: null, hc: '#C4604F' },
-    { id: 'bizplan', t: 'Business Plan', d: 'Professional, investor-ready execution strategy', cost: 80, advances: 'pitch_ready', hc: '#6B5CA5' },
-    { id: 'pitch', t: 'Investor Pitch Deck', d: '12-slide deck, export-ready', cost: 100, advances: 'investor_ready', hc: '#6B9BD1' },
-    { id: 'export', t: 'Export Excel + PDF Pack', d: 'Download all generated assets', cost: 15, advances: null, hc: '#8B93A5' }
+    { id: 'validation', t: 'Market Validation Report', d: 'Deep dive into local demand, competition, and timing', cost: NF.COSTS.validation, advances: 'validated', hc: '#3FA79B' },
+    { id: 'forecast', t: '3-Year Cashflow Forecast', d: 'Detailed P&L, cashflow, and break-even analysis', cost: NF.COSTS.forecast, advances: 'financial_ready', hc: '#D9A441' },
+    { id: 'riskmap', t: 'Risk Heatmap', d: 'Identify regulatory, operational, and market exposures', cost: NF.COSTS.riskmap, advances: null, hc: '#C4604F' },
+    { id: 'bizplan', t: 'Business Plan', d: 'Professional, investor-ready execution strategy', cost: NF.COSTS.bizplan, advances: 'pitch_ready', hc: '#6B5CA5' },
+    { id: 'pitch', t: 'Investor Pitch Deck', d: '12-slide deck, export-ready', cost: NF.COSTS.pitch, advances: 'investor_ready', hc: '#6B9BD1' },
+    { id: 'export', t: 'Export Excel + PDF Pack', d: 'Download all generated assets as an Excel model + PDF pack', cost: NF.COSTS.excel_model, advances: null, hc: '#8B93A5' }
   ];
 
   /* ---------- autosave: ledger + reports + memory ---------- */
@@ -631,7 +630,10 @@
   }
 
   function render(){
-    document.getElementById('acuBalance').textContent = balance.toLocaleString('en-US') + ' ACU';
+    var w = NF.wallet();
+    var balEl = document.getElementById('acuBalance');
+    balEl.textContent = NF.total().toLocaleString('en-US') + ' ACU';
+    balEl.title = w.paid.toLocaleString('en-US') + ' paid · ' + w.free.toLocaleString('en-US') + ' free (read-only)';
     document.getElementById('statusPill').textContent = state.status.replace('_', ' ');
     var reached = STAGES.indexOf(state.status);
     document.querySelectorAll('.stage').forEach(function(el, i){
@@ -646,7 +648,6 @@
       btn.innerHTML = '<span class="t"></span><span class="cost"></span>';
       btn.querySelector('.t').innerHTML = esc(a.t) + '<span class="d">' + esc(a.d) + '</span>';
       btn.querySelector('.cost').textContent = done ? 'VIEW ↗' : a.cost + ' ACU';
-      if (!done && balance < a.cost) btn.disabled = true;
       if (done) btn.addEventListener('click', function(){ location.href = 'asset.html?type=' + a.id; });
       else btn.addEventListener('click', function(){ runAction(a, btn); });
       actionsEl.appendChild(btn);
@@ -654,15 +655,16 @@
   }
 
   function runAction(a, btn){
+    // paid ACUs only — welcome ACUs cannot fund generation; NF opens top-up if short
+    if (NF.wallet().paid < a.cost) { NF.openTopup(a.cost, a.t, render); return; }
     btn.classList.add('working');
     var costEl = btn.querySelector('.cost');
     if (costEl) costEl.textContent = 'GENERATING…';
     else btn.textContent = 'GENERATING…';
     setTimeout(function(){
-      balance -= a.cost;
+      if (!NF.charge(a.cost, a.t, null)) { render(); return; }
       state.doneActions.push(a.id);
       if (a.advances && STAGES.indexOf(a.advances) > STAGES.indexOf(state.status)) state.status = a.advances;
-      logLedger('OPERATIONAL_TASK · ' + a.t, -a.cost);
       logReport(a.id, a.t);
       logMemory(a.t + ' generated (' + a.cost + ' ACU). Status → ' + state.status + '.');
       saveAll();
@@ -678,7 +680,7 @@
   function setTxt(id, v){ var el = document.getElementById(id); if (el && v != null) el.textContent = v; }
   document.getElementById('briefScore').innerHTML = esc(B.score || (project.score / 10).toFixed(1)) + '<small> /10</small>';
   document.getElementById('bpsPill').textContent =
-    (project.bps >= 7 ? 'BREAKTHROUGH' : project.bps >= 5 ? 'STRONG OPTION' : 'STANDARD') + ' (BPS: ' + (project.bps || Math.round(project.score / 10)) + '/10)';
+    (project.bps >= 7.5 ? 'BREAKTHROUGH' : project.bps >= 5 ? 'STRONG OPTION' : 'STANDARD') + ' (BPS: ' + (project.bps || Math.round(project.score / 10)) + '/10)';
   setTxt('briefRationale', B.rationale);
   setTxt('briefSituation', B.situation);
   setTxt('briefInsight', B.insight);
@@ -726,11 +728,10 @@
         var fmtTag = document.createElement('span');
         fmtTag.className = 'hub-btn'; fmtTag.style.pointerEvents = 'none'; fmtTag.textContent = 'HTML';
         var regen = document.createElement('button');
-        regen.className = 'hub-btn'; regen.textContent = 'Regenerate · Version 2.0 · ' + Math.ceil(a.cost / 2) + ' ACU';
+        var regenCost = Math.ceil(a.cost / 2);
+        regen.className = 'hub-btn'; regen.textContent = 'Regenerate · Version 2.0 · ' + regenCost + ' ACU';
         regen.addEventListener('click', function(){
-          if (balance < Math.ceil(a.cost / 2)) return alert('Insufficient ACU balance.');
-          balance -= Math.ceil(a.cost / 2);
-          logLedger('REGENERATE · ' + a.t + ' V2', -Math.ceil(a.cost / 2));
+          if (!NF.charge(regenCost, 'Regenerate ' + a.t + ' V2', null)) { render(); return; }
           logMemory(a.t + ' regenerated as Version 2.0.');
           saveAll(); renderHub();
           showToast('<b>' + a.t + '</b> · Version 2.0 generated');
@@ -740,7 +741,6 @@
         var exec = document.createElement('button');
         exec.className = 'hub-btn primary';
         exec.textContent = 'Execute ' + a.t + ' Engine';
-        if (balance < a.cost) exec.disabled = true;
         exec.addEventListener('click', function(){
           runAction(a, exec);
           setTimeout(renderHub, 1800);

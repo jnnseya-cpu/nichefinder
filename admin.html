@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Niche Finder — Super Admin OS</title>
+<meta name="description" content="Super Admin OS Command Center — unified platform, SEO, and governance control.">
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="page.css">
+<style>
+  .admin-head{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:18px;margin-bottom:26px}
+  .sync{display:flex;flex-direction:column;align-items:flex-end;gap:6px;font-family:var(--mono);font-size:.62rem;letter-spacing:.16em;text-transform:uppercase}
+  .sync .dot{color:var(--teal)}
+  .sync .dot::before{content:"●";margin-right:7px;animation:pulse 2.4s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .health{font-family:var(--mono);font-size:.6rem;letter-spacing:.18em;color:var(--teal);border:1px solid rgba(63,167,155,.4);border-radius:99px;padding:6px 14px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--line-soft);margin:26px 0 30px}
+  .tab{background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:var(--sans);font-size:.88rem;font-weight:600;padding:12px 18px;cursor:pointer}
+  .tab.on{color:var(--gold-bright);border-bottom-color:var(--gold)}
+  .subtabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px}
+  .subtab{border:1px solid var(--line);border-radius:99px;background:none;color:var(--muted);font-size:.78rem;font-weight:600;padding:8px 18px;cursor:pointer}
+  .subtab.on{border-color:var(--gold);color:var(--gold-bright);background:rgba(217,164,65,.07)}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+  .kpi{border:1px solid var(--line-soft);border-radius:12px;padding:20px;background:linear-gradient(170deg,var(--panel-2),var(--panel) 65%);border-top:3px solid var(--kc,var(--gold))}
+  .kpi .k{font-family:var(--mono);font-size:.56rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+  .kpi .v{font-family:var(--serif);font-size:1.9rem;margin:8px 0 2px;color:var(--text)}
+  .kpi .d{font-size:.74rem;color:var(--muted)}
+  .panel{border:1px solid var(--line-soft);border-radius:14px;padding:24px;background:linear-gradient(170deg,var(--panel-2),var(--panel) 65%);margin-top:20px}
+  .panel h3{font-family:var(--serif);font-weight:400;font-size:1.2rem;margin-bottom:4px}
+  .panel .sub{font-size:.82rem;color:var(--muted);margin-bottom:14px}
+  .pane{display:none}.pane.on{display:block}
+  .spane{display:none}.spane.on{display:block}
+  .field{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:7px;padding:11px 14px;color:var(--text);font-family:inherit;font-size:.9rem;width:100%}
+  .frow{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .frow .field{flex:1;min-width:180px;width:auto}
+  .chip{border:1px solid var(--line);border-radius:99px;background:none;color:var(--muted);font-size:.76rem;font-weight:600;padding:8px 16px;cursor:pointer}
+  .chip[aria-pressed="true"]{border-color:var(--gold);color:var(--gold-bright);background:rgba(217,164,65,.08)}
+  table.simple td .btn{padding:5px 12px;font-size:.74rem}
+  .brief-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:14px}
+  .brief-card{border:1px solid var(--line-soft);border-left:3px solid var(--bc,var(--gold));border-radius:10px;padding:18px;background:rgba(255,255,255,.02)}
+  .brief-card b{font-family:var(--serif);font-weight:400;font-size:1.02rem;display:block;margin-bottom:6px}
+  .brief-card p{font-size:.82rem;color:var(--muted)}
+  .kw{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line-soft);font-size:.86rem}
+  .kw .rank{font-family:var(--mono);color:var(--gold);font-size:.72rem;width:26px}
+  .kw .vol{margin-left:auto;font-family:var(--mono);font-size:.72rem;color:var(--muted)}
+  .kw .delta{font-family:var(--mono);font-size:.72rem;color:var(--teal)}
+  .status-pill{font-family:var(--mono);font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;border-radius:99px;padding:4px 10px;border:1px solid var(--line)}
+  .status-pill.pub{color:var(--teal);border-color:rgba(63,167,155,.4)}
+  .status-pill.draft{color:var(--gold-bright);border-color:var(--gold-dim)}
+  .topbar-acu{font-family:var(--mono);font-size:.72rem;letter-spacing:.1em;color:var(--gold-bright);border:1px solid var(--line);border-radius:99px;padding:7px 16px}
+  @media (max-width:700px){ .admin-head{align-items:start} .sync{align-items:flex-start} }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"><i></i></span><span>Niche<em>Finder</em></span></a>
+    <nav class="main">
+      <a href="search.html">Search Canvas</a>
+      <a href="dashboard.html">Command Center</a>
+      <a href="admin.html" aria-current="page">Super Admin OS</a>
+    </nav>
+    <span style="display:inline-flex;gap:10px;align-items:center">
+      <span class="topbar-acu" id="acuTop">— ACU</span>
+      <button class="btn gold" id="addCredits" type="button">Add Credits</button>
+    </span>
+  </div>
+</header>
+
+<main class="page">
+  <div class="wrap">
+
+    <div class="admin-head">
+      <div>
+        <span class="kicker">SUPER ADMIN OS</span>
+        <h1 class="page-title" style="margin-bottom:6px">Command Center</h1>
+        <p class="lede">Unified platform, SEO, and governance control.</p>
+      </div>
+      <div class="sync">
+        <span class="dot">System Sync Active</span>
+        <span style="color:var(--muted)">Role: Super Admin</span>
+        <span class="health">HEALTH: OPTIMAL</span>
+      </div>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button class="tab on" data-pane="overview" role="tab">Command Overview</button>
+      <button class="tab" data-pane="ops" role="tab">Platform Ops</button>
+      <button class="tab" data-pane="seo" role="tab">SEO War Room</button>
+      <button class="tab" data-pane="gov" role="tab">OS Governance</button>
+    </div>
+
+    <!-- ============ COMMAND OVERVIEW ============ -->
+    <section class="pane on" id="pane-overview">
+      <p class="sub" style="color:var(--muted);font-size:.85rem;margin-bottom:16px">Platform-wide KPIs and system status</p>
+      <div class="kpis">
+        <div class="kpi" style="--kc:var(--gold)"><div class="k">Global Operators</div><div class="v" id="kOperators">9</div><div class="d">Registered users</div></div>
+        <div class="kpi" style="--kc:var(--teal)"><div class="k">Platform Revenue</div><div class="v" id="kRevenue">£0.00</div><div class="d">Lifetime GBP</div></div>
+        <div class="kpi" style="--kc:var(--violet)"><div class="k">SEO Articles</div><div class="v" id="kArticles">18</div><div class="d" id="kPublished">17 published</div></div>
+        <div class="kpi" style="--kc:var(--blue)"><div class="k">Indexing Rate</div><div class="v">94%</div><div class="d">SEO pipeline</div></div>
+        <div class="kpi" style="--kc:var(--red)"><div class="k">Intelligence Cost</div><div class="v">$22.05</div><div class="d">AI provider spend</div></div>
+        <div class="kpi" style="--kc:var(--red)"><div class="k">Operational Margin</div><div class="v" id="kMargin">-£22.05</div><div class="d">Revenue − cost</div></div>
+        <div class="kpi" style="--kc:var(--muted)"><div class="k">SEO Impressions</div><div class="v">0</div><div class="d">Search console</div></div>
+        <div class="kpi" style="--kc:var(--gold)"><div class="k">Semantic Clusters</div><div class="v">130</div><div class="d">Topic graph</div></div>
+      </div>
+
+      <div class="panel">
+        <h3>Super Admin Command Brief</h3>
+        <p class="sub" style="font-family:var(--mono);font-size:.6rem;letter-spacing:.18em;color:var(--teal)">ALL SYSTEMS ONLINE</p>
+        <div class="brief-grid">
+          <div class="brief-card" style="--bc:var(--gold)"><b>Platform Ops</b><p>Manage support cases, blog posts, user ACU, and ledger from Platform Ops.</p></div>
+          <div class="brief-card" style="--bc:var(--teal)"><b>SEO War Room</b><p>Generate SEO articles, publish content, and run social amplification campaigns.</p></div>
+          <div class="brief-card" style="--bc:var(--violet)"><b>OS Governance</b><p>Monitor revenue, AI provider costs, and platform-wide adoption metrics.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PLATFORM OPS ============ -->
+    <section class="pane" id="pane-ops">
+      <p class="sub" style="color:var(--muted);font-size:.85rem;margin-bottom:16px">Support, blog, users, and ACU ledger</p>
+      <div class="subtabs" role="tablist">
+        <button class="subtab on" data-spane="support">Support</button>
+        <button class="subtab" data-spane="blog">Blog</button>
+        <button class="subtab" data-spane="users">Users</button>
+        <button class="subtab" data-spane="partners">Partners</button>
+        <button class="subtab" data-spane="ledger">Ledger</button>
+      </div>
+
+      <div class="spane on" id="spane-support">
+        <div class="panel" style="margin-top:0">
+          <h3>Open Support Cases</h3>
+          <p class="sub">Review and manage user support cases escalated from the AI chatbot.</p>
+          <p style="font-size:.86rem;color:var(--muted)">No open support cases.</p>
+        </div>
+      </div>
+
+      <div class="spane" id="spane-blog">
+        <div class="panel" style="margin-top:0">
+          <h3>Generate Blog Post</h3>
+          <p class="sub">Use AI to generate a new blog post from a topic.</p>
+          <label style="font-family:var(--mono);font-size:.6rem;letter-spacing:.18em;color:var(--gold)">BLOG POST TOPIC</label>
+          <div class="frow">
+            <input class="field" id="blogTopic" type="text" placeholder="e.g., 'The Top 5 Emerging Markets for Fintech in 2026'">
+            <button class="btn gold" id="genDraft" type="button">Generate Draft</button>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Manage Posts</h3>
+          <p class="sub">Review, publish, and track blog posts.</p>
+          <table class="simple" id="postsTable">
+            <tr><th>Title</th><th>Status</th><th>Actions</th></tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="spane" id="spane-users">
+        <div class="panel" style="margin-top:0">
+          <h3>User Search</h3>
+          <p class="sub">Find a user by email.</p>
+          <div class="frow">
+            <input class="field" id="userEmail" type="email" placeholder="user@example.com">
+            <button class="btn" id="userSearch" type="button">Search</button>
+          </div>
+          <p id="userResult" style="font-size:.84rem;color:var(--muted);margin-top:12px"></p>
+        </div>
+        <div class="panel">
+          <h3>Modify ACU</h3>
+          <p class="sub">Manually adjust credits. In this prototype the modification applies to the local Operator wallet.</p>
+          <div class="frow">
+            <input class="field" id="modUid" type="text" placeholder="Target UID">
+            <select class="field" id="modAction" style="max-width:160px"><option value="grant">Grant</option><option value="deduct">Deduct</option></select>
+            <input class="field" id="modAmount" type="number" value="1000" min="1" style="max-width:140px">
+            <button class="btn gold" id="modRun" type="button">Process Modification</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="spane" id="spane-partners">
+        <div class="panel" style="margin-top:0">
+          <h3>Growth Partner Admin</h3>
+          <p class="sub">Approve partners, review referrals, and run commission jobs.</p>
+          <div class="frow">
+            <button class="btn" type="button" data-toast="Commission review queued — no pending referral commissions found.">Run commission review</button>
+            <button class="btn" type="button" data-toast="Monthly payout job queued — 0 payouts due.">Run monthly payouts</button>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Approve partner</h3>
+          <div class="frow">
+            <input class="field" type="text" placeholder="User UID">
+            <input class="field" type="text" placeholder="Custom commission % (optional)">
+          </div>
+          <div class="frow">
+            <button class="chip" type="button" aria-pressed="true">Influencer</button>
+            <button class="chip" type="button" aria-pressed="false">Strategic</button>
+            <button class="btn gold" type="button" data-toast="Partner approval recorded (prototype).">Approve</button>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Suspend partner</h3>
+          <div class="frow">
+            <input class="field" type="text" placeholder="User UID">
+            <input class="field" type="text" placeholder="Reason">
+            <button class="btn" type="button" data-toast="Partner suspension recorded (prototype).">Suspend</button>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Referrals</h3>
+          <table class="simple">
+            <tr><th>Referrer</th><th>Referee</th><th>Status</th><th>Commission</th></tr>
+            <tr><td colspan="4" style="color:var(--muted)">No referrals yet.</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="spane" id="spane-ledger">
+        <div class="panel" style="margin-top:0">
+          <h3>Recent Activity</h3>
+          <p class="sub">Every ACU movement across the platform, synced from the wallet ledger.</p>
+          <table class="simple" id="ledgerTable">
+            <tr><th>Date</th><th>Type</th><th>Δ ACU</th></tr>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SEO WAR ROOM ============ -->
+    <section class="pane" id="pane-seo">
+      <p class="sub" style="color:var(--muted);font-size:.85rem;margin-bottom:16px">Content generation and organic visibility</p>
+      <div class="kpis">
+        <div class="kpi" style="--kc:var(--gold)"><div class="k">Total Impressions</div><div class="v">0</div><div class="d" id="seoPub">17 PUBLISHED</div></div>
+        <div class="kpi" style="--kc:var(--teal)"><div class="k">Organic Operators</div><div class="v">0</div><div class="d" id="seoArts">18 ARTICLES</div></div>
+        <div class="kpi" style="--kc:var(--blue)"><div class="k">GEO Search Visibility</div><div class="v">50%</div><div class="d">SCHEMA COVERAGE</div></div>
+        <div class="kpi" style="--kc:var(--violet)"><div class="k">Active Semantic Clusters</div><div class="v">130</div><div class="d" id="seoDrafts">1 DRAFTS</div></div>
+      </div>
+
+      <div class="panel">
+        <h3>Autonomous Content Generator</h3>
+        <p class="sub" style="font-family:var(--mono);font-size:.6rem;letter-spacing:.18em;color:var(--gold)">AGENT 2: CONTENT CREATION</p>
+        <p class="sub">Input a market signal or trending topic to assign a production task to the Content Agent.</p>
+        <input class="field" id="seoTopic" type="text" placeholder="Enter topic (e.g. 'Fintech adoption in Nigeria 2026')">
+        <div class="frow">
+          <button class="chip" type="button" aria-pressed="true">Pillar</button>
+          <button class="chip" type="button" aria-pressed="false">Comparison</button>
+          <button class="chip" type="button" aria-pressed="false">GEO Page</button>
+          <button class="chip" type="button" aria-pressed="false">FAQ Cluster</button>
+          <button class="chip" type="button" aria-pressed="false">Case Study</button>
+          <button class="btn gold" id="seoExec" type="button">Execute</button>
+        </div>
+        <p class="sub" style="margin-top:10px">Select a format, enter a topic, then press Execute to assign the production task.</p>
+      </div>
+
+      <div class="panel">
+        <h3>Visibility War Map</h3>
+        <p class="sub">Top ranking keywords across the content estate.</p>
+        <div id="kwList">
+          <div class="kw"><span class="rank">#1</span> niche business ideas <span class="vol">1,250 Vol</span> <span class="delta">+0%</span></div>
+          <div class="kw"><span class="rank">#2</span> environmental testing <span class="vol">500 Vol</span> <span class="delta">+0%</span></div>
+          <div class="kw"><span class="rank">#3</span> quality control <span class="vol">500 Vol</span> <span class="delta">+0%</span></div>
+          <div class="kw"><span class="rank">#4</span> quality assurance <span class="vol">500 Vol</span> <span class="delta">+0%</span></div>
+          <div class="kw"><span class="rank">#5</span> risk mitigation <span class="vol">500 Vol</span> <span class="delta">+0%</span></div>
+        </div>
+      </div>
+
+      <div class="brief-grid">
+        <div class="brief-card" style="--bc:var(--red)"><b>Competitor Attack Monitor</b><p>No decay alerts. Articles marked refresh_required will appear here.</p></div>
+        <div class="brief-card" style="--bc:var(--gold)"><b>OS Strategic Brief · Market Signal</b><p id="seoSignal">1 draft in the production pipeline awaiting publish.</p></div>
+        <div class="brief-card" style="--bc:var(--teal)"><b>Critical Action</b><p id="seoAction">1 draft article ready for review and publishing.</p></div>
+        <div class="brief-card" style="--bc:var(--blue)"><b>Backlink Intelligence</b><p>No backlinks tracked on articles yet.</p></div>
+      </div>
+    </section>
+
+    <!-- ============ OS GOVERNANCE ============ -->
+    <section class="pane" id="pane-gov">
+      <p class="sub" style="color:var(--muted);font-size:.85rem;margin-bottom:16px">Revenue, costs, and strategic oversight</p>
+      <div class="kpis">
+        <div class="kpi" style="--kc:var(--gold)"><div class="k">Global Operators</div><div class="v">9</div><div class="d">Registered users</div></div>
+        <div class="kpi" style="--kc:var(--teal)"><div class="k">Platform Revenue</div><div class="v" id="govRevenue">£0.00</div><div class="d">Lifetime GBP</div></div>
+        <div class="kpi" style="--kc:var(--red)"><div class="k">Intelligence Unit Cost</div><div class="v">$22.05</div><div class="d">AI provider spend</div></div>
+        <div class="kpi" style="--kc:var(--red)"><div class="k">Operational Margin</div><div class="v" id="govMargin">-£22.05</div><div class="d">Revenue − cost</div></div>
+      </div>
+
+      <div class="panel">
+        <h3>Governance Insights</h3>
+        <p class="sub" style="font-family:var(--mono);font-size:.6rem;letter-spacing:.18em;color:var(--teal)">LEDGER SYNCED</p>
+        <div class="brief-grid">
+          <div class="brief-card" style="--bc:var(--teal)"><b>AI Strategic Insight</b><p>Profitability margin is trending up as Discovery Core costs stabilize in Tier 2 markets.</p></div>
+          <div class="brief-card" style="--bc:var(--red)"><b>AI Risk Alert</b><p>Intelligence unit cost in Cluster C is higher than projected. Routing calibration recommended.</p></div>
+          <div class="brief-card" style="--bc:var(--gold)"><b>AI Next Governance Action</b><p>Execute operational margin optimization on Discovery Core 04.</p></div>
+          <div class="brief-card" style="--bc:var(--violet)"><b>Confidence &amp; Ownership</b><p>Confidence: <strong style="color:var(--teal)">HIGH (92%)</strong> · Owner: <strong>S-ADMIN</strong></p></div>
+        </div>
+      </div>
+
+      <div class="brief-grid">
+        <div class="brief-card" style="--bc:var(--gold)"><b>Intelligence Core Consumption</b><p>Cost distribution across OS reasoning nodes.</p><p style="margin-top:8px;font-family:var(--mono);font-size:.68rem;color:var(--muted)">claude ▓▓▓▓▓▓▓ 54% · gemini ▓▓▓ 28% · openai ▓▓ 18%</p></div>
+        <div class="brief-card" style="--bc:var(--blue)"><b>Adoption Velocity Monitor</b><p>Predictive analytics for sector migration.</p><p style="margin-top:8px;font-family:var(--mono);font-size:.68rem;color:var(--gold-bright)">Cognitive Calibration in Progress…</p></div>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<div id="toast" style="position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:12px 22px;font-size:.85rem;opacity:0;pointer-events:none;transition:.25s;z-index:99" role="status"></div>
+
+<footer class="site">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"><i></i></span><span>Niche<em>Finder</em></span></a>
+        <p style="font-size:.82rem;margin-top:12px;max-width:34ch">The AI Operating System for Venture Creation. Discover, validate, and build your next investor-ready business.</p>
+      </div>
+      <div><h4>Platform</h4><a href="how-it-works.html">How It Works</a><a href="about.html">About Us</a><a href="blog.html">Blog</a><a href="contact.html">Contact</a></div>
+      <div><h4>Legal</h4><a href="terms.html">Terms of Use</a><a href="privacy.html">Privacy Policy</a><a href="disclaimer.html">Disclaimer</a><a href="cookies.html">Cookies</a></div>
+      <div><h4>Connect</h4><a href="https://www.linkedin.com/company/nichefinder" rel="noopener">LinkedIn</a><a href="https://x.com/nichefinderhq" rel="noopener">Twitter / X</a></div>
+    </div>
+    <div class="foot-base">
+      <span>© 2026 Niche Finder Ltd. All rights reserved.</span>
+      <span>Use of Niche Finder is subject to our <a href="terms.html" style="color:var(--muted)">Terms of Use</a> and <a href="privacy.html" style="color:var(--muted)">Privacy Policy</a>.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="nf-wallet.js"></script>
+<script>
+(function(){
+  var toast = document.getElementById('toast'), toastTimer;
+  function showToast(msg){
+    toast.textContent = msg;
+    toast.style.opacity = 1; toast.style.transform = 'translateX(-50%) translateY(0)';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toast.style.opacity = 0; toast.style.transform = 'translateX(-50%) translateY(20px)'; }, 2800);
+  }
+
+  /* wallet strip */
+  function renderAcu(){
+    var w = NF.wallet();
+    var el = document.getElementById('acuTop');
+    el.textContent = NF.total().toLocaleString('en-US') + ' ACU';
+    el.title = w.paid.toLocaleString('en-US') + ' paid · ' + w.free.toLocaleString('en-US') + ' free (read-only)';
+  }
+  renderAcu();
+  document.getElementById('addCredits').addEventListener('click', function(){ NF.openTopup(0, null, renderAcu); });
+
+  /* platform revenue derived from top-up ledger entries */
+  var ledger;
+  try { ledger = JSON.parse(localStorage.getItem('nf_ledger') || '[]'); } catch (e) { ledger = []; }
+  var topupAcu = ledger.filter(function(l){ return /^TOP-UP/.test(l.t); }).reduce(function(s, l){ return s + (l.amt || 0); }, 0);
+  var revenue = topupAcu / 100; // £1 = 100 ACU
+  var AI_COST_GBP = 22.05 * 0.79; // display uses $22.05; margin shown in GBP
+  ['kRevenue', 'govRevenue'].forEach(function(id){ document.getElementById(id).textContent = '£' + revenue.toFixed(2); });
+  ['kMargin', 'govMargin'].forEach(function(id){
+    var m = revenue - AI_COST_GBP;
+    var el = document.getElementById(id);
+    el.textContent = (m < 0 ? '-' : '') + '£' + Math.abs(m).toFixed(2);
+    el.style.color = m < 0 ? 'var(--red)' : 'var(--teal)';
+  });
+
+  /* tabs */
+  document.querySelectorAll('.tab').forEach(function(t){
+    t.addEventListener('click', function(){
+      document.querySelectorAll('.tab').forEach(function(x){ x.classList.remove('on'); });
+      document.querySelectorAll('.pane').forEach(function(x){ x.classList.remove('on'); });
+      t.classList.add('on');
+      document.getElementById('pane-' + t.dataset.pane).classList.add('on');
+    });
+  });
+  document.querySelectorAll('.subtab').forEach(function(t){
+    t.addEventListener('click', function(){
+      document.querySelectorAll('.subtab').forEach(function(x){ x.classList.remove('on'); });
+      document.querySelectorAll('.spane').forEach(function(x){ x.classList.remove('on'); });
+      t.classList.add('on');
+      document.getElementById('spane-' + t.dataset.spane).classList.add('on');
+    });
+  });
+
+  /* chip groups: single-select within their row */
+  document.querySelectorAll('.frow').forEach(function(row){
+    var chips = row.querySelectorAll('.chip');
+    chips.forEach(function(c){
+      c.addEventListener('click', function(){
+        chips.forEach(function(x){ x.setAttribute('aria-pressed', 'false'); });
+        c.setAttribute('aria-pressed', 'true');
+      });
+    });
+  });
+
+  /* generic prototype-action buttons */
+  document.querySelectorAll('[data-toast]').forEach(function(b){
+    b.addEventListener('click', function(){ showToast(b.getAttribute('data-toast')); });
+  });
+
+  /* ---- blog posts (localStorage-backed) ---- */
+  var SEED_POSTS = [
+    { title: "Don't Just Dream It, Test It: The Entrepreneur's Guide to Validating Your Niche", status: 'published' },
+    { title: 'Unlocking Startup Success: Why Niche Marketing is Your Secret Weapon', status: 'draft' }
+  ];
+  var posts;
+  try { posts = JSON.parse(localStorage.getItem('nf_admin_posts')) || SEED_POSTS; } catch (e) { posts = SEED_POSTS; }
+  function savePosts(){ localStorage.setItem('nf_admin_posts', JSON.stringify(posts)); }
+  function esc(s){ var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+  function renderPosts(){
+    var tbl = document.getElementById('postsTable');
+    tbl.innerHTML = '<tr><th>Title</th><th>Status</th><th>Actions</th></tr>' + posts.map(function(p, i){
+      return '<tr><td style="color:var(--text)">' + esc(p.title) + '</td>' +
+        '<td><span class="status-pill ' + (p.status === 'published' ? 'pub' : 'draft') + '">' + p.status + '</span></td>' +
+        '<td>' + (p.status === 'published'
+          ? '<a class="btn" href="blog.html" style="padding:5px 12px;font-size:.74rem">View live</a>'
+          : '<button class="btn gold" data-publish="' + i + '" style="padding:5px 12px;font-size:.74rem">Publish</button>') + '</td></tr>';
+    }).join('');
+    var drafts = posts.filter(function(p){ return p.status !== 'published'; }).length;
+    var pub = posts.length - drafts;
+    document.getElementById('kArticles').textContent = 16 + posts.length;
+    document.getElementById('kPublished').textContent = (16 + pub) + ' published';
+    document.getElementById('seoPub').textContent = (16 + pub) + ' PUBLISHED';
+    document.getElementById('seoArts').textContent = (16 + posts.length) + ' ARTICLES';
+    document.getElementById('seoDrafts').textContent = drafts + ' DRAFTS';
+    document.getElementById('seoSignal').textContent = drafts ? drafts + ' draft' + (drafts > 1 ? 's' : '') + ' in the production pipeline awaiting publish.' : 'Production pipeline clear — all articles live.';
+    document.getElementById('seoAction').textContent = drafts ? drafts + ' draft article' + (drafts > 1 ? 's' : '') + ' ready for review and publishing.' : 'Assign a new topic to the Content Agent.';
+    tbl.querySelectorAll('[data-publish]').forEach(function(b){
+      b.addEventListener('click', function(){
+        posts[Number(b.getAttribute('data-publish'))].status = 'published';
+        savePosts(); renderPosts();
+        showToast('Post published to the blog pipeline.');
+      });
+    });
+  }
+  renderPosts();
+
+  document.getElementById('genDraft').addEventListener('click', function(){
+    var topic = document.getElementById('blogTopic').value.trim();
+    if (!topic) return showToast('Enter a blog post topic first.');
+    posts.unshift({ title: topic, status: 'draft' });
+    savePosts(); renderPosts();
+    document.getElementById('blogTopic').value = '';
+    showToast('Draft generated and queued for review.');
+  });
+
+  document.getElementById('seoExec').addEventListener('click', function(){
+    var topic = document.getElementById('seoTopic').value.trim();
+    if (!topic) return showToast('Enter a topic for the Content Agent first.');
+    posts.unshift({ title: topic, status: 'draft' });
+    savePosts(); renderPosts();
+    document.getElementById('seoTopic').value = '';
+    showToast('Production task assigned to Content Agent (Agent 2).');
+  });
+
+  /* ---- users ---- */
+  document.getElementById('userSearch').addEventListener('click', function(){
+    var q = document.getElementById('userEmail').value.trim();
+    document.getElementById('userResult').textContent = q
+      ? 'Prototype directory: only the local Operator account exists in this build. UID: operator-local · Wallet: ' + NF.total().toLocaleString('en-US') + ' ACU.'
+      : 'Enter an email address to search.';
+  });
+  document.getElementById('modRun').addEventListener('click', function(){
+    var amt = Math.max(1, Math.floor(Number(document.getElementById('modAmount').value) || 0));
+    var action = document.getElementById('modAction').value;
+    var w = NF.wallet();
+    if (action === 'grant'){
+      w.paid += amt;
+      localStorage.setItem('nf_wallet', JSON.stringify(w));
+      localStorage.setItem('nf_acu_balance', String(w.paid + w.free));
+      NF.logLedger('ADMIN_GRANT · Manual ACU credit', amt);
+      showToast('+' + amt.toLocaleString('en-US') + ' ACU granted to Operator wallet.');
+    } else {
+      var take = Math.min(amt, w.paid);
+      w.paid -= take;
+      localStorage.setItem('nf_wallet', JSON.stringify(w));
+      localStorage.setItem('nf_acu_balance', String(w.paid + w.free));
+      NF.logLedger('ADMIN_DEDUCT · Manual ACU deduction', -take);
+      showToast('-' + take.toLocaleString('en-US') + ' ACU deducted from Operator wallet.');
+    }
+    renderAcu(); renderLedger();
+  });
+
+  /* ---- ledger ---- */
+  function renderLedger(){
+    var l;
+    try { l = JSON.parse(localStorage.getItem('nf_ledger') || '[]'); } catch (e) { l = []; }
+    var tbl = document.getElementById('ledgerTable');
+    tbl.innerHTML = '<tr><th>Date</th><th>Type</th><th>Δ ACU</th></tr>' + (l.length ? l.slice(0, 25).map(function(e){
+      var kind = /^TOP-UP/.test(e.t) ? 'TOP_UP' : /^WELCOME/.test(e.t) ? 'WELCOME' : /^ADMIN/.test(e.t) ? 'ADMIN' : 'OPERATIONAL_TASK';
+      return '<tr><td>' + new Date(e.ts).toLocaleString() + '</td><td title="' + esc(e.t) + '">' + kind + '</td>' +
+        '<td style="color:' + (e.amt < 0 ? 'var(--red)' : 'var(--teal)') + '">' + (e.amt > 0 ? '+' : '') + e.amt + '</td></tr>';
+    }).join('') : '<tr><td colspan="3" style="color:var(--muted)">Ledger is empty.</td></tr>');
+  }
+  renderLedger();
+})();
+</script>
+</body>
+</html>
