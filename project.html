@@ -236,14 +236,14 @@
     <div class="nav-right">
       <a href="search.html">Search Canvas</a>
       <a href="dashboard.html">Command Center</a>
-      <span class="acu-balance" id="acuBalance">— ACU</span>
+      <span class="acu-balance" id="acuBalance">— ACU</span><span aria-label="Account" title="Operator account" style="width:30px;height:30px;border-radius:50%;border:1px solid var(--gold-dim);display:inline-grid;place-items:center;font-family:var(--mono);font-size:.66rem;color:var(--gold-bright);background:rgba(217,164,65,.08);cursor:pointer">U</span>
     </div>
   </div>
 </header>
 
 <main>
   <div class="wrap page-head">
-    <div class="repo-strip"><span><i></i> VENTURE REPOSITORY ACTIVE</span><span class="v4">SYNC ACTIVE V4</span></div>
+    <div class="repo-strip"><span><i></i> REPOSITORY LIVE</span><span class="v4">AUTOSAVE ON</span></div>
     <p class="crumb"><a href="search.html">Business Discovery OS</a> / Deep-Dive Analysis</p>
     <div class="title-row">
       <h1 id="title">Loading project…</h1>
@@ -272,7 +272,7 @@
   <div class="wrap" style="padding-top:26px">
     <section class="brief" id="aiBrief">
       <div class="brief-head">
-        <h2>AI Operational Brief</h2>
+        <h2>Operating Brief</h2>
         <span class="brief-score" id="briefScore">8.5<small> /10</small></span>
       </div>
       <div class="bcard" style="--bc:var(--gold);margin-top:18px">
@@ -280,14 +280,14 @@
         <p id="briefRationale"></p>
       </div>
       <div class="brief-grid">
-        <div class="bcard" style="--bc:var(--teal)"><span class="bk">AI Situation</span><p id="briefSituation"></p></div>
-        <div class="bcard" style="--bc:#6B9BD1"><span class="bk">AI Insight</span><p id="briefInsight"></p></div>
-        <div class="bcard" style="--bc:var(--red)"><span class="bk">AI Risk Alert</span><p id="briefRisk"></p></div>
-        <div class="bcard" style="--bc:var(--gold)"><span class="bk">AI Recommendation</span><p id="briefReco"></p></div>
+        <div class="bcard" style="--bc:var(--teal)"><span class="bk">Situation</span><p id="briefSituation"></p></div>
+        <div class="bcard" style="--bc:#6B9BD1"><span class="bk">Insight</span><p id="briefInsight"></p></div>
+        <div class="bcard" style="--bc:var(--red)"><span class="bk">Risk Alert</span><p id="briefRisk"></p></div>
+        <div class="bcard" style="--bc:var(--gold)"><span class="bk">Recommendation</span><p id="briefReco"></p></div>
       </div>
       <div class="brief-facts">
         <div class="f"><div class="k">Target Investment</div><div class="v" id="briefInvest">US$10,000</div></div>
-        <div class="f"><div class="k">AI Confidence</div><div class="v" id="briefConf">HIGH CERTAINTY</div></div>
+        <div class="f"><div class="k">Confidence</div><div class="v" id="briefConf">HIGH CERTAINTY</div></div>
         <div class="f"><div class="k">Recommendation</div><div class="v">UNLOCKED</div></div>
       </div>
       <h2 style="font-family:var(--serif);font-weight:400;font-size:1.2rem;margin-top:28px">Decision Intelligence Matrix</h2>
@@ -397,7 +397,7 @@
     <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:30px" class="foot-grid">
       <div>
         <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"><i></i></span><span>Niche<em>Finder</em></span></a>
-        <p style="font-size:.82rem;margin-top:12px;max-width:34ch">The AI Operating System for Venture Creation. Discover, validate, and build your next investor-ready business.</p>
+        <p style="font-size:.82rem;margin-top:12px;max-width:34ch">The operating system for venture creation. Discover, validate, and build your next investor-ready business.</p>
       </div>
       <div><h4 style="font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">Platform</h4><a href="how-it-works.html" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">How It Works</a><a href="about.html" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">About Us</a><a href="blog.html" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Blog</a><a href="contact.html" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Contact</a></div>
       <div><h4 style="font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">Legal</h4><a href="terms.html" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Terms of Use</a><a href="privacy.html" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Privacy Policy</a><a href="disclaimer.html" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Disclaimer</a><a href="cookies.html" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Cookies</a></div>
@@ -715,7 +715,7 @@
 
   render();
 
-  /* ---------- AI Operational Brief ---------- */
+  /* ---------- Operating Brief ---------- */
   var B = project.brief || {};
   function setTxt(id, v){ var el = document.getElementById(id); if (el && v != null) el.textContent = v; }
   document.getElementById('briefScore').innerHTML = esc(B.score || (project.score / 10).toFixed(1)) + '<small> /10</small>';
@@ -780,7 +780,7 @@
       } else {
         var exec = document.createElement('button');
         exec.className = 'hub-btn primary';
-        exec.textContent = 'Execute ' + a.t + ' Engine';
+        exec.textContent = 'Generate ' + a.t;
         exec.addEventListener('click', function(){
           runAction(a, exec);
           setTimeout(renderHub, 1800);

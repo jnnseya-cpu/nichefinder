@@ -1,4 +1,4 @@
-/* Niche Finder — NicheBot support widget.
+/* Niche Finder — Support concierge widget.
    Precision-first support chat: direct answer → actionable step, no filler.
    Costs 1 ACU per message (the one action welcome ACUs may fund). Escalates to
    a human by writing a structured case to nf_support_cases, which the Super
@@ -58,20 +58,23 @@
   }
 
   var fab = el('button',
-    'position:fixed;right:22px;bottom:22px;z-index:940;width:54px;height:54px;border-radius:50%;border:1px solid rgba(217,164,65,.55);' +
-    'background:linear-gradient(170deg,#121C30,#0E1626);color:#F1C97E;font-size:1.25rem;cursor:pointer;box-shadow:0 8px 30px rgba(0,0,0,.45)');
-  fab.setAttribute('aria-label', 'Open support chat');
-  fab.textContent = '✦';
+    'position:fixed;right:22px;bottom:22px;z-index:940;border-radius:99px;border:1px solid rgba(255,255,255,.16);' +
+    'background:#0E1626;color:#C3C9D6;font-size:.78rem;font-weight:600;letter-spacing:.02em;padding:10px 18px;cursor:pointer;' +
+    'box-shadow:0 6px 24px rgba(0,0,0,.4);font-family:"Avenir Next","Segoe UI",system-ui,sans-serif');
+  fab.setAttribute('aria-label', 'Open support');
+  fab.textContent = 'Support';
+  fab.onmouseenter = function () { fab.style.borderColor = 'rgba(217,164,65,.5)'; fab.style.color = '#E8ECF4'; };
+  fab.onmouseleave = function () { fab.style.borderColor = 'rgba(255,255,255,.16)'; fab.style.color = '#C3C9D6'; };
 
   var panel = el('div',
     'position:fixed;right:22px;bottom:88px;z-index:941;width:min(360px,calc(100vw - 44px));max-height:min(540px,70vh);display:none;flex-direction:column;' +
     'background:#0E1626;border:1px solid rgba(255,255,255,.14);border-radius:16px;overflow:hidden;box-shadow:0 18px 60px rgba(0,0,0,.55);color:#E8ECF4;' +
     'font-family:"Avenir Next","Segoe UI",system-ui,sans-serif');
   panel.setAttribute('role', 'dialog');
-  panel.setAttribute('aria-label', 'NicheBot support chat');
+  panel.setAttribute('aria-label', 'Support');
   panel.innerHTML =
     '<div style="padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.09);display:flex;justify-content:space-between;align-items:center">' +
-      '<div><b style="font-size:.95rem">NicheBot</b><div style="font-family:ui-monospace,monospace;font-size:.56rem;letter-spacing:.18em;color:#3FA79B">VENTURE OS SUPPORT · 1 ACU / MESSAGE</div></div>' +
+      '<div><b style="font-size:.95rem">Support</b><div style="font-family:ui-monospace,monospace;font-size:.56rem;letter-spacing:.18em;color:#8B93A5">TYPICALLY REPLIES INSTANTLY · 1 ACU / MESSAGE</div></div>' +
       '<button data-close style="background:none;border:1px solid rgba(255,255,255,.15);border-radius:7px;color:#8B93A5;padding:3px 9px;cursor:pointer">✕</button>' +
     '</div>' +
     '<div data-log style="flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px;font-size:.85rem"></div>' +
@@ -115,7 +118,7 @@
       localStorage.setItem('nf_support_cases', JSON.stringify(cases.slice(0, 50)));
     } catch (e) {}
     bubble('Escalating to human support — your case is open with the full conversation attached. Expected response: within 24 hours. You can keep asking me questions meanwhile.', 'bot');
-    note('CASE CREATED · VISIBLE IN SUPER ADMIN OS → PLATFORM OPS → SUPPORT');
+    note('CASE OPENED · THE TEAM HAS YOUR FULL CONVERSATION');
     strikes = 0;
   }
 
@@ -137,7 +140,7 @@
     var input = panel.querySelector('[data-in]');
     var q = input.value.trim();
     if (!q) return;
-    if (window.NF && NF.chargeSupport && !NF.chargeSupport('NicheBot')) {
+    if (window.NF && NF.chargeSupport && !NF.chargeSupport('Support chat')) {
       bubble('Your ACU balance is empty — support chat costs 1 ACU per message. Top up from any "Buy ACU" button and I\'m here.', 'bot');
       return;
     }
@@ -153,8 +156,8 @@
     panel.style.display = 'flex';
     fab.style.display = 'none';
     if (!log.children.length) {
-      bubble('NicheBot here. Direct answers on pricing, scoring, unlocks, and documents — 1 ACU per message (your free welcome ACUs cover it). What do you need?', 'bot');
-      note('SAY "HUMAN" ANY TIME TO ESCALATE TO THE TEAM');
+      bubble('Hi — ask me anything about pricing, scoring, unlocks, or documents. Each message costs 1 ACU, covered by your welcome credits. What do you need?', 'bot');
+      note('SAY "HUMAN" ANY TIME TO REACH THE TEAM');
     }
     panel.querySelector('[data-in]').focus();
   });

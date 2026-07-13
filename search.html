@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Niche Finder — AI Search Canvas</title>
-<meta name="description" content="Business Discovery OS — guide the venture intelligence OS to discover your next opportunity.">
+<title>Niche Finder — Search Canvas</title>
+<meta name="description" content="Search Canvas — country-grounded venture discovery with deterministic scoring.">
 <meta name="theme-color" content="#070B14">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
@@ -303,17 +303,17 @@
     </a>
     <span style="display:flex;align-items:center;gap:18px">
       <a href="dashboard.html" style="font-size:.82rem;color:var(--muted);text-decoration:none">Command Center</a>
-      <span class="sync"><i aria-hidden="true"></i>OS SYNC ACTIVE</span>
-      <span class="sync" id="acuBalance" style="color:var(--gold-bright);border:1px solid var(--line);border-radius:99px;padding:6px 14px">— ACU</span>
+      <span class="sync"><i aria-hidden="true"></i>AUTOSAVE ON</span>
+      <span class="sync" id="acuBalance" style="color:var(--gold-bright);border:1px solid var(--line);border-radius:99px;padding:6px 14px">— ACU</span><span aria-label="Account" title="Operator account" style="width:30px;height:30px;border-radius:50%;border:1px solid var(--gold-dim);display:inline-grid;place-items:center;font-family:var(--mono);font-size:.66rem;color:var(--gold-bright);background:rgba(217,164,65,.08);cursor:pointer">U</span>
     </span>
   </div>
 </header>
 
 <main>
   <div class="wrap page-head">
-    <p class="eyebrow">Business Discovery OS</p>
-    <h1>AI <span class="gold">Search Canvas</span></h1>
-    <p>Your journey from idea to execution starts here. Use the filters below to guide the AI — the more specific you are, the better the results.</p>
+    <p class="eyebrow">Venture Discovery</p>
+    <h1>Search <span class="gold">Canvas</span></h1>
+    <p>Your journey from idea to execution starts here. Set your market and constraints below — the more specific you are, the sharper the results.</p>
   </div>
 
   <div class="wrap canvas">
@@ -351,9 +351,9 @@
       <section class="block" aria-labelledby="h-route">
         <div class="block-head">
           <span class="n">03</span>
-          <h2 id="h-route">Intelligence Routing</h2>
+          <h2 id="h-route">Search Priority</h2>
         </div>
-        <p class="hint">Guide the system to prioritize specific commercial outcomes.</p>
+        <p class="hint">Choose which commercial outcomes to prioritise.</p>
         <div class="opt-grid g3" id="routeGrid" role="group" aria-label="Intelligence routing priority">
           <button class="opt" aria-pressed="false"><span class="t">Standard Opportunities</span><span class="d">Proven reliable</span></button>
           <button class="opt" aria-pressed="false"><span class="t">High-Profit Opportunities</span><span class="d">Maximize margins</span></button>
@@ -415,7 +415,7 @@
 
           <div class="tier" style="margin-top:26px">
             <label class="lab" style="margin:0 0 4px">Business Sectors (up to 3)</label>
-            <p class="hint" style="margin-bottom:4px">Focus the AI on specific sectors for more targeted niche ideas.</p>
+            <p class="hint" style="margin-bottom:4px">Focus discovery on specific sectors for tighter results.</p>
           </div>
           <div id="tiers"></div>
           <p class="sector-count">SELECTED <b id="secCount">0</b> / 3</p>
@@ -461,7 +461,7 @@
           <div class="toggle-row">
             <div class="tx">
               <div class="t">Investor Production Mode</div>
-              <div class="d">Upgrades reasoning density for high-stakes conversations. <b>+40% ACU consumption</b></div>
+              <div class="d">Outputs structured for real funding conversations. <b>+40% ACU consumption</b></div>
             </div>
             <button class="switch" id="invMode" role="switch" aria-checked="false" aria-label="Investor Production Mode"><i></i></button>
           </div>
@@ -472,11 +472,11 @@
       <!-- RESULTS -->
       <section class="results" id="results" aria-live="polite">
         <div class="results-head">
-          <h2>Generated Niche Ideas</h2>
+          <h2>Opportunities</h2>
           <span class="count" id="resCount">SHOWING 0 OF 0 SAVED NICHES</span>
         </div>
         <div class="thinking" id="thinking">
-          Opportunity Discovery Agent · Scanning market signals
+          Running discovery · country signals, comparable operators, cost structures
           <span class="bar"><i></i></span>
         </div>
         <div class="niches" id="niches"></div>
@@ -500,7 +500,7 @@
           <span class="k">Search Cost</span>
           <span class="v" id="acuCost">25 <small>ACU</small></span>
         </div>
-        <button class="btn-generate" id="generate">Generate Niche Ideas</button>
+        <button class="btn-generate" id="generate">Run Discovery</button>
         <p class="rail-note">All outputs are probabilistic and require your critical review. You are the final decision-maker.</p>
       </div>
     </aside>
@@ -512,7 +512,7 @@
     <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:30px" class="foot-grid">
       <div>
         <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"><i></i></span><span>Niche<em>Finder</em></span></a>
-        <p style="font-size:.82rem;margin-top:12px;max-width:34ch">The AI Operating System for Venture Creation. Discover, validate, and build your next investor-ready business.</p>
+        <p style="font-size:.82rem;margin-top:12px;max-width:34ch">The operating system for venture creation. Discover, validate, and build your next investor-ready business.</p>
       </div>
       <div><h4 style="font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">Platform</h4><a href="how-it-works.html" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">How It Works</a><a href="about.html" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">About Us</a><a href="blog.html" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Blog</a><a href="contact.html" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Contact</a></div>
       <div><h4 style="font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">Legal</h4><a href="terms.html" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Terms of Use</a><a href="privacy.html" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Privacy Policy</a><a href="disclaimer.html" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Disclaimer</a><a href="cookies.html" style="display:block;color:var(--muted);text-decoration:none;padding:3px 0">Cookies</a></div>
@@ -968,7 +968,7 @@
     var b = NF.bracket(+budget.value);
     var searchCost = searchCostNow();
     if (!charge(searchCost, 'niche generation' + (b.tier > 1 ? ' · bracket ' + b.tier : ''))) return;
-    gen.disabled = true; gen.textContent = 'Discovery Agent Running…';
+    gen.disabled = true; gen.textContent = 'Running discovery…';
     nichesEl.innerHTML = ''; thinking.classList.add('on');
     document.getElementById('results').scrollIntoView({behavior: reduced ? 'auto' : 'smooth'});
 
