@@ -599,6 +599,56 @@ The Niche Finder AI-OS is built on a cloud-native, event-driven, microservices a
 
 ---
 
+# SECTION 10 — API SPECIFICATION
+
+## 10. REST API Specification
+
+### 10.1 API Standards
+
+| Standard | Specification |
+|---|---|
+| Base URL | https://api.nichefinder.io/v1 |
+| Authentication | Bearer JWT (user sessions); HMAC API Key (partner integrations) |
+| Rate Limiting | Standard: 100 req/min; Enterprise: 1000 req/min; Headers: X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset |
+| Response Format | JSON with consistent envelope: `{ success: bool, data: {}, error: {code, message, details}, meta: {request_id, timestamp} }` |
+| Error Codes | HTTP standard codes + platform codes: 4001 (Insufficient ACUs — maps to the wallet contract's HTTP 402 `insufficient_acu`), 4002 (Project not unlocked), 4003 (Asset generation in progress), 5001 (Agent timeout) |
+| Versioning | URL path versioning (/v1/, /v2/); minimum 12-month deprecation notice; sunset header on deprecated endpoints |
+| Pagination | Cursor-based pagination; params: cursor, limit (max 100); response includes: next_cursor, has_more |
+| Webhooks | HMAC-SHA256 signed; X-NicheFinder-Signature header; retry with exponential backoff (5 attempts max) |
+
+### 10.2 Core API Endpoints
+
+*ACU conformance (standing rule): endpoint prices below follow the canonical schedule — the draft's placeholder costs were conformed. All charged endpoints price at base × bracket_factor (from the project's locked capital bracket) × 1.4 when Investor Mode is active; the response envelope echoes `acu_charged` and `bracket_factor`, and generation endpoints accept an idempotency key, matching the existing gateway/wallet contract.*
+
+| Method | Endpoint | Description | Auth Required | ACU Cost (bracket 1) |
+|---|---|---|---|---|
+| POST | /auth/register | Create new user account | None | Free (grants 100 welcome ACUs) |
+| POST | /auth/login | Authenticate and receive JWT | None | Free |
+| POST | /auth/refresh | Refresh JWT using refresh token | Refresh Token | Free |
+| GET | /users/me | Get current user profile and ACU balance | JWT | Free |
+| PATCH | /users/me | Update user profile | JWT | Free |
+| POST | /opportunities/search | Submit search and trigger Discovery Agent | JWT | 125 ACU |
+| GET | /opportunities | List all discovered opportunities for user | JWT | Free |
+| GET | /opportunities/{id} | Get opportunity summary (pre-unlock) | JWT | Free |
+| POST | /opportunities/{id}/unlock | Unlock full Deep-Dive Analysis | JWT | 150 ACU |
+| POST | /projects/{id}/validate | Generate Market Validation Report | JWT | 250 ACU |
+| POST | /projects/{id}/financial-model | Generate 3-year Financial Model | JWT | 250 ACU (forecast) / 350 ACU (Excel model) |
+| POST | /projects/{id}/business-plan | Generate Business Plan document | JWT | 500 ACU (+150 PDF edition) |
+| POST | /projects/{id}/pitch-deck | Generate Investor Pitch Deck | JWT | 500 / 650 / 850 ACU by tier |
+| GET | /projects | List all user projects with status | JWT | Free |
+| GET | /projects/{id}/assets | List all generated assets for project | JWT | Free |
+| GET | /assets/{id}/download | Get signed download URL for asset | JWT | Free |
+| GET | /wallet/balance | Get current ACU balance breakdown | JWT | Free |
+| GET | /wallet/transactions | List ACU transaction history | JWT | Free |
+| POST | /payments/initiate | Initiate ACU package purchase (canonical packages £5/£10/£20/£50) | JWT | N/A |
+| POST | /webhooks/bitripay | BitriPay payment webhook receiver | HMAC | N/A |
+| POST | /webhooks/stripe | Stripe payment webhook receiver | Stripe Sig | N/A |
+| GET | /admin/users | List all users (Admin only) | JWT + Admin | Free |
+| GET | /admin/revenue | Revenue dashboard data | JWT + Admin | Free |
+| GET | /admin/agents/status | Agent health and performance metrics | JWT + Admin | Free |
+
+---
+
 # ENGINEERING ANNEX — TRANSFORMATION PILLARS
 
 *The annex below is the engineering-grade transformation layer: audited current state, invariant laws already enforced in code, and the gap-closing work per pillar. Annex numbering (§3–§13) is internal to the annex and independent of the master-document SECTION numbering above. Annex content is additive — master sections land verbatim on top; nothing here is removed.*
