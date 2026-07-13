@@ -485,6 +485,65 @@ The Niche Finder AI-OS is built on a cloud-native, event-driven, microservices a
 
 ---
 
+# SECTION 09 — DATABASE SCHEMA
+
+## 9. Database Schema (PostgreSQL)
+
+*Conformance notes: `acu_balance_welcome` / `acu_balance_paid` mirror the dual-balance wallet already implemented (welcome = 100 read-only ACUs on first touch). `overall_confidence_score` (0.00–100.00) is stored as the deterministic 0–10 core score × 10; the deterministic pillar values (PRS/CS/PSS and optional BPS) are persisted alongside in `deep_dive_data` so the invariant arithmetic remains auditable. Projects also persist `bracket_factor` (from the capital-bracket law) so unlocked ventures carry their bracket into every Build Hub charge — matching today's `nf_active_project.bracketFactor`.*
+
+### 9.1 Core Tables
+
+**Table: users**
+
+| Column | Type | Constraints / Notes |
+|---|---|---|
+| id | UUID | PRIMARY KEY, DEFAULT gen_random_uuid() |
+| email | VARCHAR(255) | UNIQUE NOT NULL, indexed |
+| password_hash | VARCHAR(255) | bcrypt hash; NULL if social auth |
+| full_name | VARCHAR(255) | NOT NULL |
+| user_type | ENUM | entrepreneur, incubator, investor, enterprise, admin, api_partner |
+| acu_balance_welcome | INTEGER | DEFAULT 0; Welcome ACU balance (read-only credits) |
+| acu_balance_paid | INTEGER | DEFAULT 0; Paid ACU balance |
+| kyc_status | ENUM | pending, verified, rejected, not_required |
+| subscription_tier | ENUM | free, starter, professional, enterprise |
+| stripe_customer_id | VARCHAR(255) | Stripe customer reference; nullable |
+| bitripay_wallet_id | VARCHAR(255) | BitriPay wallet reference; nullable |
+| country_code | CHAR(2) | ISO 3166-1 alpha-2 |
+| preferred_currency | CHAR(3) | ISO 4217 currency code |
+| gdpr_consent | BOOLEAN | NOT NULL DEFAULT FALSE |
+| gdpr_consent_at | TIMESTAMPTZ | Consent timestamp; required for EU users |
+| last_login_at | TIMESTAMPTZ | Indexed for inactivity detection |
+| created_at | TIMESTAMPTZ | DEFAULT NOW() |
+| deleted_at | TIMESTAMPTZ | Soft delete; NULL = active |
+
+**Table: venture_projects**
+
+| Column | Type | Constraints / Notes |
+|---|---|---|
+| id | UUID | PRIMARY KEY |
+| user_id | UUID | FOREIGN KEY → users.id; indexed |
+| title | VARCHAR(500) | NOT NULL; venture opportunity title |
+| summary | TEXT | One-paragraph venture description |
+| overall_confidence_score | DECIMAL(5,2) | Score 0.00–100.00 (deterministic 0–10 core × 10) |
+| score_market_readiness | DECIMAL(5,2) | Sub-score (feeds PRS) |
+| score_competitive_density | DECIMAL(5,2) | Sub-score (feeds CS) |
+| score_capital_efficiency | DECIMAL(5,2) | Sub-score (feeds PSS) |
+| score_regulatory_complexity | DECIMAL(5,2) | Sub-score (feeds PSS) |
+| score_revenue_model_clarity | DECIMAL(5,2) | Sub-score (feeds PSS) |
+| score_exit_potential | DECIMAL(5,2) | Sub-score (feeds BPS/PPP in Breakthrough mode) |
+| score_time_to_market | DECIMAL(5,2) | Sub-score (feeds PSS) |
+| score_founder_alignment | DECIMAL(5,2) | Sub-score (feeds PSS) |
+| status | ENUM | shortlisted, unlocked, validated, financial_ready, pitch_ready, investor_ready, archived |
+| search_params | JSONB | Stored search parameters that generated this opportunity |
+| bracket_factor | INTEGER | Capital-bracket multiplier locked at unlock (1, 2, 4, … per the bracket law) |
+| deep_dive_data | JSONB | Full deep-dive analysis content (incl. PRS/CS/PSS/BPS pillar values); populated on unlock |
+| financial_model_data | JSONB | Financial model assumptions and outputs |
+| acu_spent_total | INTEGER | Total ACUs consumed on this project |
+| created_at | TIMESTAMPTZ | DEFAULT NOW() |
+| updated_at | TIMESTAMPTZ | Auto-updated on any change |
+
+---
+
 # ENGINEERING ANNEX — TRANSFORMATION PILLARS
 
 *The annex below is the engineering-grade transformation layer: audited current state, invariant laws already enforced in code, and the gap-closing work per pillar. Annex numbering (§3–§13) is internal to the annex and independent of the master-document SECTION numbering above. Annex content is additive — master sections land verbatim on top; nothing here is removed.*
