@@ -356,6 +356,107 @@ Every user type on the Niche Finder AI-OS receives a dedicated, personalised AI 
 
 ---
 
+# SECTION 07 — BITRIPAY PAYMENT GATEWAY INTEGRATION
+
+## 7. BitriPay Payment Gateway Integration
+
+### 7.1 Integration Architecture Overview
+
+BitriPay is integrated as the primary payment infrastructure layer for all ACU purchase transactions. The integration is designed as a dedicated BitriPay API Gateway module within the Niche Finder AI-OS, operating alongside Stripe as a dual-rail payment system to maximise geographic coverage and payment method diversity.
+
+### 7.2 BitriPay Integration Specification
+
+| Integration Component | Specification |
+|---|---|
+| API Key Management | Per-user API key generation for enterprise/merchant integrations; sandbox and production key pairs; key rotation every 90 days; key scoping by permission level |
+| Sandbox Environment | Full sandbox with test ACU packages, mock payment flows, webhook simulation, transaction reversal testing; isolated from production data |
+| Production Environment | Live payment processing with real-time settlement; PCI-DSS compliant token vault; no raw card data stored on Niche Finder infrastructure |
+| Webhook Engine | Signed webhook delivery for: payment.completed, payment.failed, refund.issued, dispute.opened, settlement.completed; retry logic with exponential backoff |
+| QR Payment Flow | Generate payment QR for ACU package checkout; QR valid for 15 minutes; real-time status polling; auto-credit ACU wallet on confirmation |
+| Wallet Payments | BitriPay wallet balance deduction for ACU purchases; supports CDF, GBP, EUR, USD wallet balances; FX conversion at BitriPay mid-market rate |
+| Mobile Money | M-Pesa, Airtel Money, Orange Money, Africell integration via BitriPay rails for Sub-Saharan African user base; enables DRC/pan-African market penetration |
+| Settlement Engine | Automated daily settlement to Niche Finder operating account; settlement report auto-generated; reconciliation matching against ACU credit events |
+| Refund Processing | API-triggered refunds within 24 hours of request; partial refund support; refund event triggers ACU wallet deduction of equivalent credits |
+| Dispute Management | Dispute webhook triggers admin alert; dispute evidence package auto-compiled from transaction logs; 72-hour response SLA |
+| Commission Split | Revenue sharing configuration for white-label partners; configurable split percentage; automated partner settlement on monthly cycle |
+| Transaction Monitoring | Real-time transaction feed in Admin Command Centre; anomaly detection on transaction velocity; fraud scoring per transaction |
+
+*ACU conformance: checkout sells the canonical packages (£5 → 500, £10 → 1,100, £20 → 2,400, £50 → 6,500 ACU) in whichever settlement currency/rail the buyer uses — the package's ACU grant is fixed at purchase and credited idempotently on `payment.completed`/settlement, exactly per the wallet contract (credit on settlement only, compensating debit on refund/chargeback).*
+
+### 7.3 BitriPay ACU Purchase Flow — Technical Sequence
+
+| Step | System Action | Technical Detail |
+|---|---|---|
+| 1 | User selects ACU package and clicks Purchase | Frontend sends package_id and user_id to /api/v1/payments/initiate |
+| 2 | Payment Service creates BitriPay payment intent | POST to BitriPay /v1/payment-intents with amount, currency, metadata |
+| 3 | BitriPay returns payment_intent_id and checkout URL | Frontend redirects user to BitriPay hosted checkout or renders inline QR |
+| 4 | User completes payment on BitriPay | BitriPay processes payment, updates payment_intent status to succeeded |
+| 5 | BitriPay fires payment.completed webhook | Niche Finder Webhook Engine receives signed event, verifies HMAC signature |
+| 6 | ACU Wallet Service credits user account | Atomic DB transaction: insert ACU_transaction record, update user ACU balance (idempotency-keyed, same contract as the existing `/v1/wallet/credit`) |
+| 7 | Notification Agent fires confirmation | Email + in-app: payment confirmed, ACU balance updated, receipt generated |
+| 8 | Settlement cycle runs (T+1) | BitriPay settles net amount to Niche Finder account; settlement record created |
+
+### 7.4 Dual-Rail Payment Strategy
+
+| Payment Rail | Primary Market | Supported Methods | Routing Logic |
+|---|---|---|---|
+| BitriPay | Africa (DRC, Kenya, Nigeria, Ghana, Zambia) | Mobile Money (M-Pesa, Airtel, Orange, Africell), QR, Wallet | Default for African IP geolocation; explicit user selection |
+| Stripe | UK, EU, USA, Canada, Australia | Card (Visa, Mastercard, Amex), Apple Pay, Google Pay, SEPA | Default for Western markets; fallback for failed BitriPay transactions |
+
+---
+
+# SECTION 08 — PRODUCTION-GRADE TECHNICAL ARCHITECTURE
+
+## 8. Production-Grade Technical Architecture
+
+### 8.1 Architecture Overview
+
+The Niche Finder AI-OS is built on a cloud-native, event-driven, microservices architecture deployed on Google Cloud Platform (GCP). The system is designed for horizontal scalability, zero single points of failure, and sub-200ms API response times at the 99th percentile under load.
+
+### 8.2 Frontend Architecture
+
+| Layer | Technology | Rationale |
+|---|---|---|
+| Framework | Next.js 14 (App Router) | SSR for SEO, RSC for performance, API routes for BFF pattern |
+| Language | TypeScript | Type safety across component and API contract boundaries |
+| State Management | Zustand + React Query | Lightweight global state; server state caching and synchronisation |
+| UI Component System | Radix UI + Tailwind CSS | Accessible primitives; utility-first styling; design token system |
+| Real-Time Updates | Server-Sent Events (SSE) | Streaming agent output to UI; ACU balance real-time updates |
+| Authentication | Firebase Auth SDK | JWT session management; social login; MFA support |
+| Analytics | Mixpanel Browser SDK | Client-side event capture; funnel tracking; A/B test exposure |
+| Edge Delivery | Cloudflare CDN | Static asset CDN; edge caching; global latency optimisation |
+
+*Migration note (additive): the current prototype's 15-page static front end, shared design system, and `nf-polish.css` brand layer are the design source of truth; the Next.js build re-implements them 1:1 (same tokens: ink `#070B14`, gold `#E8A61A`, blue `#3D85E0`) rather than replacing the product's look. `nf-config.js`'s single-switch gateway contract carries into the BFF layer.*
+
+### 8.3 Backend Architecture
+
+| Service | Technology | Responsibility |
+|---|---|---|
+| API Gateway | NestJS + Express (GCP Cloud Run) | Request routing, auth middleware, rate limiting, request validation |
+| Agent Orchestration Service | LangChain / LangGraph (Python, GCP Cloud Run) | Multi-agent workflow coordination, agent state management, tool calling |
+| Document Generation Service | Node.js + docx.js + ExcelJS + Puppeteer | Business plan, financial model, pitch deck production; async job queue |
+| ACU Wallet Service | NestJS microservice | ACU balance management, transaction atomicity, ledger integrity |
+| Payment Gateway Service | NestJS (BitriPay SDK + Stripe SDK) | Payment intent creation, webhook processing, settlement reconciliation |
+| Notification Service | NestJS + Bull Queue (Redis) | Email, SMS, push notification dispatch; retry logic; delivery tracking |
+| Webhook Engine | NestJS + HMAC verification | Inbound webhook processing, signature verification, event routing |
+| Audit Log Service | Append-only service (GCP Firestore) | Immutable action log for all platform events; compliance reporting |
+| Search & Indexing Service | GCP Cloud Search + Elasticsearch | Project and asset full-text search; opportunity discovery indexing |
+
+*ACU Wallet Service conformance: implements the wallet contract already proven in the prototype gateway — dual Welcome/Paid balances, welcome grant on first touch, idempotency keys on every mutation, `402 insufficient_acu` semantics, and the capital-bracket metering law (`bracketFactor`/`meterAcu`) applied server-side.*
+
+### 8.4 Database Architecture
+
+| Database | Technology | Data Domain |
+|---|---|---|
+| Primary Relational DB | PostgreSQL 15 (GCP Cloud SQL) | Users, projects, ACU transactions, billing records, API keys |
+| Document Store | GCP Firestore | Agent conversation logs, audit trails, notification events, real-time state |
+| Vector Database | Pinecone (managed) | Venture Memory embeddings, opportunity semantic index, user preference vectors |
+| Cache Layer | Redis (GCP Memorystore) | Session data, API response cache, job queue, rate limit counters |
+| Data Warehouse | BigQuery | Analytics events, revenue reporting, cohort analysis, ML training data |
+| Object Storage | Cloudflare R2 / GCP Cloud Storage | Generated documents (PDF, DOCX, XLSX), user exports, backup archives |
+
+---
+
 # ENGINEERING ANNEX — TRANSFORMATION PILLARS
 
 *The annex below is the engineering-grade transformation layer: audited current state, invariant laws already enforced in code, and the gap-closing work per pillar. Annex numbering (§3–§13) is internal to the annex and independent of the master-document SECTION numbering above. Annex content is additive — master sections land verbatim on top; nothing here is removed.*
