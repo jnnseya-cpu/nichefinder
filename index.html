@@ -1,0 +1,719 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Niche Finder — The Operating System for Venture Creation</title>
+<meta name="description" content="From market signal to investor-ready venture — an autonomous venture intelligence system that discovers, validates, and builds your next business.">
+<style>
+  :root{
+    --ink:#070B14;
+    --ink-2:#0A1120;
+    --panel:#0E1626;
+    --panel-2:#121C30;
+    --line:rgba(217,164,65,.14);
+    --line-soft:rgba(139,147,165,.14);
+    --text:#EAE5D9;
+    --muted:#8B93A5;
+    --gold:#D9A441;
+    --gold-bright:#F1C97E;
+    --gold-dim:rgba(217,164,65,.55);
+    --teal:#3FA79B;
+    --serif:"Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:"SF Mono","Cascadia Code","JetBrains Mono",Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--ink);
+    color:var(--text);
+    font-family:var(--sans);
+    font-size:17px;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  ::selection{background:var(--gold);color:var(--ink)}
+  a{color:inherit}
+  a:focus-visible,button:focus-visible{outline:2px solid var(--gold-bright);outline-offset:3px;border-radius:2px}
+  img,canvas{max-width:100%}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:0 clamp(20px,4vw,48px)}
+
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:.72rem;
+    letter-spacing:.28em;
+    text-transform:uppercase;
+    color:var(--gold);
+    display:flex;align-items:center;gap:14px;
+  }
+  .eyebrow::before{content:"";width:34px;height:1px;background:var(--gold-dim);flex:none}
+
+  /* ---------- NAV ---------- */
+  header.nav{
+    position:fixed;inset:0 0 auto 0;z-index:50;
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+    background:rgba(7,11,20,.62);
+    border-bottom:1px solid var(--line-soft);
+  }
+  .nav-inner{display:flex;align-items:center;justify-content:space-between;height:66px}
+  .brand{display:flex;align-items:center;gap:11px;text-decoration:none}
+  .brand-mark{
+    width:30px;height:30px;flex:none;border:1px solid var(--gold);border-radius:50%;
+    display:grid;place-items:center;
+  }
+  .brand-mark i{width:8px;height:8px;border-radius:50%;background:var(--gold);display:block}
+  .brand span{font-family:var(--serif);font-size:1.15rem;letter-spacing:.02em}
+  .brand em{font-style:normal;color:var(--gold)}
+  .nav-links{display:flex;gap:30px;align-items:center;font-size:.85rem}
+  .nav-links a{color:var(--muted);text-decoration:none;transition:color .2s}
+  .nav-links a:hover{color:var(--text)}
+  .nav-cta{
+    color:var(--ink)!important;background:var(--gold);
+    padding:9px 18px;border-radius:3px;font-weight:600;letter-spacing:.02em;
+  }
+  .nav-cta:hover{background:var(--gold-bright);color:var(--ink)!important}
+  @media(max-width:760px){.nav-links a:not(.nav-cta){display:none}}
+
+  /* ---------- HERO ---------- */
+  .hero{
+    position:relative;
+    min-height:100svh;
+    display:flex;flex-direction:column;justify-content:center;
+    padding:130px 0 90px;
+    isolation:isolate;
+  }
+  #radar{
+    position:absolute;inset:0;z-index:-2;width:100%;height:100%;
+  }
+  .hero-vignette{
+    position:absolute;inset:0;z-index:-1;pointer-events:none;
+    background:
+      radial-gradient(1100px 520px at 68% 30%, rgba(217,164,65,.07), transparent 60%),
+      radial-gradient(900px 700px at 15% 85%, rgba(63,167,155,.05), transparent 60%),
+      linear-gradient(180deg, rgba(7,11,20,.25) 0%, rgba(7,11,20,0) 30%, rgba(7,11,20,.88) 88%, var(--ink) 100%);
+  }
+  .hero h1{
+    font-family:var(--serif);
+    font-weight:400;
+    font-size:clamp(2.7rem,7.2vw,5.4rem);
+    line-height:1.04;
+    letter-spacing:-.015em;
+    text-wrap:balance;
+    max-width:15ch;
+    margin:26px 0 0;
+  }
+  .hero h1 .gold{color:var(--gold-bright);font-style:italic}
+  .hero p.lede{
+    max-width:56ch;
+    margin:26px 0 0;
+    font-size:clamp(1rem,1.6vw,1.2rem);
+    color:var(--muted);
+  }
+  .hero-ctas{display:flex;gap:16px;flex-wrap:wrap;margin-top:40px}
+  .btn{
+    display:inline-flex;align-items:center;gap:10px;
+    font-size:.95rem;font-weight:600;letter-spacing:.02em;
+    padding:15px 30px;border-radius:3px;text-decoration:none;
+    transition:transform .18s ease, background .18s ease, border-color .18s ease;
+    border:1px solid transparent;
+  }
+  .btn:hover{transform:translateY(-2px)}
+  .btn-gold{background:var(--gold);color:var(--ink)}
+  .btn-gold:hover{background:var(--gold-bright)}
+  .btn-gold .arr{transition:transform .18s}
+  .btn-gold:hover .arr{transform:translateX(4px)}
+  .btn-ghost{border-color:rgba(234,229,217,.22);color:var(--text)}
+  .btn-ghost:hover{border-color:var(--gold-dim)}
+  .hero-badges{
+    display:flex;flex-wrap:wrap;gap:12px 30px;margin-top:56px;
+    font-family:var(--mono);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+  }
+  .hero-badges span{display:flex;align-items:center;gap:9px}
+  .hero-badges i{width:5px;height:5px;background:var(--gold);border-radius:50%;flex:none;display:block}
+  .hero-trust{margin-top:14px;font-size:.85rem;color:var(--muted)}
+  .hero-trust b{color:var(--text);font-family:var(--mono);font-weight:600}
+
+  /* load-in choreography */
+  .rise{opacity:0;transform:translateY(22px);animation:rise .9s cubic-bezier(.2,.7,.2,1) forwards}
+  .rise.d1{animation-delay:.08s}.rise.d2{animation-delay:.22s}.rise.d3{animation-delay:.38s}
+  .rise.d4{animation-delay:.55s}.rise.d5{animation-delay:.72s}
+  @keyframes rise{to{opacity:1;transform:none}}
+
+  /* ---------- DASHBOARD ---------- */
+  .dash-section{position:relative;padding:10px 0 40px}
+  .dash{
+    background:linear-gradient(165deg,var(--panel-2),var(--panel) 55%);
+    border:1px solid var(--line);
+    border-radius:10px;
+    box-shadow:0 40px 90px -30px rgba(0,0,0,.75), 0 0 0 1px rgba(255,255,255,.02) inset;
+    overflow:hidden;
+  }
+  .dash-bar{
+    display:flex;align-items:center;gap:10px;
+    padding:13px 18px;border-bottom:1px solid var(--line-soft);
+    font-family:var(--mono);font-size:.7rem;color:var(--muted);letter-spacing:.12em;
+  }
+  .dash-bar .dots{display:flex;gap:6px;margin-right:8px}
+  .dash-bar .dots i{width:9px;height:9px;border-radius:50%;background:rgba(139,147,165,.3);display:block}
+  .dash-bar .live{margin-left:auto;color:var(--gold);display:flex;align-items:center;gap:7px}
+  .dash-bar .live i{width:6px;height:6px;border-radius:50%;background:var(--gold);display:block;animation:pulse 2.2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+  .dash-body{display:grid;grid-template-columns:1.35fr 1fr;gap:0}
+  @media(max-width:860px){.dash-body{grid-template-columns:1fr}}
+  .dash-main{padding:28px 30px;border-right:1px solid var(--line-soft)}
+  @media(max-width:860px){.dash-main{border-right:none;border-bottom:1px solid var(--line-soft)}}
+  .dash-main h3{font-family:var(--serif);font-weight:400;font-size:1.35rem;letter-spacing:.01em}
+  .dash-main .sub{font-size:.8rem;color:var(--muted);margin-top:4px}
+  .metric-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:24px}
+  @media(max-width:520px){.metric-row{grid-template-columns:1fr 1fr}}
+  .metric{
+    background:rgba(7,11,20,.5);border:1px solid var(--line-soft);border-radius:6px;padding:14px 16px;
+  }
+  .metric .k{font-family:var(--mono);font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+  .metric .v{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:1.35rem;margin-top:6px;color:var(--text)}
+  .metric .v em{font-style:normal;font-size:.75rem;color:var(--teal);margin-left:6px}
+  .metric.gold .v{color:var(--gold-bright)}
+  #spark{width:100%;height:150px;display:block;margin-top:22px}
+  .dash-side{padding:28px 30px;display:flex;flex-direction:column;gap:18px}
+  .score-ring{display:flex;align-items:center;gap:20px}
+  .ring{position:relative;width:104px;height:104px;flex:none}
+  .ring svg{transform:rotate(-90deg)}
+  .ring .num{
+    position:absolute;inset:0;display:grid;place-items:center;
+    font-family:var(--mono);font-size:1.5rem;color:var(--gold-bright);font-variant-numeric:tabular-nums;
+  }
+  .score-ring .lab .k{font-family:var(--mono);font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+  .score-ring .lab .t{font-family:var(--serif);font-size:1.05rem;margin-top:4px}
+  .qual{display:flex;flex-direction:column;gap:12px;margin-top:4px}
+  .qual .q{font-size:.78rem;color:var(--muted)}
+  .qual .q b{display:flex;justify-content:space-between;color:var(--text);font-weight:500;font-family:var(--mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
+  .qual .bar{height:3px;background:rgba(139,147,165,.18);border-radius:2px;overflow:hidden}
+  .qual .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-bright));border-radius:2px}
+  .dash-caption{
+    text-align:center;margin-top:22px;font-family:var(--mono);
+    font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
+  }
+
+  /* ---------- SECTIONS ---------- */
+  section.act{padding:110px 0}
+  section.act.tint{background:linear-gradient(180deg,var(--ink) 0%,var(--ink-2) 18%,var(--ink-2) 82%,var(--ink) 100%)}
+  .act-head{max-width:720px;margin-bottom:64px}
+  .act-head h2{
+    font-family:var(--serif);font-weight:400;
+    font-size:clamp(1.9rem,3.6vw,2.9rem);line-height:1.12;letter-spacing:-.01em;
+    text-wrap:balance;margin-top:22px;
+  }
+  .act-head h2 .gold{color:var(--gold-bright);font-style:italic}
+  .act-head p{color:var(--muted);margin-top:18px;max-width:58ch}
+
+  /* features */
+  .features{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line-soft);border:1px solid var(--line-soft)}
+  @media(max-width:760px){.features{grid-template-columns:1fr}}
+  .feature{background:var(--ink);padding:38px 36px;position:relative;transition:background .25s}
+  .feature:hover{background:var(--ink-2)}
+  .feature::after{
+    content:"";position:absolute;left:36px;right:36px;bottom:0;height:1px;
+    background:var(--gold);transform:scaleX(0);transform-origin:left;transition:transform .35s ease;
+  }
+  .feature:hover::after{transform:scaleX(1)}
+  .feature .glyph{width:38px;height:38px;margin-bottom:22px;color:var(--gold)}
+  .feature h3{font-family:var(--serif);font-weight:400;font-size:1.3rem;letter-spacing:.01em}
+  .feature p{color:var(--muted);font-size:.94rem;margin-top:10px;max-width:44ch}
+
+  /* steps */
+  .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(20px,3vw,40px)}
+  @media(max-width:980px){.steps{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:560px){.steps{grid-template-columns:1fr}}
+  .step{position:relative;padding-top:26px}
+  .step::before{content:"";position:absolute;top:0;left:0;width:100%;height:1px;background:var(--line-soft)}
+  .step::after{content:"";position:absolute;top:0;left:0;width:44px;height:1px;background:var(--gold)}
+  .step .n{font-family:var(--mono);font-size:.72rem;letter-spacing:.22em;color:var(--gold)}
+  .step h3{font-family:var(--serif);font-weight:400;font-size:1.35rem;margin-top:12px}
+  .step p{color:var(--muted);font-size:.92rem;margin-top:10px}
+
+  /* layers */
+  .layers-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(36px,5vw,80px);align-items:center}
+  @media(max-width:900px){.layers-grid{grid-template-columns:1fr}}
+  .asset-list{list-style:none;margin-top:34px}
+  .asset-list li{
+    display:flex;align-items:center;gap:16px;padding:16px 0;
+    border-bottom:1px solid var(--line-soft);font-family:var(--serif);font-size:1.15rem;
+  }
+  .asset-list li:first-child{border-top:1px solid var(--line-soft)}
+  .asset-list .tick{color:var(--gold);font-family:var(--mono);font-size:.8rem;flex:none}
+  .layer-stack{display:flex;flex-direction:column;gap:14px;perspective:900px}
+  .layer{
+    background:linear-gradient(160deg,var(--panel-2),var(--panel));
+    border:1px solid var(--line);border-radius:8px;
+    padding:22px 26px;display:flex;align-items:baseline;gap:18px;
+    box-shadow:0 18px 40px -18px rgba(0,0,0,.7);
+    transition:transform .3s ease,border-color .3s ease;
+  }
+  .layer:hover{transform:translateX(10px);border-color:var(--gold-dim)}
+  .layer .ln{font-family:var(--mono);font-size:.68rem;letter-spacing:.2em;color:var(--gold);flex:none}
+  .layer .lt{font-family:var(--serif);font-size:1.2rem}
+  .layer:nth-child(1){margin-left:0}
+  .layer:nth-child(2){margin-left:clamp(8px,2vw,26px)}
+  .layer:nth-child(3){margin-left:clamp(16px,4vw,52px)}
+  .layer:nth-child(4){margin-left:clamp(24px,6vw,78px)}
+  @media(max-width:900px){.layer{margin-left:0!important}}
+
+  /* proof */
+  .proof-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line-soft);border:1px solid var(--line-soft)}
+  @media(max-width:900px){.proof-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:520px){.proof-grid{grid-template-columns:1fr}}
+  .proof{background:var(--ink-2);padding:40px 34px}
+  .proof .big{
+    font-family:var(--serif);font-size:clamp(2.4rem,4vw,3.4rem);line-height:1;
+    color:var(--gold-bright);font-variant-numeric:tabular-nums;letter-spacing:-.01em;
+  }
+  .proof p{color:var(--muted);font-size:.9rem;margin-top:14px;max-width:30ch}
+
+  /* final call */
+  .final{
+    position:relative;padding:150px 0 140px;text-align:center;isolation:isolate;overflow:hidden;
+  }
+  .final::before{
+    content:"";position:absolute;inset:0;z-index:-1;
+    background:radial-gradient(800px 420px at 50% 20%, rgba(217,164,65,.1), transparent 65%);
+  }
+  .final .eyebrow{justify-content:center}
+  .final .eyebrow::after{content:"";width:34px;height:1px;background:var(--gold-dim);flex:none}
+  .final h2{
+    font-family:var(--serif);font-weight:400;
+    font-size:clamp(2.6rem,6vw,4.6rem);line-height:1.06;letter-spacing:-.015em;
+    text-wrap:balance;margin:26px auto 0;max-width:16ch;
+  }
+  .final h2 .gold{color:var(--gold-bright);font-style:italic}
+  .final p{color:var(--muted);max-width:52ch;margin:24px auto 0}
+  .final .hero-ctas{justify-content:center}
+
+  /* footer */
+  footer{border-top:1px solid var(--line-soft);padding:38px 0;font-size:.82rem;color:var(--muted)}
+  .foot{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+  .foot .mono{font-family:var(--mono);font-size:.68rem;letter-spacing:.18em;text-transform:uppercase}
+
+  /* scroll reveal */
+  .reveal{opacity:0;transform:translateY(26px);transition:opacity .8s ease,transform .8s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto}
+    .rise,.reveal{opacity:1;transform:none;animation:none;transition:none}
+    .dash-bar .live i{animation:none}
+    *{transition-duration:.01ms!important}
+  }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="#top" aria-label="Niche Finder home">
+      <span class="brand-mark" aria-hidden="true"><i></i></span>
+      <span>Niche<em>Finder</em></span>
+    </a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="#what">What You Get</a>
+      <a href="#how">How It Works</a>
+      <a href="#outputs">Outputs</a>
+      <a href="#proof">Proof</a>
+      <a class="nav-cta" href="#final">Find My Opportunity</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- HERO -->
+  <section class="hero" aria-label="Introduction">
+    <canvas id="radar" aria-hidden="true"></canvas>
+    <div class="hero-vignette" aria-hidden="true"></div>
+    <div class="wrap">
+      <p class="eyebrow rise d1">Autonomous venture intelligence</p>
+      <h1 class="rise d2">The Operating System for <span class="gold">Venture Creation</span></h1>
+      <p class="lede rise d3">From market signal to investor-ready venture — powered by an autonomous venture intelligence system that discovers, validates, and builds your next business.</p>
+      <div class="hero-ctas rise d4">
+        <a class="btn btn-gold" href="#final">Find My Opportunity <span class="arr" aria-hidden="true">→</span></a>
+        <a class="btn btn-ghost" href="#how">How It Works</a>
+      </div>
+      <div class="hero-badges rise d5">
+        <span><i></i>Enterprise-Grade Security</span>
+        <span><i></i>Global Market Coverage</span>
+        <span><i></i>Real-Time AI Analysis</span>
+      </div>
+      <p class="hero-trust rise d5">Trusted by <b>12,500+</b> founders</p>
+    </div>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section class="dash-section" aria-label="Product preview">
+    <div class="wrap">
+      <div class="dash reveal">
+        <div class="dash-bar">
+          <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+          NICHE FINDER — INVESTOR FINANCIAL DASHBOARD
+          <span class="live"><i aria-hidden="true"></i>OS SYNC ACTIVE</span>
+        </div>
+        <div class="dash-body">
+          <div class="dash-main">
+            <h3>Cold-Chain Logistics for Fresh Produce — Kinshasa, DRC</h3>
+            <p class="sub">Deep-dive analysis · Project status: financial_ready</p>
+            <div class="metric-row">
+              <div class="metric gold">
+                <div class="k">Year-3 Revenue</div>
+                <div class="v">$1.24M<em>▲ forecast</em></div>
+              </div>
+              <div class="metric">
+                <div class="k">Gross Margin</div>
+                <div class="v">61%</div>
+              </div>
+              <div class="metric">
+                <div class="k">Break-even</div>
+                <div class="v">14 mo</div>
+              </div>
+            </div>
+            <canvas id="spark" aria-label="Three-year revenue forecast chart" role="img"></canvas>
+          </div>
+          <div class="dash-side">
+            <div class="score-ring">
+              <div class="ring" aria-hidden="true">
+                <svg width="104" height="104" viewBox="0 0 104 104">
+                  <circle cx="52" cy="52" r="46" fill="none" stroke="rgba(139,147,165,.18)" stroke-width="5"/>
+                  <circle id="ringArc" cx="52" cy="52" r="46" fill="none" stroke="#D9A441" stroke-width="5"
+                          stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="289"/>
+                </svg>
+                <span class="num" id="ringNum">0</span>
+              </div>
+              <div class="lab">
+                <div class="k">Venture Scorecard</div>
+                <div class="t">Overall Confidence Score</div>
+              </div>
+            </div>
+            <div class="qual">
+              <div class="q"><b>Market Readiness <span>91</span></b><span class="bar"><i style="width:91%"></i></span></div>
+              <div class="q"><b>Competitive Gap <span>84</span></b><span class="bar"><i style="width:84%"></i></span></div>
+              <div class="q"><b>Prospect of Success <span>87</span></b><span class="bar"><i style="width:87%"></i></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="dash-caption reveal">Live view · Opportunity validated in under five minutes</p>
+    </div>
+  </section>
+
+  <!-- WHAT YOU GET -->
+  <section class="act tint" id="what">
+    <div class="wrap">
+      <div class="act-head reveal">
+        <p class="eyebrow">What you get</p>
+        <h2>An end-to-end <span class="gold">Venture OS</span></h2>
+        <p>Everything you need to go from idea to a validated, fundable venture — all in one seamless system.</p>
+      </div>
+      <div class="features">
+        <article class="feature reveal">
+          <svg class="glyph" viewBox="0 0 38 38" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
+            <circle cx="19" cy="19" r="14"/><circle cx="19" cy="19" r="7" opacity=".5"/><circle cx="19" cy="19" r="1.8" fill="currentColor" stroke="none"/><path d="M19 5v-3M33 19h3M19 33v3M5 19H2"/>
+          </svg>
+          <h3>Autonomous Opportunity Discovery</h3>
+          <p>Discover high-potential niches with data-backed scores and deep market insights.</p>
+        </article>
+        <article class="feature reveal">
+          <svg class="glyph" viewBox="0 0 38 38" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
+            <path d="M4 32h30"/><path d="M7 32V20m8 12V14m8 18V22m8 10V9"/><path d="M7 15l8-6 8 7 8-9" opacity=".5"/>
+          </svg>
+          <h3>Automated Financial Modeling</h3>
+          <p>Instantly generate 3-year financial forecasts and cashflow projections for any niche.</p>
+        </article>
+        <article class="feature reveal">
+          <svg class="glyph" viewBox="0 0 38 38" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
+            <path d="M10 3h13l7 7v25H10z"/><path d="M23 3v7h7" opacity=".5"/><path d="M15 18h10M15 23h10M15 28h6"/>
+          </svg>
+          <h3>Generative Investor Documents</h3>
+          <p>Produce professional business plans, financial models, and pitch decks automatically.</p>
+        </article>
+        <article class="feature reveal">
+          <svg class="glyph" viewBox="0 0 38 38" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
+            <path d="M5 33c9 0 7-22 16-22"/><circle cx="27" cy="11" r="4"/><circle cx="5" cy="33" r="2.4" fill="currentColor" stroke="none"/><path d="M27 15v6m0 4v2m-6-3h12" opacity=".5"/>
+          </svg>
+          <h3>Intelligent Execution Planning</h3>
+          <p>Turn strategy into action with AI-powered, step-by-step execution roadmaps.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW -->
+  <section class="act" id="how">
+    <div class="wrap">
+      <div class="act-head reveal">
+        <p class="eyebrow">How the system operates</p>
+        <h2>From idea to investor-ready — <span class="gold">in minutes</span></h2>
+        <p>Our OS streamlines the entire venture creation process, turning your initial spark into a fundable business plan with unprecedented speed.</p>
+      </div>
+      <div class="steps">
+        <div class="step reveal">
+          <span class="n">01 / SEARCH</span>
+          <h3>Search</h3>
+          <p>Enter your preferences and let our system find the best opportunities worldwide.</p>
+        </div>
+        <div class="step reveal">
+          <span class="n">02 / RESULTS</span>
+          <h3>Results</h3>
+          <p>Explore top opportunities ranked by our proprietary AI scoring model.</p>
+        </div>
+        <div class="step reveal">
+          <span class="n">03 / ANALYZE</span>
+          <h3>Analyze</h3>
+          <p>Generate financial models and validate profitability in seconds.</p>
+        </div>
+        <div class="step reveal">
+          <span class="n">04 / CREATE</span>
+          <h3>Create</h3>
+          <p>Download investor-ready documents and pitch with full confidence.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- OUTPUTS -->
+  <section class="act tint" id="outputs">
+    <div class="wrap layers-grid">
+      <div>
+        <div class="act-head reveal" style="margin-bottom:0">
+          <p class="eyebrow">One opportunity. Multiple outputs.</p>
+          <h2>Built for <span class="gold">execution</span>. Not just ideas.</h2>
+          <p>Each project provides a full suite of investor-ready assets. Move from validation to fundraising with structured, professional documents generated in minutes.</p>
+        </div>
+        <ul class="asset-list reveal">
+          <li><span class="tick">✓</span>Investor Pitch Decks</li>
+          <li><span class="tick">✓</span>Business Plans</li>
+          <li><span class="tick">✓</span>3-Year Financial Models</li>
+          <li><span class="tick">✓</span>Execution Roadmaps</li>
+        </ul>
+      </div>
+      <div class="layer-stack reveal" aria-label="The four output layers">
+        <div class="layer"><span class="ln">LAYER 01</span><span class="lt">Opportunity Validation</span></div>
+        <div class="layer"><span class="ln">LAYER 02</span><span class="lt">Financial Modeling</span></div>
+        <div class="layer"><span class="ln">LAYER 03</span><span class="lt">Business Plan</span></div>
+        <div class="layer"><span class="ln">LAYER 04</span><span class="lt">Investor Pitch Deck</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROOF -->
+  <section class="act" id="proof">
+    <div class="wrap">
+      <div class="act-head reveal">
+        <p class="eyebrow">Operating proof</p>
+        <h2>Trust built through <span class="gold">measurable structure</span></h2>
+        <p>No inflated claims. No synthetic testimonials. The proof comes from how quickly the platform converts exploration into decision-grade outputs.</p>
+      </div>
+      <div class="proof-grid">
+        <div class="proof reveal">
+          <div class="big">&lt; 5 Min</div>
+          <p>Average time from search to a validated, investor-grade niche idea.</p>
+        </div>
+        <div class="proof reveal">
+          <div class="big">3× Faster</div>
+          <p>Venture planning and financial modeling vs traditional research methods.</p>
+        </div>
+        <div class="proof reveal">
+          <div class="big">12,500+</div>
+          <p>Founders and entrepreneurs building with Niche Finder outputs.</p>
+        </div>
+        <div class="proof reveal">
+          <div class="big">95%</div>
+          <p>Of generated niche reports deemed 'investor-ready' by our validation models.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FINAL -->
+  <section class="final" id="final">
+    <div class="wrap">
+      <p class="eyebrow reveal">Final call</p>
+      <h2 class="reveal">Your next venture <span class="gold">is waiting.</span></h2>
+      <p class="reveal">No guesswork. Just execution. Choose the niche, structure the model, and move with outputs that look ready for serious conversations.</p>
+      <div class="hero-ctas reveal">
+        <a class="btn btn-gold" href="#top">Start Now <span class="arr" aria-hidden="true">→</span></a>
+        <a class="btn btn-ghost" href="#how">See How It Works</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <a class="brand" href="#top" aria-label="Niche Finder home">
+      <span class="brand-mark" aria-hidden="true"><i></i></span>
+      <span>Niche<em>Finder</em></span>
+    </a>
+    <span class="mono">The Operating System for Venture Creation</span>
+    <span>© 2026 Niche Finder</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---- Opportunity radar: drifting global signal network with gold pings ---- */
+  var cv = document.getElementById('radar'), cx = cv.getContext('2d');
+  var W, H, DPR = Math.min(devicePixelRatio || 1, 2), nodes = [], pings = [], t = 0;
+  function size(){
+    W = cv.clientWidth; H = cv.clientHeight;
+    cv.width = W * DPR; cv.height = H * DPR;
+    cx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  function seed(){
+    nodes = [];
+    var n = Math.max(40, Math.min(90, Math.floor(W * H / 22000)));
+    for (var i = 0; i < n; i++){
+      nodes.push({
+        x: Math.random() * W, y: Math.random() * H,
+        vx: (Math.random() - .5) * .16, vy: (Math.random() - .5) * .16,
+        r: Math.random() * 1.4 + .6
+      });
+    }
+  }
+  function frame(){
+    cx.clearRect(0, 0, W, H);
+    t++;
+    var i, j, a, b, d2, LINK = 130 * 130;
+    for (i = 0; i < nodes.length; i++){
+      a = nodes[i];
+      a.x += a.vx; a.y += a.vy;
+      if (a.x < -20) a.x = W + 20; if (a.x > W + 20) a.x = -20;
+      if (a.y < -20) a.y = H + 20; if (a.y > H + 20) a.y = -20;
+    }
+    cx.lineWidth = 1;
+    for (i = 0; i < nodes.length; i++){
+      a = nodes[i];
+      for (j = i + 1; j < nodes.length; j++){
+        b = nodes[j];
+        d2 = (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y);
+        if (d2 < LINK){
+          cx.strokeStyle = 'rgba(139,147,165,' + (0.07 * (1 - d2 / LINK)).toFixed(3) + ')';
+          cx.beginPath(); cx.moveTo(a.x, a.y); cx.lineTo(b.x, b.y); cx.stroke();
+        }
+      }
+    }
+    for (i = 0; i < nodes.length; i++){
+      a = nodes[i];
+      cx.fillStyle = 'rgba(139,147,165,.28)';
+      cx.beginPath(); cx.arc(a.x, a.y, a.r, 0, 6.2832); cx.fill();
+    }
+    // gold opportunity pings
+    if (t % 130 === 0 && nodes.length){
+      var src = nodes[Math.floor(Math.random() * nodes.length)];
+      pings.push({ x: src.x, y: src.y, r: 0 });
+    }
+    for (i = pings.length - 1; i >= 0; i--){
+      var p = pings[i];
+      p.r += .55;
+      var al = Math.max(0, 1 - p.r / 70);
+      if (al <= 0){ pings.splice(i, 1); continue; }
+      cx.strokeStyle = 'rgba(217,164,65,' + (al * .5).toFixed(3) + ')';
+      cx.lineWidth = 1.2;
+      cx.beginPath(); cx.arc(p.x, p.y, p.r, 0, 6.2832); cx.stroke();
+      cx.fillStyle = 'rgba(241,201,126,' + (al * .9).toFixed(3) + ')';
+      cx.beginPath(); cx.arc(p.x, p.y, 2, 0, 6.2832); cx.fill();
+    }
+    requestAnimationFrame(frame);
+  }
+  size(); seed();
+  addEventListener('resize', function(){ size(); seed(); });
+  if (!reduced) requestAnimationFrame(frame);
+  else { // static single draw
+    (function(){ t = 1; var raf = requestAnimationFrame; frame = function(){}; })();
+  }
+
+  /* ---- Sparkline: 3-year forecast ---- */
+  var sp = document.getElementById('spark');
+  function drawSpark(){
+    var w = sp.clientWidth, h = sp.clientHeight || 150;
+    sp.width = w * DPR; sp.height = h * DPR;
+    var g = sp.getContext('2d');
+    g.setTransform(DPR, 0, 0, DPR, 0, 0);
+    g.clearRect(0, 0, w, h);
+    var data = [4,5,7,8,11,13,17,20,26,31,38,47,52,60,71,79,88,100];
+    var pad = 8, max = 100;
+    function X(i){ return pad + i * (w - pad * 2) / (data.length - 1); }
+    function Y(v){ return h - pad - (v / max) * (h - pad * 2 - 14); }
+    // faint grid
+    g.strokeStyle = 'rgba(139,147,165,.12)'; g.lineWidth = 1;
+    for (var gy = 1; gy <= 3; gy++){
+      var yy = pad + gy * (h - pad * 2) / 4;
+      g.beginPath(); g.moveTo(pad, yy); g.lineTo(w - pad, yy); g.stroke();
+    }
+    // area fill
+    g.beginPath(); g.moveTo(X(0), Y(data[0]));
+    for (var i = 1; i < data.length; i++) g.lineTo(X(i), Y(data[i]));
+    g.lineTo(X(data.length - 1), h - pad); g.lineTo(X(0), h - pad); g.closePath();
+    var grad = g.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0, 'rgba(217,164,65,.28)'); grad.addColorStop(1, 'rgba(217,164,65,0)');
+    g.fillStyle = grad; g.fill();
+    // line
+    g.beginPath(); g.moveTo(X(0), Y(data[0]));
+    for (i = 1; i < data.length; i++) g.lineTo(X(i), Y(data[i]));
+    g.strokeStyle = '#D9A441'; g.lineWidth = 2; g.lineJoin = 'round'; g.stroke();
+    // emphasized endpoint
+    g.fillStyle = '#F1C97E';
+    g.beginPath(); g.arc(X(data.length - 1), Y(100), 3.5, 0, 6.2832); g.fill();
+    g.font = '10px ' + getComputedStyle(document.body).getPropertyValue('font-family');
+    g.fillStyle = 'rgba(241,201,126,.9)';
+    g.textAlign = 'right';
+    g.fillText('$1.24M', X(data.length - 1) - 8, Y(100) - 8);
+  }
+  drawSpark();
+  addEventListener('resize', drawSpark);
+
+  /* ---- Confidence ring count-up ---- */
+  var arc = document.getElementById('ringArc'), num = document.getElementById('ringNum');
+  var TARGET = 87, CIRC = 289;
+  function setRing(v){
+    arc.setAttribute('stroke-dashoffset', CIRC - (v / 100) * CIRC);
+    num.textContent = Math.round(v);
+  }
+  if (reduced){ setRing(TARGET); }
+  else {
+    var ringDone = false;
+    new IntersectionObserver(function(es, ob){
+      es.forEach(function(e){
+        if (e.isIntersecting && !ringDone){
+          ringDone = true; ob.disconnect();
+          var t0 = null;
+          requestAnimationFrame(function anim(ts){
+            if (!t0) t0 = ts;
+            var k = Math.min(1, (ts - t0) / 1400);
+            setRing(TARGET * (1 - Math.pow(1 - k, 3)));
+            if (k < 1) requestAnimationFrame(anim);
+          });
+        }
+      });
+    }, { threshold: .4 }).observe(arc.closest('.ring'));
+  }
+
+  /* ---- Scroll reveals ---- */
+  var els = document.querySelectorAll('.reveal');
+  if (reduced || !('IntersectionObserver' in window)){
+    els.forEach(function(el){ el.classList.add('in'); });
+  } else {
+    var io = new IntersectionObserver(function(es){
+      es.forEach(function(e){
+        if (e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    }, { threshold: .12, rootMargin: '0px 0px -40px 0px' });
+    els.forEach(function(el){ io.observe(el); });
+  }
+})();
+</script>
+</body>
+</html>
