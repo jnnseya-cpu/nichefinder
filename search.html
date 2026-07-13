@@ -628,7 +628,78 @@
     document.getElementById('acuCost').innerHTML = cost + ' <small>ACU</small>';
   }
 
-  /* ---------- generate (demo) ---------- */
+  /* ---------- generate: AI gateway with demo fallback ---------- */
+  var GATEWAY = window.NF_GATEWAY_URL || 'http://localhost:8787';
+
+  function canvasConfig(){
+    function sel(gridId){ var b = document.querySelector('#' + gridId + ' [aria-pressed="true"]'); return b ? b.querySelector('.t').textContent : null; }
+    var area = seg.querySelector('[aria-pressed="true"]');
+    return {
+      startingPoint: sel('startGrid'),
+      goal: sel('goalGrid'),
+      routing: sel('routeGrid'),
+      mode: sel('modeGrid'),
+      country: document.getElementById('country').value,
+      city: document.getElementById('city').value.trim() || null,
+      areaType: area ? area.textContent : null,
+      sectors: picked.slice(),
+      experience: document.getElementById('exp').value,
+      fundingGoal: document.getElementById('fund').value,
+      timeline: document.getElementById('time').value,
+      modelPreference: document.getElementById('model').value,
+      maxInvestmentUsd: +budget.value,
+      context: ctx.value.trim() || null,
+      investorMode: inv.getAttribute('aria-checked') === 'true'
+    };
+  }
+
+  var NICHE_SCHEMA = {
+    type: 'object',
+    properties: {
+      niches: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            title: { type: 'string' },
+            tagline: { type: 'string', description: 'UPPERCASE meta line: SECTOR · LOCATION · MODE' },
+            summary: { type: 'string', description: '2-3 sentence commercial rationale' },
+            confidence: { type: 'integer', description: 'Overall Confidence Score 0-100' }
+          },
+          required: ['title', 'tagline', 'summary', 'confidence'],
+          additionalProperties: false
+        }
+      }
+    },
+    required: ['niches'],
+    additionalProperties: false
+  };
+
+  function fetchNiches(cfg){
+    var controller = new AbortController();
+    var timer = setTimeout(function(){ controller.abort(); }, 25000);
+    return fetch(GATEWAY + '/v1/generate', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({
+        system: 'You are the Opportunity Discovery Agent of Niche Finder, a venture intelligence OS. Generate hyper-specific, fundable business opportunities matched to the user constraints. Be concrete and commercially grounded.',
+        messages: [{ role: 'user', content: 'Generate exactly 3 distinct niche venture opportunities for these constraints:\n' + JSON.stringify(cfg, null, 2) }],
+        jsonSchema: NICHE_SCHEMA,
+        investorMode: cfg.investorMode
+      })
+    }).then(function(r){
+      clearTimeout(timer);
+      if (!r.ok) throw new Error('gateway ' + r.status);
+      return r.json();
+    }).then(function(data){
+      var parsed = JSON.parse(data.text);
+      return parsed.niches.map(function(n){
+        return { t: n.title, m: n.tagline.toUpperCase(), s: Math.max(0, Math.min(100, n.confidence)), p: n.summary, live: true };
+      });
+    });
+  }
+
   var MOCKS = [
     { t:'Solar-Powered Cold-Chain Micro-Depots', m:'AGRIBUSINESS · KINSHASA · HYBRID', s:87,
       p:'Off-grid refrigerated storage hubs serving smallholder produce cooperatives, monetized per-crate with mobile-money settlement. Post-harvest losses above 35% signal strong latent demand.' },
@@ -639,6 +710,50 @@
   ];
   var gen = document.getElementById('generate'), thinking = document.getElementById('thinking'), nichesEl = document.getElementById('niches');
   var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function slug(s){ return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48); }
+
+  function unlockProject(m){
+    localStorage.setItem('nf_active_project', JSON.stringify({
+      id: slug(m.t),
+      title: m.t,
+      meta: m.m,
+      score: m.s,
+      thesis: m.p.replace(/&/g, '&amp;').replace(/</g, '&lt;'),
+      sub: { 'Market Readiness': Math.min(100, m.s + 4), 'Competitive Gap': Math.max(0, m.s - 3), 'Prospect of Success': m.s }
+    }));
+    location.href = 'project.html';
+  }
+
+  function renderNiches(list, live){
+    thinking.classList.remove('on');
+    gen.disabled = false; gen.textContent = 'Generate Niche Ideas';
+    document.getElementById('resCount').textContent =
+      'SHOWING ' + list.length + ' OF ' + list.length + ' SAVED NICHES' + (live ? ' · LIVE AI' : ' · DEMO DATA');
+    list.forEach(function(m, i){
+      var el = document.createElement('article'); el.className = 'niche';
+      el.innerHTML =
+        '<div><h3></h3><div class="meta"></div></div>' +
+        '<div class="score"><div class="n"></div><div class="l">Confidence</div></div>' +
+        '<p></p>' +
+        '<div class="actions">' +
+          '<button class="a primary">Unlock Deep-Dive</button>' +
+          '<span class="cost">60 ACU</span>' +
+          '<button class="a">Save to Portfolio</button>' +
+        '</div>';
+      el.querySelector('h3').textContent = m.t;
+      el.querySelector('.meta').textContent = m.m;
+      el.querySelector('.score .n').textContent = m.s;
+      el.querySelector('p').textContent = m.p;
+      el.querySelector('.a.primary').addEventListener('click', function(){ unlockProject(m); });
+      el.querySelector('.a:not(.primary)').addEventListener('click', function(ev){
+        ev.target.textContent = 'Saved ✓';
+      });
+      nichesEl.appendChild(el);
+      setTimeout(function(){ el.classList.add('in'); }, reduced ? 0 : 90 * i);
+    });
+  }
+
   gen.addEventListener('click', function(){
     if (!sel.value){
       sel.focus();
@@ -648,29 +763,13 @@
     gen.disabled = true; gen.textContent = 'Discovery Agent Running…';
     nichesEl.innerHTML = ''; thinking.classList.add('on');
     document.getElementById('results').scrollIntoView({behavior: reduced ? 'auto' : 'smooth'});
-    setTimeout(function(){
-      thinking.classList.remove('on');
-      gen.disabled = false; gen.textContent = 'Generate Niche Ideas';
-      document.getElementById('resCount').textContent = 'SHOWING 3 OF 3 SAVED NICHES';
-      MOCKS.forEach(function(m, i){
-        var el = document.createElement('article'); el.className = 'niche';
-        el.innerHTML =
-          '<div><h3></h3><div class="meta"></div></div>' +
-          '<div class="score"><div class="n"></div><div class="l">Confidence</div></div>' +
-          '<p></p>' +
-          '<div class="actions">' +
-            '<button class="a primary">Unlock Deep-Dive</button>' +
-            '<span class="cost">60 ACU</span>' +
-            '<button class="a">Save to Portfolio</button>' +
-          '</div>';
-        el.querySelector('h3').textContent = m.t;
-        el.querySelector('.meta').textContent = m.m;
-        el.querySelector('.score .n').textContent = m.s;
-        el.querySelector('p').textContent = m.p;
-        nichesEl.appendChild(el);
-        setTimeout(function(){ el.classList.add('in'); }, reduced ? 0 : 90 * i);
+
+    fetchNiches(canvasConfig())
+      .then(function(niches){ renderNiches(niches, true); })
+      .catch(function(){
+        // gateway unreachable or returned an error — fall back to demo data
+        setTimeout(function(){ renderNiches(MOCKS, false); }, reduced ? 60 : 1200);
       });
-    }, reduced ? 60 : 2400);
   });
 
   updBudget(); updAcu();

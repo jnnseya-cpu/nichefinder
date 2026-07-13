@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Niche Finder — Deep-Dive Analysis</title>
+<meta name="description" content="Investor-grade deep-dive analysis for a validated venture opportunity.">
+<style>
+  :root{
+    --ink:#070B14;
+    --ink-2:#0A1120;
+    --panel:#0E1626;
+    --panel-2:#121C30;
+    --line:rgba(217,164,65,.14);
+    --line-soft:rgba(139,147,165,.14);
+    --text:#EAE5D9;
+    --muted:#8B93A5;
+    --gold:#D9A441;
+    --gold-bright:#F1C97E;
+    --gold-dim:rgba(217,164,65,.55);
+    --teal:#3FA79B;
+    --red:#C4604F;
+    --serif:"Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:"SF Mono","Cascadia Code","JetBrains Mono",Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--ink);color:var(--text);font-family:var(--sans);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  ::selection{background:var(--gold);color:var(--ink)}
+  a{color:inherit}
+  a:focus-visible,button:focus-visible{outline:2px solid var(--gold-bright);outline-offset:2px;border-radius:2px}
+  .wrap{max-width:1240px;margin:0 auto;padding:0 clamp(18px,3.5vw,44px)}
+
+  header.nav{position:fixed;inset:0 0 auto 0;z-index:50;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:rgba(7,11,20,.62);border-bottom:1px solid var(--line-soft)}
+  .nav-inner{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .brand{display:flex;align-items:center;gap:11px;text-decoration:none}
+  .brand-mark{width:28px;height:28px;flex:none;border:1px solid var(--gold);border-radius:50%;display:grid;place-items:center}
+  .brand-mark i{width:7px;height:7px;border-radius:50%;background:var(--gold);display:block}
+  .brand span{font-family:var(--serif);font-size:1.1rem}
+  .brand em{font-style:normal;color:var(--gold)}
+  .nav-right{display:flex;align-items:center;gap:22px}
+  .nav-right a{font-size:.85rem;color:var(--muted);text-decoration:none}
+  .nav-right a:hover{color:var(--text)}
+  .acu-balance{font-family:var(--mono);font-size:.72rem;letter-spacing:.1em;color:var(--gold-bright);border:1px solid var(--line);border-radius:99px;padding:7px 16px}
+
+  .page-head{padding:106px 0 26px}
+  .crumb{font-family:var(--mono);font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+  .crumb a{color:var(--muted);text-decoration:none}
+  .crumb a:hover{color:var(--gold)}
+  .title-row{display:flex;align-items:flex-start;gap:18px;flex-wrap:wrap;margin-top:14px}
+  .page-head h1{font-family:var(--serif);font-weight:400;font-size:clamp(1.7rem,3.6vw,2.6rem);line-height:1.12;letter-spacing:-.01em;max-width:26ch}
+  .status-pill{
+    flex:none;margin-top:10px;font-family:var(--mono);font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--gold-bright);border:1px solid var(--gold);border-radius:99px;padding:6px 14px;background:rgba(217,164,65,.08);
+  }
+  .meta-line{font-family:var(--mono);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-top:10px}
+
+  /* lifecycle stepper */
+  .lifecycle{display:flex;gap:0;margin:30px 0 8px;overflow-x:auto;padding-bottom:6px}
+  .stage{flex:1;min-width:118px;position:relative;padding-top:18px}
+  .stage::before{content:"";position:absolute;top:5px;left:0;right:0;height:2px;background:rgba(139,147,165,.18)}
+  .stage::after{content:"";position:absolute;top:0;left:0;width:12px;height:12px;border-radius:50%;background:var(--ink);border:2px solid rgba(139,147,165,.35)}
+  .stage span{font-family:var(--mono);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .stage.done::before{background:var(--gold-dim)}
+  .stage.done::after{background:var(--gold);border-color:var(--gold)}
+  .stage.done span{color:var(--text)}
+  .stage.current::after{background:var(--ink);border-color:var(--gold-bright);box-shadow:0 0 0 4px rgba(217,164,65,.18)}
+  .stage.current span{color:var(--gold-bright)}
+
+  .layout{display:grid;grid-template-columns:1fr 330px;gap:34px;align-items:start;padding:26px 0 110px}
+  @media(max-width:1020px){.layout{grid-template-columns:1fr}}
+  .col{display:flex;flex-direction:column;gap:26px;min-width:0}
+
+  .block{background:linear-gradient(170deg,var(--panel-2),var(--panel) 60%);border:1px solid var(--line-soft);border-radius:10px;padding:26px 28px}
+  .block h2{font-family:var(--serif);font-weight:400;font-size:1.3rem;display:flex;align-items:center;gap:12px}
+  .block h2::after{content:"";height:1px;background:var(--line-soft);flex:1}
+  .block p{color:var(--muted);font-size:.92rem;margin-top:14px}
+  .block p b{color:var(--text);font-weight:600}
+
+  .metric-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px}
+  @media(max-width:760px){.metric-row{grid-template-columns:1fr 1fr}}
+  .metric{background:rgba(7,11,20,.5);border:1px solid var(--line-soft);border-radius:6px;padding:13px 15px}
+  .metric .k{font-family:var(--mono);font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  .metric .v{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:1.2rem;margin-top:5px;color:var(--gold-bright)}
+
+  #forecast{width:100%;height:220px;display:block;margin-top:20px}
+  table.fin{width:100%;border-collapse:collapse;margin-top:18px;font-size:.84rem}
+  table.fin th{font-family:var(--mono);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);text-align:right;padding:9px 10px;border-bottom:1px solid var(--line-soft)}
+  table.fin th:first-child,table.fin td:first-child{text-align:left}
+  table.fin td{padding:9px 10px;border-bottom:1px dashed var(--line-soft);text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--text)}
+  table.fin td:first-child{font-family:var(--sans);color:var(--muted)}
+  table.fin tr.hl td{color:var(--gold-bright)}
+
+  .risk{display:flex;gap:14px;padding:14px 0;border-bottom:1px dashed var(--line-soft)}
+  .risk:last-child{border-bottom:none}
+  .risk .sev{flex:none;width:64px;font-family:var(--mono);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;padding-top:3px}
+  .sev.high{color:var(--red)} .sev.med{color:var(--gold)} .sev.low{color:var(--teal)}
+  .risk .tx b{font-size:.92rem;font-weight:600;color:var(--text)}
+  .risk .tx p{margin-top:4px;font-size:.84rem}
+
+  .roadmap{counter-reset:step;margin-top:6px}
+  .rstep{display:flex;gap:18px;padding:16px 0;border-bottom:1px dashed var(--line-soft)}
+  .rstep:last-child{border-bottom:none}
+  .rstep::before{
+    counter-increment:step;content:"0" counter(step);
+    flex:none;font-family:var(--mono);font-size:.72rem;color:var(--gold);letter-spacing:.1em;padding-top:3px;
+  }
+  .rstep .tx b{font-size:.94rem;font-weight:600}
+  .rstep .tx p{margin-top:4px;font-size:.85rem}
+  .rstep .tx .tm{font-family:var(--mono);font-size:.6rem;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;margin-top:8px;display:block}
+
+  /* rail */
+  .rail{position:sticky;top:86px;display:flex;flex-direction:column;gap:18px}
+  @media(max-width:1020px){.rail{position:static}}
+  .rail-card{background:linear-gradient(170deg,var(--panel-2),var(--panel) 60%);border:1px solid var(--line);border-radius:10px;padding:24px}
+  .rail-card h3{font-family:var(--serif);font-weight:400;font-size:1.15rem;margin-bottom:16px}
+  .score-ring{display:flex;align-items:center;gap:18px}
+  .ring{position:relative;width:96px;height:96px;flex:none}
+  .ring svg{transform:rotate(-90deg)}
+  .ring .num{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--mono);font-size:1.4rem;color:var(--gold-bright);font-variant-numeric:tabular-nums}
+  .score-ring .lab{font-family:var(--mono);font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);line-height:1.8}
+  .qual{display:flex;flex-direction:column;gap:12px;margin-top:20px}
+  .qual .q b{display:flex;justify-content:space-between;color:var(--text);font-family:var(--mono);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;font-weight:500}
+  .qual .bar{height:3px;background:rgba(139,147,165,.18);border-radius:2px;overflow:hidden}
+  .qual .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-bright));border-radius:2px}
+
+  .actions{display:flex;flex-direction:column;gap:9px}
+  .action{
+    display:flex;align-items:center;gap:12px;width:100%;text-align:left;cursor:pointer;
+    background:rgba(7,11,20,.45);border:1px solid var(--line-soft);border-radius:7px;
+    padding:13px 15px;color:var(--text);font-family:var(--sans);transition:border-color .18s,transform .18s;
+  }
+  .action:hover:not([disabled]){border-color:var(--gold-dim);transform:translateY(-1px)}
+  .action .t{font-size:.86rem;font-weight:600;flex:1}
+  .action .d{display:block;font-size:.7rem;color:var(--muted);font-weight:400;margin-top:2px}
+  .action .cost{flex:none;font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;color:var(--gold-bright)}
+  .action.done{border-color:rgba(63,167,155,.4)}
+  .action.done .cost{color:var(--teal)}
+  .action[disabled]{opacity:.45;cursor:not-allowed}
+  .action.working{border-color:var(--gold);pointer-events:none}
+  .rail-note{font-size:.72rem;color:var(--muted);margin-top:14px;line-height:1.55}
+
+  .toast{
+    position:fixed;bottom:26px;left:50%;transform:translate(-50%,20px);opacity:0;z-index:80;
+    background:var(--panel-2);border:1px solid var(--gold);border-radius:8px;padding:13px 22px;
+    font-size:.86rem;transition:all .3s ease;pointer-events:none;box-shadow:0 20px 50px -12px rgba(0,0,0,.8);
+  }
+  .toast.on{opacity:1;transform:translate(-50%,0)}
+  .toast b{color:var(--gold-bright)}
+
+  footer{border-top:1px solid var(--line-soft);padding:32px 0;font-size:.8rem;color:var(--muted)}
+  .foot{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}
+
+  @media (prefers-reduced-motion: reduce){*{transition-duration:.01ms!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="index.html" aria-label="Niche Finder home">
+      <span class="brand-mark" aria-hidden="true"><i></i></span>
+      <span>Niche<em>Finder</em></span>
+    </a>
+    <div class="nav-right">
+      <a href="search.html">Search Canvas</a>
+      <span class="acu-balance" id="acuBalance">— ACU</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap page-head">
+    <p class="crumb"><a href="search.html">Business Discovery OS</a> / Deep-Dive Analysis</p>
+    <div class="title-row">
+      <h1 id="title">Loading project…</h1>
+      <span class="status-pill" id="statusPill">unlocked</span>
+    </div>
+    <p class="meta-line" id="metaLine"></p>
+
+    <div class="lifecycle" id="lifecycle" aria-label="Project lifecycle">
+      <div class="stage" data-stage="shortlisted"><span>Shortlisted</span></div>
+      <div class="stage" data-stage="unlocked"><span>Unlocked</span></div>
+      <div class="stage" data-stage="validated"><span>Validated</span></div>
+      <div class="stage" data-stage="financial_ready"><span>Financial Ready</span></div>
+      <div class="stage" data-stage="pitch_ready"><span>Pitch Ready</span></div>
+      <div class="stage" data-stage="investor_ready"><span>Investor Ready</span></div>
+    </div>
+  </div>
+
+  <div class="wrap layout">
+    <div class="col">
+
+      <section class="block">
+        <h2>Opportunity Thesis</h2>
+        <p id="thesis"></p>
+        <div class="metric-row" id="marketMetrics"></div>
+      </section>
+
+      <section class="block">
+        <h2>3-Year Financial Forecast</h2>
+        <p>Automated model generated from regional benchmarks and comparable operators. All figures are probabilistic and require your critical review.</p>
+        <canvas id="forecast" aria-label="Revenue and cashflow forecast chart" role="img"></canvas>
+        <table class="fin" id="finTable"></table>
+      </section>
+
+      <section class="block">
+        <h2>Market Risks</h2>
+        <div id="risks"></div>
+      </section>
+
+      <section class="block">
+        <h2>Execution Roadmap</h2>
+        <div class="roadmap" id="roadmap"></div>
+      </section>
+
+    </div>
+
+    <aside class="rail" aria-label="Scorecard and actions">
+      <div class="rail-card">
+        <h3>Venture Scorecard</h3>
+        <div class="score-ring">
+          <div class="ring" aria-hidden="true">
+            <svg width="96" height="96" viewBox="0 0 96 96">
+              <circle cx="48" cy="48" r="42" fill="none" stroke="rgba(139,147,165,.18)" stroke-width="5"/>
+              <circle id="ringArc" cx="48" cy="48" r="42" fill="none" stroke="#D9A441" stroke-width="5" stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="264"/>
+            </svg>
+            <span class="num" id="ringNum">0</span>
+          </div>
+          <div class="lab">Overall<br>Confidence<br>Score</div>
+        </div>
+        <div class="qual" id="subScores"></div>
+      </div>
+
+      <div class="rail-card">
+        <h3>Build &amp; Generate</h3>
+        <div class="actions" id="actions"></div>
+        <p class="rail-note">Each action consumes ACUs, generates a saved asset, and progresses your project status. Costs are shown before you commit.</p>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <span>© 2026 Niche Finder</span>
+    <span style="font-family:var(--mono);font-size:.66rem;letter-spacing:.16em">THE OPERATING SYSTEM FOR VENTURE CREATION</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+  var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- project data: from localStorage (set by search.html) or demo default ---------- */
+  var DEFAULT = {
+    id: 'demo-coldchain',
+    title: 'Solar-Powered Cold-Chain Micro-Depots',
+    meta: 'AGRIBUSINESS · KINSHASA, DRC · HYBRID · MAX INVESTMENT US$10,000',
+    score: 87,
+    sub: { 'Market Readiness': 91, 'Competitive Gap': 84, 'Prospect of Success': 87 },
+    thesis: 'Off-grid refrigerated storage hubs serving smallholder produce cooperatives around Kinshasa, monetized per-crate with mobile-money settlement. <b>Post-harvest losses above 35%</b> signal strong latent demand, while grid unreliability makes solar-first cold storage a structural advantage rather than a green premium. The wedge is a single 20-crate depot at a high-traffic collection point, expanding along existing trader routes.',
+    market: { 'Addressable Market': '$46M', 'Break-even': '14 mo', 'Gross Margin': '61%', 'Startup Capital': '$9,400' },
+    fin: {
+      years: ['Year 1', 'Year 2', 'Year 3'],
+      revenue: [118000, 540000, 1240000],
+      costs: [104000, 342000, 486000],
+      cashflow: [14000, 198000, 754000]
+    },
+    risks: [
+      { sev: 'high', t: 'Equipment import lead times', p: 'Solar refrigeration units clear customs in 6–14 weeks. Mitigate with a regional distributor holding buffer stock in Matadi.' },
+      { sev: 'med', t: 'Mobile-money settlement fees', p: 'Per-transaction fees compress margin on small crate fees. Negotiate aggregator rates once volume passes 2,000 tx/month.' },
+      { sev: 'med', t: 'Cooperative payment discipline', p: 'Prepaid crate credits rather than invoicing keeps receivables near zero.' },
+      { sev: 'low', t: 'Competitive response', p: 'No solar cold-chain operator currently serves the target corridors; diesel incumbents carry 3× operating cost.' }
+    ],
+    roadmap: [
+      { t: 'Validate the corridor', p: 'Interview 30 traders at the target collection point; pre-sell 60% of depot capacity as prepaid crate credits.', tm: 'Weeks 1–4' },
+      { t: 'Deploy pilot depot', p: 'Install the first 20-crate solar depot; instrument temperature logging for spoilage-reduction proof.', tm: 'Weeks 5–10' },
+      { t: 'Prove unit economics', p: 'Run 90 days at target utilization; capture spoilage-delta data for the investor pack.', tm: 'Weeks 11–22' },
+      { t: 'Raise & replicate', p: 'Use validated depot economics to raise for 10 additional depots along two trading corridors.', tm: 'Months 6–12' }
+    ]
+  };
+
+  var project;
+  try { project = JSON.parse(localStorage.getItem('nf_active_project')) || DEFAULT; } catch (e) { project = DEFAULT; }
+  // merge: AI-generated niches carry title/meta/score/summary only — fill analysis sections from the template
+  Object.keys(DEFAULT).forEach(function(k){ if (project[k] == null) project[k] = DEFAULT[k]; });
+
+  /* ---------- state: status + ACU balance persist ---------- */
+  var STAGES = ['shortlisted','unlocked','validated','financial_ready','pitch_ready','investor_ready'];
+  var stateKey = 'nf_state_' + project.id;
+  var state;
+  try { state = JSON.parse(localStorage.getItem(stateKey)) || {}; } catch (e) { state = {}; }
+  if (!state.status) state.status = 'unlocked';
+  if (state.doneActions == null) state.doneActions = [];
+
+  var stored = localStorage.getItem('nf_acu_balance');
+  var balance = stored === null ? 500 : Number(stored); // 500 = welcome bonus
+  if (!Number.isFinite(balance)) balance = 500;
+  function saveAll(){
+    localStorage.setItem(stateKey, JSON.stringify(state));
+    localStorage.setItem('nf_acu_balance', String(balance));
+    render();
+  }
+
+  /* ---------- render ---------- */
+  function esc(s){ var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+  document.getElementById('title').textContent = project.title;
+  document.getElementById('metaLine').textContent = project.meta;
+  document.getElementById('thesis').innerHTML = project.thesis; // template-authored HTML only
+  document.title = 'Niche Finder — ' + project.title;
+
+  var mm = document.getElementById('marketMetrics');
+  Object.keys(project.market).forEach(function(k){
+    var el = document.createElement('div'); el.className = 'metric';
+    el.innerHTML = '<div class="k"></div><div class="v"></div>';
+    el.querySelector('.k').textContent = k;
+    el.querySelector('.v').textContent = project.market[k];
+    mm.appendChild(el);
+  });
+
+  var sub = document.getElementById('subScores');
+  Object.keys(project.sub).forEach(function(k){
+    var el = document.createElement('div'); el.className = 'q';
+    el.innerHTML = '<b><span></span><span></span></b><span class="bar"><i></i></span>';
+    el.querySelectorAll('b span')[0].textContent = k;
+    el.querySelectorAll('b span')[1].textContent = project.sub[k];
+    el.querySelector('.bar i').style.width = project.sub[k] + '%';
+    sub.appendChild(el);
+  });
+
+  var risks = document.getElementById('risks');
+  project.risks.forEach(function(r){
+    var el = document.createElement('div'); el.className = 'risk';
+    el.innerHTML = '<span class="sev"></span><div class="tx"><b></b><p></p></div>';
+    el.querySelector('.sev').classList.add(r.sev);
+    el.querySelector('.sev').textContent = r.sev;
+    el.querySelector('b').textContent = r.t;
+    el.querySelector('p').textContent = r.p;
+    risks.appendChild(el);
+  });
+
+  var roadmap = document.getElementById('roadmap');
+  project.roadmap.forEach(function(s){
+    var el = document.createElement('div'); el.className = 'rstep';
+    el.innerHTML = '<div class="tx"><b></b><p></p><span class="tm"></span></div>';
+    el.querySelector('b').textContent = s.t;
+    el.querySelector('p').textContent = s.p;
+    el.querySelector('.tm').textContent = s.tm;
+    roadmap.appendChild(el);
+  });
+
+  var fmt = function(n){ return '$' + n.toLocaleString('en-US'); };
+  var tbl = document.getElementById('finTable');
+  tbl.innerHTML = '<tr><th>Line</th>' + project.fin.years.map(function(y){ return '<th>' + esc(y) + '</th>'; }).join('') + '</tr>' +
+    row('Revenue', project.fin.revenue) + row('Operating Costs', project.fin.costs) + row('Net Cashflow', project.fin.cashflow, true);
+  function row(name, vals, hl){
+    return '<tr' + (hl ? ' class="hl"' : '') + '><td>' + name + '</td>' + vals.map(function(v){ return '<td>' + fmt(v) + '</td>'; }).join('') + '</tr>';
+  }
+
+  /* ---------- forecast chart ---------- */
+  var cv = document.getElementById('forecast');
+  function drawChart(){
+    var DPR = Math.min(devicePixelRatio || 1, 2);
+    var w = cv.clientWidth, h = cv.clientHeight || 220;
+    cv.width = w * DPR; cv.height = h * DPR;
+    var g = cv.getContext('2d');
+    g.setTransform(DPR, 0, 0, DPR, 0, 0);
+    g.clearRect(0, 0, w, h);
+    var pad = { l: 8, r: 8, t: 16, b: 26 };
+    var max = Math.max.apply(null, project.fin.revenue) * 1.1;
+    var n = project.fin.years.length;
+    function X(i){ return pad.l + (i + .5) * (w - pad.l - pad.r) / n; }
+    function Y(v){ return pad.t + (1 - v / max) * (h - pad.t - pad.b); }
+    // grid
+    g.strokeStyle = 'rgba(139,147,165,.12)'; g.lineWidth = 1;
+    for (var gy = 1; gy <= 3; gy++){
+      var yy = pad.t + gy * (h - pad.t - pad.b) / 4;
+      g.beginPath(); g.moveTo(pad.l, yy); g.lineTo(w - pad.r, yy); g.stroke();
+    }
+    // bars: revenue (gold) + cashflow (teal), grouped
+    var bw = Math.min(46, (w / n) * .22);
+    for (var i = 0; i < n; i++){
+      g.fillStyle = 'rgba(217,164,65,.85)';
+      g.fillRect(X(i) - bw - 4, Y(project.fin.revenue[i]), bw, Y(0) - Y(project.fin.revenue[i]));
+      g.fillStyle = 'rgba(63,167,155,.8)';
+      g.fillRect(X(i) + 4, Y(Math.max(0, project.fin.cashflow[i])), bw, Y(0) - Y(Math.max(0, project.fin.cashflow[i])));
+      g.fillStyle = 'rgba(139,147,165,.9)';
+      g.font = '10px ' + getComputedStyle(document.body).fontFamily;
+      g.textAlign = 'center';
+      g.fillText(project.fin.years[i], X(i), h - 8);
+      g.fillStyle = '#F1C97E';
+      g.fillText(fmt(project.fin.revenue[i]), X(i) - bw / 2 - 4, Y(project.fin.revenue[i]) - 6);
+    }
+    // legend
+    g.textAlign = 'left';
+    g.fillStyle = 'rgba(217,164,65,.9)'; g.fillRect(pad.l, 2, 9, 9);
+    g.fillStyle = 'rgba(139,147,165,.9)'; g.fillText('Revenue', pad.l + 14, 10);
+    g.fillStyle = 'rgba(63,167,155,.9)'; g.fillRect(pad.l + 78, 2, 9, 9);
+    g.fillStyle = 'rgba(139,147,165,.9)'; g.fillText('Net Cashflow', pad.l + 92, 10);
+  }
+  drawChart();
+  addEventListener('resize', drawChart);
+
+  /* ---------- confidence ring ---------- */
+  var arc = document.getElementById('ringArc'), num = document.getElementById('ringNum'), CIRC = 264;
+  function setRing(v){ arc.setAttribute('stroke-dashoffset', CIRC - (v / 100) * CIRC); num.textContent = Math.round(v); }
+  if (reduced) setRing(project.score);
+  else {
+    var t0 = null;
+    requestAnimationFrame(function anim(ts){
+      if (!t0) t0 = ts;
+      var k = Math.min(1, (ts - t0) / 1200);
+      setRing(project.score * (1 - Math.pow(1 - k, 3)));
+      if (k < 1) requestAnimationFrame(anim);
+    });
+  }
+
+  /* ---------- actions ---------- */
+  var ACTIONS = [
+    { id: 'validation', t: 'Market Validation Report', d: 'Demand evidence & competitor scan', cost: 40, advances: 'validated' },
+    { id: 'forecast', t: 'Financial Forecast', d: '3-year model & cashflow projections', cost: 50, advances: 'financial_ready' },
+    { id: 'bizplan', t: 'Business Plan', d: 'Full investor-grade business plan', cost: 80, advances: 'pitch_ready' },
+    { id: 'pitch', t: 'Investor Pitch Deck', d: '12-slide deck, export-ready', cost: 100, advances: 'investor_ready' },
+    { id: 'export', t: 'Export Excel + PDF Pack', d: 'Download all generated assets', cost: 15, advances: null }
+  ];
+  var actionsEl = document.getElementById('actions');
+  var toast = document.getElementById('toast'), toastTimer;
+  function showToast(html){
+    toast.innerHTML = html;
+    toast.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toast.classList.remove('on'); }, 3200);
+  }
+
+  function render(){
+    document.getElementById('acuBalance').textContent = balance.toLocaleString('en-US') + ' ACU';
+    document.getElementById('statusPill').textContent = state.status.replace('_', ' ');
+    var reached = STAGES.indexOf(state.status);
+    document.querySelectorAll('.stage').forEach(function(el, i){
+      el.classList.toggle('done', i <= reached);
+      el.classList.toggle('current', i === reached);
+    });
+    actionsEl.innerHTML = '';
+    ACTIONS.forEach(function(a){
+      var done = state.doneActions.indexOf(a.id) > -1;
+      var btn = document.createElement('button');
+      btn.className = 'action' + (done ? ' done' : '');
+      btn.innerHTML = '<span class="t"></span><span class="cost"></span>';
+      btn.querySelector('.t').innerHTML = esc(a.t) + '<span class="d">' + esc(a.d) + '</span>';
+      btn.querySelector('.cost').textContent = done ? '✓ SAVED' : a.cost + ' ACU';
+      if (!done && balance < a.cost) btn.disabled = true;
+      if (!done) btn.addEventListener('click', function(){ runAction(a, btn); });
+      actionsEl.appendChild(btn);
+    });
+  }
+
+  function runAction(a, btn){
+    btn.classList.add('working');
+    btn.querySelector('.cost').textContent = 'GENERATING…';
+    setTimeout(function(){
+      balance -= a.cost;
+      state.doneActions.push(a.id);
+      if (a.advances && STAGES.indexOf(a.advances) > STAGES.indexOf(state.status)) state.status = a.advances;
+      saveAll();
+      showToast('<b>' + a.t + '</b> generated · ' + a.cost + ' ACU consumed · balance ' + balance.toLocaleString('en-US') + ' ACU');
+    }, reduced ? 100 : 1600);
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
