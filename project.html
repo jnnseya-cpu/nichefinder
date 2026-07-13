@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Niche Finder — Deep-Dive Analysis</title>
 <meta name="description" content="Investor-grade deep-dive analysis for a validated venture opportunity.">
+<meta name="theme-color" content="#070B14">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Niche Finder">
 <style>
   :root{
     --ink:#070B14;
@@ -346,6 +351,10 @@
 
       <div class="rail-card">
         <h3>Build &amp; Generate</h3>
+        <label style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 14px;padding:10px 12px;border:1px dashed var(--line);border-radius:8px;cursor:pointer">
+          <span style="font-size:.78rem;color:var(--muted)"><b style="color:var(--gold-bright);font-family:var(--mono);font-size:.62rem;letter-spacing:.14em">INVESTOR MODE</b><br>Deal-ready outputs · +40% ACU</span>
+          <input type="checkbox" id="invModeToggle" style="accent-color:#D9A441;width:18px;height:18px">
+        </label>
         <div class="actions" id="actions"></div>
         <p class="rail-note">Each action consumes ACUs, generates a saved asset, and progresses your project status. Costs are shown before you commit.</p>
       </div>
@@ -405,6 +414,7 @@
 
 <script src="nf-config.js"></script>
 <script src="nf-wallet.js"></script>
+<script src="nf-support.js" defer></script>
 <script>
 (function(){
   var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -592,12 +602,16 @@
   /* ---------- actions ---------- */
   var ACTIONS = [
     { id: 'validation', t: 'Market Validation Report', d: 'Deep dive into local demand, competition, and timing', cost: NF.COSTS.validation, advances: 'validated', hc: '#3FA79B' },
-    { id: 'forecast', t: '3-Year Cashflow Forecast', d: 'Detailed P&L, cashflow, and break-even analysis', cost: NF.COSTS.forecast, advances: 'financial_ready', hc: '#D9A441' },
+    { id: 'forecast', t: '3-Year Cashflow Forecast', d: 'Revenue build-up, cashflow, and break-even analysis', cost: NF.COSTS.forecast, advances: 'financial_ready', hc: '#D9A441' },
+    { id: 'pnl', t: '3-Year Profit & Loss', d: 'Structured P&L with margins, opex, and net position', cost: NF.COSTS.pnl, advances: 'financial_ready', hc: '#F1C97E' },
     { id: 'riskmap', t: 'Risk Heatmap', d: 'Identify regulatory, operational, and market exposures', cost: NF.COSTS.riskmap, advances: null, hc: '#C4604F' },
     { id: 'bizplan', t: 'Business Plan', d: 'Professional, investor-ready execution strategy', cost: NF.COSTS.bizplan, advances: 'pitch_ready', hc: '#6B5CA5' },
     { id: 'pitch', t: 'Investor Pitch Deck', d: '12-slide deck, export-ready', cost: NF.COSTS.pitch, advances: 'investor_ready', hc: '#6B9BD1' },
     { id: 'export', t: 'Export Excel + PDF Pack', d: 'Download all generated assets as an Excel model + PDF pack', cost: NF.COSTS.excel_model, advances: null, hc: '#8B93A5' }
   ];
+  /* Investor Production Mode: ×1.4 on all generation costs (nf_investor_mode persists across pages) */
+  var invMode = localStorage.getItem('nf_investor_mode') === '1';
+  function actionCost(a){ return invMode ? Math.round(a.cost * NF.COSTS.investor_multiplier) : a.cost; }
 
   /* ---------- autosave: ledger + reports + memory ---------- */
   function logLedger(label, amt){
@@ -648,7 +662,7 @@
       btn.className = 'action' + (done ? ' done' : '');
       btn.innerHTML = '<span class="t"></span><span class="cost"></span>';
       btn.querySelector('.t').innerHTML = esc(a.t) + '<span class="d">' + esc(a.d) + '</span>';
-      btn.querySelector('.cost').textContent = done ? 'VIEW ↗' : a.cost + ' ACU';
+      btn.querySelector('.cost').textContent = done ? 'VIEW ↗' : actionCost(a) + ' ACU';
       if (done) btn.addEventListener('click', function(){ location.href = 'asset.html?type=' + a.id; });
       else btn.addEventListener('click', function(){ runAction(a, btn); });
       actionsEl.appendChild(btn);
@@ -656,23 +670,35 @@
   }
 
   function runAction(a, btn){
+    var cost = actionCost(a);
+    var label = a.t + (invMode ? ' · Investor Mode' : '');
     // paid ACUs only — welcome ACUs cannot fund generation; NF opens top-up if short
-    if (NF.wallet().paid < a.cost) { NF.openTopup(a.cost, a.t, render); return; }
+    if (NF.wallet().paid < cost) { NF.openTopup(cost, label, render); return; }
     btn.classList.add('working');
     var costEl = btn.querySelector('.cost');
     if (costEl) costEl.textContent = 'GENERATING…';
     else btn.textContent = 'GENERATING…';
     setTimeout(function(){
-      if (!NF.charge(a.cost, a.t, null)) { render(); return; }
+      if (!NF.charge(cost, label, null)) { render(); return; }
       state.doneActions.push(a.id);
       if (a.advances && STAGES.indexOf(a.advances) > STAGES.indexOf(state.status)) state.status = a.advances;
       logReport(a.id, a.t);
-      logMemory(a.t + ' generated (' + a.cost + ' ACU). Status → ' + state.status + '.');
+      logMemory(label + ' generated (' + cost + ' ACU). Status → ' + state.status + '.');
       saveAll();
-      showToast('<b>' + a.t + '</b> generated · ' + a.cost + ' ACU consumed · <a href="asset.html?type=' + a.id + '" style="color:var(--gold-bright)">Open document ↗</a>');
+      showToast('<b>' + a.t + '</b> generated · ' + cost + ' ACU consumed · <a href="asset.html?type=' + a.id + '" style="color:var(--gold-bright)">Open document ↗</a>');
       toast.style.pointerEvents = 'auto';
     }, reduced ? 100 : 1600);
   }
+
+  var invToggle = document.getElementById('invModeToggle');
+  invToggle.checked = invMode;
+  invToggle.addEventListener('change', function(){
+    invMode = invToggle.checked;
+    localStorage.setItem('nf_investor_mode', invMode ? '1' : '0');
+    render();
+    showToast(invMode ? '<b>Investor Mode ON</b> · generation costs ×1.4 — outputs structured for real funding conversations'
+                      : '<b>Investor Mode OFF</b> · standard generation costs restored');
+  });
 
   render();
 
@@ -718,7 +744,7 @@
       card.className = 'hub-card';
       card.style.setProperty('--hc', a.hc);
       card.innerHTML = '<b></b><span class="hd"></span>' +
-        '<span class="hub-state ' + (done ? 'synced' : 'locked') + '">' + (done ? 'REPOSITORY SYNCED' : a.cost + ' ACU') + '</span>' +
+        '<span class="hub-state ' + (done ? 'synced' : 'locked') + '">' + (done ? 'REPOSITORY SYNCED' : actionCost(a) + ' ACU') + '</span>' +
         '<div class="hub-btns"></div>';
       card.querySelector('b').textContent = a.t;
       card.querySelector('.hd').textContent = a.d;
@@ -729,7 +755,7 @@
         var fmtTag = document.createElement('span');
         fmtTag.className = 'hub-btn'; fmtTag.style.pointerEvents = 'none'; fmtTag.textContent = 'HTML';
         var regen = document.createElement('button');
-        var regenCost = Math.ceil(a.cost / 2);
+        var regenCost = Math.ceil(actionCost(a) / 2);
         regen.className = 'hub-btn'; regen.textContent = 'Regenerate · Version 2.0 · ' + regenCost + ' ACU';
         regen.addEventListener('click', function(){
           if (!NF.charge(regenCost, 'Regenerate ' + a.t + ' V2', null)) { render(); return; }
@@ -777,5 +803,6 @@
   logMemory('Deep-dive session opened.');
 })();
 </script>
+<script src="nf-consent.js" defer></script>
 </body>
 </html>

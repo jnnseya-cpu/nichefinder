@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Niche Finder — AI Search Canvas</title>
 <meta name="description" content="Business Discovery OS — guide the venture intelligence OS to discover your next opportunity.">
+<meta name="theme-color" content="#070B14">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Niche Finder">
 <style>
   :root{
     --ink:#070B14;
@@ -447,7 +452,7 @@
             <span class="amt"><span id="budgetVal">US$10,000</span><small id="budgetLocal"></small></span>
           </div>
           <input type="range" id="budget" min="500" max="100000" step="500" value="10000">
-          <p class="rule"><b>Standard Rule:</b> Constraints mapped to 10k USD global equivalent (Local Parity logic active). Displayed in local currency for UK, EU, Canada &amp; US; USD equivalent elsewhere.</p>
+          <p class="rule"><b>Parity Rule:</b> GBP &amp; EUR zones use a flat £10k / €10k cap. Dollarized economies (e.g. DRC) use US$10k. All other markets use the local-currency equivalent of US$10,000.</p>
 
           <label class="lab" for="ctx">Additional Context &amp; Keywords</label>
           <textarea id="ctx" maxlength="260" placeholder="e.g., 'focus on sustainable solutions' or 'target young professionals'"></textarea>
@@ -522,6 +527,7 @@
 
 <script src="nf-config.js"></script>
 <script src="nf-wallet.js"></script>
+<script src="nf-support.js" defer></script>
 <script>
 (function(){
   /* ---------- data ---------- */
@@ -607,17 +613,26 @@
     });
   });
 
-  /* ---------- budget + currency rules ---------- */
-  var CUR = { 'United States':['USD','$',1], 'United Kingdom':['GBP','£',.79], 'Canada':['CAD','C$',1.37] };
+  /* ---------- budget + currency parity rules ----------
+     GBP and EUR zones use a FLAT cap (£10k / €10k — same figure, no FX conversion).
+     Dollarized economies (e.g. DRC, Ecuador) use US$10k. Everywhere else the cap
+     is the local-currency equivalent of US$10,000. */
+  var DOLLARIZED = ['DR Congo','Democratic Republic of the Congo','Ecuador','El Salvador','Panama','Zimbabwe','Timor-Leste'];
+  var LOCAL = { 'Canada':['CAD','C$',1.37], 'Nigeria':['NGN','₦',1580], 'Kenya':['KES','KSh',129], 'Ghana':['GHS','GH₵',15.6], 'India':['INR','₹',86], 'South Africa':['ZAR','R',18.2], 'Brazil':['BRL','R$',5.6], 'Japan':['JPY','¥',155], 'Australia':['AUD','A$',1.52] };
   var budget = document.getElementById('budget');
   function fmt(n){ return n.toLocaleString('en-US'); }
   function updBudget(){
     var usd = +budget.value, c = sel.value, main, local = '';
-    if (CUR[c]){
-      var k = CUR[c]; main = k[1] + fmt(Math.round(usd * k[2])) + ' ' + k[0];
-      if (k[0] !== 'USD') local = '≈ US$' + fmt(usd);
+    if (c === 'United Kingdom'){
+      main = '£' + fmt(usd) + ' GBP'; local = 'flat parity — same figure, no FX';
     } else if (EU.indexOf(c) > -1){
-      main = '€' + fmt(Math.round(usd * .92)) + ' EUR'; local = '≈ US$' + fmt(usd);
+      main = '€' + fmt(usd) + ' EUR'; local = 'flat parity — same figure, no FX';
+    } else if (c === 'United States' || DOLLARIZED.indexOf(c) > -1){
+      main = 'US$' + fmt(usd);
+      if (DOLLARIZED.indexOf(c) > -1) local = 'dollarized zone';
+    } else if (LOCAL[c]){
+      var k = LOCAL[c]; main = k[1] + fmt(Math.round(usd * k[2])) + ' ' + k[0];
+      local = '≈ US$' + fmt(usd) + ' equivalent';
     } else {
       main = 'US$' + fmt(usd);
       if (c) local = '10k USD equivalent · local parity';
@@ -952,5 +967,6 @@
   updBudget(); updAcu();
 })();
 </script>
+<script src="nf-consent.js" defer></script>
 </body>
 </html>

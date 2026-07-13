@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Niche Finder — The Operating System for Venture Creation</title>
 <meta name="description" content="From market signal to investor-ready venture — an autonomous venture intelligence system that discovers, validates, and builds your next business.">
+<meta name="theme-color" content="#070B14">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Niche Finder">
 <style>
   :root{
     --ink:#070B14;
@@ -723,5 +728,44 @@
   }
 })();
 </script>
+<script src="nf-config.js"></script>
+<script src="nf-wallet.js"></script>
+<script src="nf-support.js" defer></script>
+<script>
+/* PWA: service worker + polite install prompt (Android/desktop native flow;
+   iOS gets Add-to-Home-Screen instructions). Dismissal is remembered. */
+(function(){
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    navigator.serviceWorker.register('sw.js').catch(function(){});
+  }
+  if (localStorage.getItem('nf_install_dismissed')) return;
+  var standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  if (standalone) return;
+  var deferred = null;
+  function chip(label, onClick){
+    var c = document.createElement('div');
+    c.style.cssText = 'position:fixed;left:22px;bottom:22px;z-index:930;background:#0E1626;border:1px solid rgba(217,164,65,.45);border-radius:12px;padding:12px 16px;color:#E8ECF4;font-size:.82rem;box-shadow:0 12px 40px rgba(0,0,0,.5);display:flex;gap:12px;align-items:center;max-width:320px';
+    c.innerHTML = '<span>' + label + '</span>' +
+      '<button data-go style="background:#D9A441;border:none;border-radius:7px;color:#070B14;font-weight:700;padding:7px 14px;cursor:pointer;white-space:nowrap">Install</button>' +
+      '<button data-no style="background:none;border:none;color:#8B93A5;cursor:pointer;font-size:1rem" aria-label="Dismiss">✕</button>';
+    c.addEventListener('click', function(e){
+      if (e.target.closest('[data-go]')) { onClick(); c.remove(); }
+      if (e.target.closest('[data-no]')) { localStorage.setItem('nf_install_dismissed','1'); c.remove(); }
+    });
+    document.body.appendChild(c);
+  }
+  addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault(); deferred = e;
+    chip('<b>Install Niche Finder</b><br>One-tap launch, full-screen OS experience.', function(){
+      deferred.prompt(); deferred = null;
+    });
+  });
+  var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  if (isIOS) chip('<b>Add to Home Screen</b><br>Tap Share, then "Add to Home Screen".', function(){
+    alert('In Safari: tap the Share button, then choose "Add to Home Screen", then launch Niche Finder from your home screen.');
+  });
+})();
+</script>
+<script src="nf-consent.js" defer></script>
 </body>
 </html>

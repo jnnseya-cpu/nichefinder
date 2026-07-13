@@ -130,8 +130,8 @@
       <div class="spane on" id="spane-support">
         <div class="panel" style="margin-top:0">
           <h3>Open Support Cases</h3>
-          <p class="sub">Review and manage user support cases escalated from the AI chatbot.</p>
-          <p style="font-size:.86rem;color:var(--muted)">No open support cases.</p>
+          <p class="sub">Review and manage user support cases escalated from the AI chatbot (NicheBot).</p>
+          <div id="caseList"></div>
         </div>
       </div>
 
@@ -474,6 +474,33 @@
     renderAcu(); renderLedger();
   });
 
+  /* ---- support cases (escalated from NicheBot) ---- */
+  function renderCases(){
+    var cases;
+    try { cases = JSON.parse(localStorage.getItem('nf_support_cases') || '[]'); } catch (e) { cases = []; }
+    var open = cases.filter(function(c){ return c.status === 'open'; });
+    var box = document.getElementById('caseList');
+    if (!open.length){ box.innerHTML = '<p style="font-size:.86rem;color:var(--muted)">No open support cases.</p>'; return; }
+    box.innerHTML = open.map(function(c, i){
+      var last = (c.transcript || []).filter(function(t){ return t.who === 'user'; }).slice(-1)[0];
+      return '<div style="border:1px solid var(--line-soft);border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;gap:14px;align-items:start;flex-wrap:wrap">' +
+        '<span class="status-pill ' + (c.priority === 'high' ? 'draft' : 'pub') + '">' + c.priority.toUpperCase() + '</span>' +
+        '<div style="flex:1;min-width:220px"><b style="font-size:.9rem">' + esc(c.reason || 'Escalated conversation') + '</b>' +
+          '<p style="font-size:.78rem;color:var(--muted);margin-top:4px">' + (last ? '“' + esc(last.t).slice(0, 140) + '”' : 'No transcript') +
+          ' · ' + new Date(c.ts).toLocaleString() + '</p></div>' +
+        '<button class="btn" data-resolve="' + esc(c.id) + '" style="padding:6px 14px;font-size:.76rem">Resolve</button></div>';
+    }).join('');
+    box.querySelectorAll('[data-resolve]').forEach(function(b){
+      b.addEventListener('click', function(){
+        cases.forEach(function(c){ if (c.id === b.getAttribute('data-resolve')) c.status = 'resolved'; });
+        localStorage.setItem('nf_support_cases', JSON.stringify(cases));
+        renderCases();
+        showToast('Case resolved — logged to the platform ledger.');
+      });
+    });
+  }
+  renderCases();
+
   /* ---- ledger ---- */
   function renderLedger(){
     var l;
@@ -488,5 +515,6 @@
   renderLedger();
 })();
 </script>
+<script src="nf-consent.js" defer></script>
 </body>
 </html>

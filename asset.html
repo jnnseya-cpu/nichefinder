@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Niche Finder — Generated Asset</title>
 <meta name="description" content="Investor-grade generated asset: validation report, financial forecast, business plan, or pitch deck.">
+<meta name="theme-color" content="#070B14">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Niche Finder">
 <style>
   :root{
     --ink:#070B14;
@@ -431,6 +436,7 @@
   var TYPES = {
     validation: { n: 'Market Validation Report', tag: 'VALIDATION · ' + NF.COSTS.validation + ' ACU', sub: 'Demand evidence, market sizing, and competitive scan', ac: C.teal },
     forecast:   { n: '3-Year Financial Forecast', tag: 'FINANCIAL MODEL · ' + NF.COSTS.forecast + ' ACU', sub: 'Revenue build-up, P&L, cashflow, and sensitivity analysis', ac: C.brand },
+    pnl:        { n: '3-Year Profit & Loss', tag: 'P&L STATEMENT · ' + NF.COSTS.pnl + ' ACU', sub: 'Structured P&L with margins, opex breakdown, and EBITDA sensitivity', ac: C.brand },
     bizplan:    { n: 'Business Plan', tag: 'BUSINESS PLAN · ' + NF.COSTS.bizplan + ' ACU', sub: 'Investor-grade operating and growth plan', ac: C.violet },
     pitch:      { n: 'Investor Pitch Deck', tag: 'PITCH DECK · ' + NF.COSTS.pitch + ' ACU', sub: '12 slides, export-ready', ac: C.blue },
     riskmap:    { n: 'Risk Heatmap', tag: 'RISK ENGINE · ' + NF.COSTS.riskmap + ' ACU', sub: 'Regulatory, operational, and market exposures mapped by probability and impact', ac: C.coral },
@@ -611,6 +617,9 @@
     });
     document.getElementById('sensTable').innerHTML = sens;
   };
+  // P&L statement shares the anchored financial model — same assumptions, same
+  // figures, different document identity (internal consistency guarantee).
+  render.pnl = render.forecast;
 
   render.bizplan = function(){
     root.innerHTML = docShell(
@@ -900,6 +909,7 @@
         '<div class="dl-grid" style="margin-top:14px">' +
         dlLink('Market Validation Report', 'Open the report, then Export PDF.', 'validation') +
         dlLink('3-Year Financial Forecast', 'Open the forecast, then Export PDF.', 'forecast') +
+        dlLink('3-Year Profit & Loss', 'Open the P&L statement, then Export PDF.', 'pnl') +
         dlLink('Business Plan', 'Open the plan, then Export PDF.', 'bizplan') +
         dlLink('Risk Heatmap', 'Open the heatmap, then Export PDF.', 'riskmap') +
         dlLink('Investor Pitch Deck', 'Open the deck, then Export PDF — one slide per page.', 'pitch') +
@@ -962,5 +972,6 @@
   addEventListener('resize', function(){ render[type](); });
 })();
 </script>
+<script src="nf-consent.js" defer></script>
 </body>
 </html>

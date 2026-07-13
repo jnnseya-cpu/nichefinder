@@ -16,11 +16,17 @@
     niche_search: 125,
     unlock: 150,
     export_pdf: 100,
-    validation: 250,
+    validation: 250,        // market validation report
     forecast: 250,          // 3-year cashflow forecast
-    pnl: 220,
+    pnl: 220,               // 3-year profit & loss
     riskmap: 250,
     excel_model: 350,
+    cashflow_pnl_bundle: 400,
+    financial_bundle: 500,  // full financial model bundle
+    scenario: 300,          // scenario builder — single case
+    scenario_bundle: 700,   // conservative + base + aggressive
+    benchmark: 250,
+    confidence_report: 200,
     bizplan: 500,
     bizplan_pdf: 150,
     pitch: 500,             // standard deck; premium 650 / elite 850 by template tier
@@ -31,6 +37,7 @@
     execution_roadmap: 300,
     market_entry: 350,
     full_investor_package: 1500,
+    support_message: 1,     // support chat — 1 ACU per message, free ACUs allowed
     investor_multiplier: 1.4
   };
 
@@ -83,6 +90,19 @@
     w.paid += pkg.total;
     saveWallet(w);
     logLedger('TOP-UP · ' + pkg.name + ' (£' + pkg.priceGBP + ' = ' + pkg.total.toLocaleString('en-US') + ' ACU)', pkg.total);
+  }
+
+  /* Support chat is the one action welcome ACUs may fund (1 ACU/message):
+     deduct free first, then paid. Returns false only when both are empty. */
+  function chargeSupport(label) {
+    var w = loadWallet();
+    var cost = COSTS.support_message;
+    if (w.free >= cost) w.free -= cost;
+    else if (w.paid >= cost) w.paid -= cost;
+    else return false;
+    saveWallet(w);
+    logLedger('SUPPORT · ' + (label || 'chat message'), -cost);
+    return true;
   }
 
   /* traffic-light helpers — 0-10 scale */
@@ -190,6 +210,7 @@
     wallet: loadWallet,
     total: function () { var w = loadWallet(); return w.paid + w.free; },
     charge: function (cost, label, onAfter) { return charge(cost, label, onAfter); },
+    chargeSupport: chargeSupport,
     credit: function (pkg) { return credit(pkg); },
     logLedger: logLedger,
     band: band,

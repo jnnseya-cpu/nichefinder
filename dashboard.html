@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Niche Finder — Command Center</title>
 <meta name="description" content="Operator Command Center — wallet, venture assets, predictive intelligence, and the immutable venture ledger.">
+<meta name="theme-color" content="#070B14">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Niche Finder">
 <style>
   :root{
     --ink:#070B14;--ink-2:#0A1120;--panel:#0E1626;--panel-2:#121C30;
@@ -268,6 +273,7 @@
 
 <script src="nf-config.js"></script>
 <script src="nf-wallet.js"></script>
+<script src="nf-support.js" defer></script>
 <script>
 (function(){
   function get(key, fallback){ try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch (e) { return fallback; } }
@@ -363,8 +369,8 @@
       '<div class="side">' + ago(h.ts) + '</div>');
   }, 'No engine runs yet.');
 
-  var REP_COLORS = { validation: 'var(--teal)', forecast: 'var(--gold)', bizplan: 'var(--violet)', pitch: 'var(--blue)', riskmap: 'var(--red)', export: 'var(--muted)' };
-  var REP_NAMES = { validation: 'Market Validation', forecast: '3-Year Forecast', bizplan: 'Business Plan', pitch: 'Pitch Deck', riskmap: 'Risk Heatmap', export: 'Export Pack' };
+  var REP_COLORS = { validation: 'var(--teal)', forecast: 'var(--gold)', pnl: 'var(--gold-bright)', bizplan: 'var(--violet)', pitch: 'var(--blue)', riskmap: 'var(--red)', export: 'var(--muted)' };
+  var REP_NAMES = { validation: 'Market Validation', forecast: '3-Year Forecast', pnl: '3-Year P&L', bizplan: 'Business Plan', pitch: 'Pitch Deck', riskmap: 'Risk Heatmap', export: 'Export Pack' };
   document.getElementById('repCount').textContent = reports.length + ' ASSETS';
   fill(document.getElementById('repList'), reports, function(r){
     return rowEl('<span class="rtype" style="border:1px solid ' + (REP_COLORS[r.type] || 'var(--line-soft)') + ';color:' + (REP_COLORS[r.type] || 'var(--muted)') + '">' + (REP_NAMES[r.type] || r.type) + '</span>' +
@@ -413,5 +419,6 @@
   document.getElementById('inviteCode').textContent = code;
 })();
 </script>
+<script src="nf-consent.js" defer></script>
 </body>
 </html>
