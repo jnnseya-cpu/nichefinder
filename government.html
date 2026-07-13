@@ -186,7 +186,7 @@
     var o = document.createElement('option'); o.value = k; o.textContent = DATA[k].name; sel.appendChild(o);
   });
 
-  var C = { gold:'#D9A441', bright:'#F1C97E', teal:'#3FA79B', red:'#C4604F', muted:'#8B93A5', grid:'rgba(139,147,165,.14)' };
+  var C = { gold:'#E8A61A', bright:'#FFC53D', teal:'#3FA79B', red:'#C4604F', muted:'#8B93A5', grid:'rgba(139,147,165,.14)' };
   function band(rate){ return rate >= .30 ? C.teal : rate >= .15 ? C.gold : C.red; }
   function fmt(n){ return n.toLocaleString('en-US'); }
 
@@ -219,7 +219,7 @@
     document.getElementById('kScore').textContent = d.score.toFixed(1) + '/10';
 
     drawBars(document.getElementById('sectorChart'), Object.keys(d.sectors),
-      Object.keys(d.sectors).map(function(k){ return d.sectors[k]; }), 'rgba(217,164,65,.85)');
+      Object.keys(d.sectors).map(function(k){ return d.sectors[k]; }), 'rgba(232,166,26,.85)');
     drawBars(document.getElementById('adoptChart'),
       d.weekly.map(function(_,i){ return 'W'+(i+1); }), d.weekly, 'rgba(63,167,155,.8)');
 

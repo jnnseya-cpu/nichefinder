@@ -16,13 +16,13 @@
     --ink-2:#0A1120;
     --panel:#0E1626;
     --panel-2:#121C30;
-    --line:rgba(217,164,65,.14);
+    --line:rgba(232,166,26,.14);
     --line-soft:rgba(139,147,165,.14);
     --text:#EAE5D9;
     --muted:#8B93A5;
-    --gold:#D9A441;
-    --gold-bright:#F1C97E;
-    --gold-dim:rgba(217,164,65,.55);
+    --gold:#E8A61A;
+    --gold-bright:#FFC53D;
+    --gold-dim:rgba(232,166,26,.55);
     --teal:#3FA79B;
     --serif:"Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif;
     --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
@@ -97,7 +97,7 @@
   .hero-vignette{
     position:absolute;inset:0;z-index:-1;pointer-events:none;
     background:
-      radial-gradient(1100px 520px at 68% 30%, rgba(217,164,65,.07), transparent 60%),
+      radial-gradient(1100px 520px at 68% 30%, rgba(232,166,26,.07), transparent 60%),
       radial-gradient(900px 700px at 15% 85%, rgba(63,167,155,.05), transparent 60%),
       linear-gradient(180deg, rgba(7,11,20,.25) 0%, rgba(7,11,20,0) 30%, rgba(7,11,20,.88) 88%, var(--ink) 100%);
   }
@@ -284,7 +284,7 @@
   }
   .final::before{
     content:"";position:absolute;inset:0;z-index:-1;
-    background:radial-gradient(800px 420px at 50% 20%, rgba(217,164,65,.1), transparent 65%);
+    background:radial-gradient(800px 420px at 50% 20%, rgba(232,166,26,.1), transparent 65%);
   }
   .final .eyebrow{justify-content:center}
   .final .eyebrow::after{content:"";width:34px;height:1px;background:var(--gold-dim);flex:none}
@@ -391,7 +391,7 @@
               <div class="ring" aria-hidden="true">
                 <svg width="104" height="104" viewBox="0 0 104 104">
                   <circle cx="52" cy="52" r="46" fill="none" stroke="rgba(139,147,165,.18)" stroke-width="5"/>
-                  <circle id="ringArc" cx="52" cy="52" r="46" fill="none" stroke="#D9A441" stroke-width="5"
+                  <circle id="ringArc" cx="52" cy="52" r="46" fill="none" stroke="#E8A61A" stroke-width="5"
                           stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="289"/>
                 </svg>
                 <span class="num" id="ringNum">0</span>
@@ -634,7 +634,7 @@
       p.r += .55;
       var al = Math.max(0, 1 - p.r / 70);
       if (al <= 0){ pings.splice(i, 1); continue; }
-      cx.strokeStyle = 'rgba(217,164,65,' + (al * .5).toFixed(3) + ')';
+      cx.strokeStyle = 'rgba(232,166,26,' + (al * .5).toFixed(3) + ')';
       cx.lineWidth = 1.2;
       cx.beginPath(); cx.arc(p.x, p.y, p.r, 0, 6.2832); cx.stroke();
       cx.fillStyle = 'rgba(241,201,126,' + (al * .9).toFixed(3) + ')';
@@ -672,14 +672,14 @@
     for (var i = 1; i < data.length; i++) g.lineTo(X(i), Y(data[i]));
     g.lineTo(X(data.length - 1), h - pad); g.lineTo(X(0), h - pad); g.closePath();
     var grad = g.createLinearGradient(0, 0, 0, h);
-    grad.addColorStop(0, 'rgba(217,164,65,.28)'); grad.addColorStop(1, 'rgba(217,164,65,0)');
+    grad.addColorStop(0, 'rgba(232,166,26,.28)'); grad.addColorStop(1, 'rgba(232,166,26,0)');
     g.fillStyle = grad; g.fill();
     // line
     g.beginPath(); g.moveTo(X(0), Y(data[0]));
     for (i = 1; i < data.length; i++) g.lineTo(X(i), Y(data[i]));
-    g.strokeStyle = '#D9A441'; g.lineWidth = 2; g.lineJoin = 'round'; g.stroke();
+    g.strokeStyle = '#E8A61A'; g.lineWidth = 2; g.lineJoin = 'round'; g.stroke();
     // emphasized endpoint
-    g.fillStyle = '#F1C97E';
+    g.fillStyle = '#FFC53D';
     g.beginPath(); g.arc(X(data.length - 1), Y(100), 3.5, 0, 6.2832); g.fill();
     g.font = '10px ' + getComputedStyle(document.body).getPropertyValue('font-family');
     g.fillStyle = 'rgba(241,201,126,.9)';
@@ -745,9 +745,9 @@
   var deferred = null;
   function chip(label, onClick){
     var c = document.createElement('div');
-    c.style.cssText = 'position:fixed;left:22px;bottom:22px;z-index:930;background:#0E1626;border:1px solid rgba(217,164,65,.45);border-radius:12px;padding:12px 16px;color:#E8ECF4;font-size:.82rem;box-shadow:0 12px 40px rgba(0,0,0,.5);display:flex;gap:12px;align-items:center;max-width:320px';
+    c.style.cssText = 'position:fixed;left:22px;bottom:22px;z-index:930;background:#0E1626;border:1px solid rgba(232,166,26,.45);border-radius:12px;padding:12px 16px;color:#E8ECF4;font-size:.82rem;box-shadow:0 12px 40px rgba(0,0,0,.5);display:flex;gap:12px;align-items:center;max-width:320px';
     c.innerHTML = '<span>' + label + '</span>' +
-      '<button data-go style="background:#D9A441;border:none;border-radius:7px;color:#070B14;font-weight:700;padding:7px 14px;cursor:pointer;white-space:nowrap">Install</button>' +
+      '<button data-go style="background:#E8A61A;border:none;border-radius:7px;color:#070B14;font-weight:700;padding:7px 14px;cursor:pointer;white-space:nowrap">Install</button>' +
       '<button data-no style="background:none;border:none;color:#8B93A5;cursor:pointer;font-size:1rem" aria-label="Dismiss">✕</button>';
     c.addEventListener('click', function(e){
       if (e.target.closest('[data-go]')) { onClick(); c.remove(); }

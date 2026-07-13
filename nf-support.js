@@ -63,7 +63,7 @@
     'box-shadow:0 6px 24px rgba(0,0,0,.4);font-family:"Avenir Next","Segoe UI",system-ui,sans-serif');
   fab.setAttribute('aria-label', 'Open support');
   fab.textContent = 'Support';
-  fab.onmouseenter = function () { fab.style.borderColor = 'rgba(217,164,65,.5)'; fab.style.color = '#E8ECF4'; };
+  fab.onmouseenter = function () { fab.style.borderColor = 'rgba(232,166,26,.5)'; fab.style.color = '#E8ECF4'; };
   fab.onmouseleave = function () { fab.style.borderColor = 'rgba(255,255,255,.16)'; fab.style.color = '#C3C9D6'; };
 
   var panel = el('div',
@@ -80,7 +80,7 @@
     '<div data-log style="flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px;font-size:.85rem"></div>' +
     '<form data-form style="display:flex;gap:8px;padding:12px;border-top:1px solid rgba(255,255,255,.09)">' +
       '<input data-in type="text" placeholder="Ask about pricing, scoring, unlocks…" style="flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:10px 12px;color:#E8ECF4;font-size:.85rem;font-family:inherit">' +
-      '<button type="submit" style="background:#D9A441;border:none;border-radius:8px;color:#070B14;font-weight:700;padding:0 16px;cursor:pointer">Send</button>' +
+      '<button type="submit" style="background:#E8A61A;border:none;border-radius:8px;color:#070B14;font-weight:700;padding:0 16px;cursor:pointer">Send</button>' +
     '</form>';
 
   var log = panel.querySelector('[data-log]');
@@ -89,7 +89,7 @@
     var mine = who === 'user';
     var b = el('div',
       'max-width:86%;padding:9px 13px;border-radius:12px;line-height:1.45;white-space:pre-line;' +
-      (mine ? 'align-self:flex-end;background:rgba(217,164,65,.14);border:1px solid rgba(217,164,65,.3)'
+      (mine ? 'align-self:flex-end;background:rgba(232,166,26,.14);border:1px solid rgba(232,166,26,.3)'
             : 'align-self:flex-start;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09)'));
     b.textContent = text;
     log.appendChild(b);

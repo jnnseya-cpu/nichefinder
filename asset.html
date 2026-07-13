@@ -15,12 +15,12 @@
     --ink:#070B14;
     --panel:#0E1626;
     --panel-2:#121C30;
-    --line:rgba(217,164,65,.14);
+    --line:rgba(232,166,26,.14);
     --line-soft:rgba(139,147,165,.14);
     --text:#EAE5D9;
     --muted:#8B93A5;
-    --gold:#D9A441;
-    --gold-bright:#F1C97E;
+    --gold:#E8A61A;
+    --gold-bright:#FFC53D;
     /* document palette (light surface) */
     --paper:#FDFBF6;
     --paper-2:#F4EFE4;
@@ -68,11 +68,11 @@
   }
   .doc-band::after{
     content:"";position:absolute;right:-60px;top:-70px;width:280px;height:280px;border-radius:50%;
-    border:1.5px solid rgba(217,164,65,.35);
+    border:1.5px solid rgba(232,166,26,.35);
   }
   .doc-band::before{
     content:"";position:absolute;right:20px;top:30px;width:170px;height:170px;border-radius:50%;
-    border:1px solid rgba(217,164,65,.2);
+    border:1px solid rgba(232,166,26,.2);
   }
   .doc-brandline{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:.62rem;letter-spacing:.26em;color:var(--gold-bright)}
   .doc-brandline i{width:7px;height:7px;border-radius:50%;background:var(--gold);display:inline-block}
@@ -152,7 +152,7 @@
   .slide h2{font-family:var(--serif);font-weight:400;font-size:clamp(1.3rem,3.2vw,2.3rem);margin-top:12px;line-height:1.12;max-width:22ch}
   .slide .sl-body{margin-top:auto;padding-top:16px}
   .slide .sl-num{position:absolute;bottom:18px;right:24px;font-family:var(--mono);font-size:.62rem;color:var(--muted)}
-  .slide .sl-brand{position:absolute;bottom:18px;left:24px;font-family:var(--mono);font-size:.58rem;letter-spacing:.2em;color:rgba(217,164,65,.55)}
+  .slide .sl-brand{position:absolute;bottom:18px;left:24px;font-family:var(--mono);font-size:.58rem;letter-spacing:.2em;color:rgba(232,166,26,.55)}
   .slide ul{list-style:none;display:flex;flex-direction:column;gap:10px;max-width:56ch}
   .slide ul li{padding-left:20px;position:relative;color:var(--sl-mut,#C4CAD6);font-size:clamp(.78rem,1.6vw,.95rem)}
   .slide ul li::before{content:"";position:absolute;left:0;top:.55em;width:8px;height:2px;background:var(--sl-ac,var(--gold))}
@@ -705,13 +705,13 @@
 
   /* 10 deck templates — each a complete visual system applied to all 12 slides */
   var DECK_THEMES = [
-    { id: 'midnight',  n: 'Midnight Gold',   bg: 'linear-gradient(135deg,#0B1322,#111B31 60%,#17203A)', tx: '#EAE5D9', mut: '#C4CAD6', ac: '#F1C97E', ac2: '#3FA79B', font: 'var(--serif)', border: 'rgba(217,164,65,.14)' },
+    { id: 'midnight',  n: 'Midnight Gold',   bg: 'linear-gradient(135deg,#0B1322,#111B31 60%,#17203A)', tx: '#EAE5D9', mut: '#C4CAD6', ac: '#FFC53D', ac2: '#3FA79B', font: 'var(--serif)', border: 'rgba(232,166,26,.14)' },
     { id: 'boardroom', n: 'Boardroom Ivory', bg: 'linear-gradient(135deg,#FDFBF6,#F4EFE4)', tx: '#1C2233', mut: '#5D6575', ac: '#B8861F', ac2: '#1F7A6F', font: 'var(--serif)', border: '#E4DCC9' },
-    { id: 'signal',    n: 'Signal Red',      bg: 'linear-gradient(135deg,#16090B,#2A0F13 65%,#3A1218)', tx: '#F5E9E6', mut: '#C9A9A3', ac: '#E86A54', ac2: '#F1C97E', font: 'var(--sans)', border: 'rgba(232,106,84,.25)' },
-    { id: 'atlantic',  n: 'Atlantic Blue',   bg: 'linear-gradient(135deg,#07131F,#0C2033 60%,#12293F)', tx: '#E7EDF4', mut: '#9FB2C4', ac: '#5FA8E0', ac2: '#F1C97E', font: 'var(--sans)', border: 'rgba(95,168,224,.22)' },
-    { id: 'terra',     n: 'Terra Verde',     bg: 'linear-gradient(135deg,#0C1510,#122019 60%,#182A20)', tx: '#E8EFE8', mut: '#A3B8A8', ac: '#5FBF8F', ac2: '#D9A441', font: 'var(--serif)', border: 'rgba(95,191,143,.22)' },
+    { id: 'signal',    n: 'Signal Red',      bg: 'linear-gradient(135deg,#16090B,#2A0F13 65%,#3A1218)', tx: '#F5E9E6', mut: '#C9A9A3', ac: '#E86A54', ac2: '#FFC53D', font: 'var(--sans)', border: 'rgba(232,106,84,.25)' },
+    { id: 'atlantic',  n: 'Atlantic Blue',   bg: 'linear-gradient(135deg,#07131F,#0C2033 60%,#12293F)', tx: '#E7EDF4', mut: '#9FB2C4', ac: '#5FA8E0', ac2: '#FFC53D', font: 'var(--sans)', border: 'rgba(95,168,224,.22)' },
+    { id: 'terra',     n: 'Terra Verde',     bg: 'linear-gradient(135deg,#0C1510,#122019 60%,#182A20)', tx: '#E8EFE8', mut: '#A3B8A8', ac: '#5FBF8F', ac2: '#E8A61A', font: 'var(--serif)', border: 'rgba(95,191,143,.22)' },
     { id: 'violet',    n: 'Violet Frontier', bg: 'linear-gradient(135deg,#120F1E,#1B1530 60%,#241C40)', tx: '#ECE8F4', mut: '#B4ABCB', ac: '#A48FE0', ac2: '#3FA79B', font: 'var(--sans)', border: 'rgba(164,143,224,.24)' },
-    { id: 'carbon',    n: 'Carbon Mono',     bg: 'linear-gradient(135deg,#0D0D0F,#161619 60%,#1E1E23)', tx: '#F2F2F0', mut: '#9C9CA3', ac: '#FFFFFF', ac2: '#D9A441', font: 'var(--mono)', border: 'rgba(255,255,255,.18)' },
+    { id: 'carbon',    n: 'Carbon Mono',     bg: 'linear-gradient(135deg,#0D0D0F,#161619 60%,#1E1E23)', tx: '#F2F2F0', mut: '#9C9CA3', ac: '#FFFFFF', ac2: '#E8A61A', font: 'var(--mono)', border: 'rgba(255,255,255,.18)' },
     { id: 'sunrise',   n: 'Sunrise Coral',   bg: 'linear-gradient(135deg,#FFF8F0,#FBEDE2)', tx: '#33231C', mut: '#8A6F60', ac: '#D45E3C', ac2: '#2E6FA3', font: 'var(--sans)', border: '#EDD9C8' },
     { id: 'ledger',    n: 'Ledger Slate',    bg: 'linear-gradient(135deg,#EEF1F4,#E2E8EE)', tx: '#1E2937', mut: '#5A6B7E', ac: '#2E6FA3', ac2: '#C4604F', font: 'var(--serif)', border: '#CBD6E0' },
     { id: 'royale',    n: 'Casino Royale',   bg: 'linear-gradient(135deg,#0F1410,#141D15 55%,#22150C)', tx: '#EFEAD8', mut: '#ADB3A0', ac: '#E4B84C', ac2: '#C4604F', font: 'var(--serif)', border: 'rgba(228,184,76,.28)' }
@@ -737,7 +737,7 @@
       DECK_THEMES.map(function(t){
         var on = t.id === TH.id;
         return '<button class="theme-pick" data-theme="' + t.id + '" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:8px 13px;border-radius:6px;font-family:var(--sans);font-size:.74rem;font-weight:600;' +
-          'background:' + (on ? 'rgba(217,164,65,.14)' : 'none') + ';border:1px solid ' + (on ? 'var(--gold)' : 'var(--line-soft)') + ';color:var(--text)">' +
+          'background:' + (on ? 'rgba(232,166,26,.14)' : 'none') + ';border:1px solid ' + (on ? 'var(--gold)' : 'var(--line-soft)') + ';color:var(--text)">' +
           '<span style="width:20px;height:14px;border-radius:3px;background:' + t.bg + ';border:1px solid rgba(255,255,255,.2);display:inline-block"></span>' +
           '<span style="width:8px;height:8px;border-radius:50%;background:' + t.ac + ';display:inline-block"></span>' + t.n + '</button>';
       }).join('') + '</div></div>';
@@ -813,7 +813,7 @@
       g.setTransform(DPR, 0, 0, DPR, 0, 0);
       var pad = { l: 10, r: 10, t: 12, b: 24 };
       var max = P.fin.revenue[2] * 1.1, n = 3, gw = (w - pad.l - pad.r) / n;
-      var cols = ['rgba(217,164,65,.9)', 'rgba(63,167,155,.85)'];
+      var cols = ['rgba(232,166,26,.9)', 'rgba(63,167,155,.85)'];
       var series = [P.fin.revenue, EBITDA];
       series.forEach(function(s, si){
         s.forEach(function(v, i){
@@ -829,7 +829,7 @@
       g.textAlign = 'center';
       P.fin.years.forEach(function(yl, i){ g.fillText(yl, pad.l + (i + .5) * gw, h - 6); });
       g.textAlign = 'left';
-      g.fillStyle = 'rgba(217,164,65,.95)'; g.fillRect(pad.l, 0, 9, 9);
+      g.fillStyle = 'rgba(232,166,26,.95)'; g.fillRect(pad.l, 0, 9, 9);
       g.fillStyle = 'rgba(139,147,165,.95)'; g.fillText('Revenue', pad.l + 13, 8);
       g.fillStyle = 'rgba(63,167,155,.95)'; g.fillRect(pad.l + 80, 0, 9, 9);
       g.fillStyle = 'rgba(139,147,165,.95)'; g.fillText('EBITDA', pad.l + 93, 8);

@@ -39,9 +39,9 @@
     '<b style="font-size:.92rem">Cookies &amp; local storage</b>' +
     '<p style="color:#8B93A5;margin:6px 0 12px;line-height:1.5">Essential storage runs the product (your wallet, projects, and ledger live in this browser). ' +
     'Analytics and marketing tags load only if you allow them. Your choice is kept for 30 days. ' +
-    '<a href="cookies.html" style="color:#F1C97E">Cookie Policy</a></p>' +
+    '<a href="cookies.html" style="color:#FFC53D">Cookie Policy</a></p>' +
     '<div style="display:flex;gap:10px;flex-wrap:wrap">' +
-      '<button data-c="all" style="background:#D9A441;border:none;border-radius:8px;color:#070B14;font-weight:700;padding:9px 18px;cursor:pointer;font-size:.82rem">Accept all</button>' +
+      '<button data-c="all" style="background:#E8A61A;border:none;border-radius:8px;color:#070B14;font-weight:700;padding:9px 18px;cursor:pointer;font-size:.82rem">Accept all</button>' +
       '<button data-c="essential" style="background:none;border:1px solid rgba(255,255,255,.2);border-radius:8px;color:#E8ECF4;padding:9px 18px;cursor:pointer;font-size:.82rem">Reject non-essential</button>' +
       '<button data-c="analytics" style="background:none;border:1px solid rgba(255,255,255,.12);border-radius:8px;color:#8B93A5;padding:9px 14px;cursor:pointer;font-size:.78rem">Essential + analytics only</button>' +
     '</div>';

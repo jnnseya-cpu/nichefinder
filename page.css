@@ -1,8 +1,8 @@
 /* Niche Finder — shared styles for informational pages (footer pages) */
 :root{
   --ink:#070B14; --panel:#0E1626; --panel-2:#111C30;
-  --gold:#D9A441; --gold-bright:#F1C97E; --gold-dim:rgba(217,164,65,.4);
-  --teal:#3FA79B; --red:#C4604F; --violet:#6B5CA5; --blue:#6B9BD1;
+  --gold:#E8A61A; --gold-bright:#FFC53D; --gold-dim:rgba(232,166,26,.4);
+  --teal:#3FA79B; --red:#C4604F; --violet:#6B5CA5; --blue:#3D85E0;
   --text:#E8ECF4; --muted:#8B93A5;
   --line:rgba(255,255,255,.12); --line-soft:rgba(255,255,255,.07);
   --sans:"Avenir Next","Segoe UI",system-ui,-apple-system,sans-serif;

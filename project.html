@@ -16,13 +16,13 @@
     --ink-2:#0A1120;
     --panel:#0E1626;
     --panel-2:#121C30;
-    --line:rgba(217,164,65,.14);
+    --line:rgba(232,166,26,.14);
     --line-soft:rgba(139,147,165,.14);
     --text:#EAE5D9;
     --muted:#8B93A5;
-    --gold:#D9A441;
-    --gold-bright:#F1C97E;
-    --gold-dim:rgba(217,164,65,.55);
+    --gold:#E8A61A;
+    --gold-bright:#FFC53D;
+    --gold-dim:rgba(232,166,26,.55);
     --teal:#3FA79B;
     --red:#C4604F;
     --serif:"Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif;
@@ -56,7 +56,7 @@
   .page-head h1{font-family:var(--serif);font-weight:400;font-size:clamp(1.7rem,3.6vw,2.6rem);line-height:1.12;letter-spacing:-.01em;max-width:26ch}
   .status-pill{
     flex:none;margin-top:10px;font-family:var(--mono);font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;
-    color:var(--gold-bright);border:1px solid var(--gold);border-radius:99px;padding:6px 14px;background:rgba(217,164,65,.08);
+    color:var(--gold-bright);border:1px solid var(--gold);border-radius:99px;padding:6px 14px;background:rgba(232,166,26,.08);
   }
   .meta-line{font-family:var(--mono);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-top:10px}
 
@@ -69,7 +69,7 @@
   .stage.done::before{background:var(--gold-dim)}
   .stage.done::after{background:var(--gold);border-color:var(--gold)}
   .stage.done span{color:var(--text)}
-  .stage.current::after{background:var(--ink);border-color:var(--gold-bright);box-shadow:0 0 0 4px rgba(217,164,65,.18)}
+  .stage.current::after{background:var(--ink);border-color:var(--gold-bright);box-shadow:0 0 0 4px rgba(232,166,26,.18)}
   .stage.current span{color:var(--gold-bright)}
 
   .layout{display:grid;grid-template-columns:1fr 330px;gap:34px;align-items:start;padding:26px 0 110px}
@@ -178,7 +178,7 @@
   .brief-facts .f .v{font-family:var(--mono);font-size:1rem;color:var(--gold-bright);margin-top:3px}
   .next-action{
     display:flex;align-items:center;gap:16px;margin-top:20px;border-radius:8px;padding:15px 18px;
-    background:linear-gradient(90deg,rgba(196,96,79,.16),rgba(217,164,65,.1));border:1px solid rgba(196,96,79,.4);
+    background:linear-gradient(90deg,rgba(196,96,79,.16),rgba(232,166,26,.1));border:1px solid rgba(196,96,79,.4);
   }
   .next-action .req{flex:none;font-family:var(--mono);font-size:.56rem;letter-spacing:.16em;background:var(--red);color:#fff;border-radius:3px;padding:3px 8px}
   .next-action .tx{flex:1;font-size:.9rem}
@@ -237,7 +237,7 @@
     <div class="nav-right">
       <a href="search.html">Search Canvas</a>
       <a href="dashboard.html">Command Center</a>
-      <span class="acu-balance" id="acuBalance">— ACU</span><span aria-label="Account" title="Operator account" style="width:30px;height:30px;border-radius:50%;border:1px solid var(--gold-dim);display:inline-grid;place-items:center;font-family:var(--mono);font-size:.66rem;color:var(--gold-bright);background:rgba(217,164,65,.08);cursor:pointer">U</span>
+      <span class="acu-balance" id="acuBalance">— ACU</span><span aria-label="Account" title="Operator account" style="width:30px;height:30px;border-radius:50%;border:1px solid var(--gold-dim);display:inline-grid;place-items:center;font-family:var(--mono);font-size:.66rem;color:var(--gold-bright);background:rgba(232,166,26,.08);cursor:pointer">U</span>
     </div>
   </div>
 </header>
@@ -282,7 +282,7 @@
       </div>
       <div class="brief-grid">
         <div class="bcard" style="--bc:var(--teal)"><span class="bk">Situation</span><p id="briefSituation"></p></div>
-        <div class="bcard" style="--bc:#6B9BD1"><span class="bk">Insight</span><p id="briefInsight"></p></div>
+        <div class="bcard" style="--bc:#3D85E0"><span class="bk">Insight</span><p id="briefInsight"></p></div>
         <div class="bcard" style="--bc:var(--red)"><span class="bk">Risk Alert</span><p id="briefRisk"></p></div>
         <div class="bcard" style="--bc:var(--gold)"><span class="bk">Recommendation</span><p id="briefReco"></p></div>
       </div>
@@ -341,7 +341,7 @@
           <div class="ring" aria-hidden="true">
             <svg width="96" height="96" viewBox="0 0 96 96">
               <circle cx="48" cy="48" r="42" fill="none" stroke="rgba(139,147,165,.18)" stroke-width="5"/>
-              <circle id="ringArc" cx="48" cy="48" r="42" fill="none" stroke="#D9A441" stroke-width="5" stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="264"/>
+              <circle id="ringArc" cx="48" cy="48" r="42" fill="none" stroke="#E8A61A" stroke-width="5" stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="264"/>
             </svg>
             <span class="num" id="ringNum">0</span>
           </div>
@@ -354,7 +354,7 @@
         <h3>Build &amp; Generate</h3>
         <label style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 14px;padding:10px 12px;border:1px dashed var(--line);border-radius:8px;cursor:pointer">
           <span style="font-size:.78rem;color:var(--muted)"><b style="color:var(--gold-bright);font-family:var(--mono);font-size:.62rem;letter-spacing:.14em">INVESTOR MODE</b><br>Deal-ready outputs · +40% ACU</span>
-          <input type="checkbox" id="invModeToggle" style="accent-color:#D9A441;width:18px;height:18px">
+          <input type="checkbox" id="invModeToggle" style="accent-color:#E8A61A;width:18px;height:18px">
         </label>
         <div class="actions" id="actions"></div>
         <p class="rail-note" id="railNote">Each action consumes ACUs, generates a saved asset, and progresses your project status. Costs are shown before you commit.</p>
@@ -565,7 +565,7 @@
     // bars: revenue (gold) + cashflow (teal), grouped
     var bw = Math.min(46, (w / n) * .22);
     for (var i = 0; i < n; i++){
-      g.fillStyle = 'rgba(217,164,65,.85)';
+      g.fillStyle = 'rgba(232,166,26,.85)';
       g.fillRect(X(i) - bw - 4, Y(project.fin.revenue[i]), bw, Y(0) - Y(project.fin.revenue[i]));
       g.fillStyle = 'rgba(63,167,155,.8)';
       g.fillRect(X(i) + 4, Y(Math.max(0, project.fin.cashflow[i])), bw, Y(0) - Y(Math.max(0, project.fin.cashflow[i])));
@@ -573,12 +573,12 @@
       g.font = '10px ' + getComputedStyle(document.body).fontFamily;
       g.textAlign = 'center';
       g.fillText(project.fin.years[i], X(i), h - 8);
-      g.fillStyle = '#F1C97E';
+      g.fillStyle = '#FFC53D';
       g.fillText(fmt(project.fin.revenue[i]), X(i) - bw / 2 - 4, Y(project.fin.revenue[i]) - 6);
     }
     // legend
     g.textAlign = 'left';
-    g.fillStyle = 'rgba(217,164,65,.9)'; g.fillRect(pad.l, 2, 9, 9);
+    g.fillStyle = 'rgba(232,166,26,.9)'; g.fillRect(pad.l, 2, 9, 9);
     g.fillStyle = 'rgba(139,147,165,.9)'; g.fillText('Revenue', pad.l + 14, 10);
     g.fillStyle = 'rgba(63,167,155,.9)'; g.fillRect(pad.l + 78, 2, 9, 9);
     g.fillStyle = 'rgba(139,147,165,.9)'; g.fillText('Net Cashflow', pad.l + 92, 10);
@@ -603,11 +603,11 @@
   /* ---------- actions ---------- */
   var ACTIONS = [
     { id: 'validation', t: 'Market Validation Report', d: 'Deep dive into local demand, competition, and timing', cost: NF.COSTS.validation, advances: 'validated', hc: '#3FA79B' },
-    { id: 'forecast', t: '3-Year Cashflow Forecast', d: 'Revenue build-up, cashflow, and break-even analysis', cost: NF.COSTS.forecast, advances: 'financial_ready', hc: '#D9A441' },
-    { id: 'pnl', t: '3-Year Profit & Loss', d: 'Structured P&L with margins, opex, and net position', cost: NF.COSTS.pnl, advances: 'financial_ready', hc: '#F1C97E' },
+    { id: 'forecast', t: '3-Year Cashflow Forecast', d: 'Revenue build-up, cashflow, and break-even analysis', cost: NF.COSTS.forecast, advances: 'financial_ready', hc: '#E8A61A' },
+    { id: 'pnl', t: '3-Year Profit & Loss', d: 'Structured P&L with margins, opex, and net position', cost: NF.COSTS.pnl, advances: 'financial_ready', hc: '#FFC53D' },
     { id: 'riskmap', t: 'Risk Heatmap', d: 'Identify regulatory, operational, and market exposures', cost: NF.COSTS.riskmap, advances: null, hc: '#C4604F' },
     { id: 'bizplan', t: 'Business Plan', d: 'Professional, investor-ready execution strategy', cost: NF.COSTS.bizplan, advances: 'pitch_ready', hc: '#6B5CA5' },
-    { id: 'pitch', t: 'Investor Pitch Deck', d: '12-slide deck, export-ready', cost: NF.COSTS.pitch, advances: 'investor_ready', hc: '#6B9BD1' },
+    { id: 'pitch', t: 'Investor Pitch Deck', d: '12-slide deck, export-ready', cost: NF.COSTS.pitch, advances: 'investor_ready', hc: '#3D85E0' },
     { id: 'export', t: 'Export Excel + PDF Pack', d: 'Download all generated assets as an Excel model + PDF pack', cost: NF.COSTS.excel_model, advances: null, hc: '#8B93A5' }
   ];
   /* Investor Production Mode: ×1.4 on all generation costs (nf_investor_mode persists across pages).

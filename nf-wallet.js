@@ -127,7 +127,7 @@
 
   /* traffic-light helpers — 0-10 scale */
   function band(score10) {
-    return score10 >= 8 ? '#3FA79B' : score10 >= 5 ? '#D9A441' : '#C4604F';
+    return score10 >= 8 ? '#3FA79B' : score10 >= 5 ? '#E8A61A' : '#C4604F';
   }
   function decision(overall10) {
     return overall10 >= 7.5 ? 'STRONG GO' : overall10 >= 6 ? 'CONDITIONAL GO' : 'NO GO';
@@ -147,10 +147,10 @@
       ? '<p style="color:#C4604F;font-size:.85rem;margin:6px 0 0">' + (label ? label.replace(/&/g, '&amp;').replace(/</g, '&lt;') + ' requires ' : 'This action requires ') + neededCost + ' paid ACU — you have ' + w.paid.toLocaleString('en-US') + '. Welcome ACUs are read-only and cannot fund generation.</p>'
       : '';
     var cards = PACKAGES.map(function (p) {
-      return '<button data-pkg="' + p.id + '" style="text-align:left;background:' + (p.recommended ? 'rgba(217,164,65,.08)' : 'rgba(255,255,255,.03)') + ';border:1px solid ' + (p.recommended ? 'rgba(217,164,65,.5)' : 'rgba(255,255,255,.1)') + ';border-radius:14px;padding:16px;cursor:pointer;color:#E8ECF4;display:block;width:100%">' +
+      return '<button data-pkg="' + p.id + '" style="text-align:left;background:' + (p.recommended ? 'rgba(232,166,26,.08)' : 'rgba(255,255,255,.03)') + ';border:1px solid ' + (p.recommended ? 'rgba(232,166,26,.5)' : 'rgba(255,255,255,.1)') + ';border-radius:14px;padding:16px;cursor:pointer;color:#E8ECF4;display:block;width:100%">' +
         '<div style="display:flex;justify-content:space-between;align-items:baseline">' +
-          '<b style="font-size:1rem">' + p.name + (p.recommended ? ' <span style="font-size:.6rem;letter-spacing:.14em;color:#D9A441">RECOMMENDED</span>' : '') + '</b>' +
-          '<span style="font-family:ui-monospace,monospace;font-size:1.05rem;color:#F1C97E">£' + p.priceGBP + '</span>' +
+          '<b style="font-size:1rem">' + p.name + (p.recommended ? ' <span style="font-size:.6rem;letter-spacing:.14em;color:#E8A61A">RECOMMENDED</span>' : '') + '</b>' +
+          '<span style="font-family:ui-monospace,monospace;font-size:1.05rem;color:#FFC53D">£' + p.priceGBP + '</span>' +
         '</div>' +
         '<div style="font-family:ui-monospace,monospace;font-size:.8rem;color:#3FA79B;margin-top:6px">' + p.total.toLocaleString('en-US') + ' ACU' + (p.bonus ? ' <span style="color:#8B93A5">(' + p.acus.toLocaleString('en-US') + ' + ' + p.bonus.toLocaleString('en-US') + ' bonus)</span>' : '') + '</div>' +
         '<div style="font-size:.78rem;color:#8B93A5;margin-top:4px">' + p.desc + '</div>' +
@@ -159,7 +159,7 @@
     overlay.innerHTML =
       '<div style="max-width:520px;width:100%;background:#0E1626;border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:26px">' +
         '<div style="display:flex;justify-content:space-between;align-items:start;gap:12px">' +
-          '<div><div style="font-family:ui-monospace,monospace;font-size:.62rem;letter-spacing:.22em;color:#D9A441">ACU TOP-UP · £1 = 100 ACU</div>' +
+          '<div><div style="font-family:ui-monospace,monospace;font-size:.62rem;letter-spacing:.22em;color:#E8A61A">ACU TOP-UP · £1 = 100 ACU</div>' +
           '<h3 style="margin:6px 0 0;font-size:1.25rem;color:#E8ECF4">Power your venture outputs</h3></div>' +
           '<button data-close style="background:none;border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#8B93A5;padding:4px 10px;cursor:pointer">✕</button>' +
         '</div>' + note +

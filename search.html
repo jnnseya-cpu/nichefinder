@@ -16,13 +16,13 @@
     --ink-2:#0A1120;
     --panel:#0E1626;
     --panel-2:#121C30;
-    --line:rgba(217,164,65,.14);
+    --line:rgba(232,166,26,.14);
     --line-soft:rgba(139,147,165,.14);
     --text:#EAE5D9;
     --muted:#8B93A5;
-    --gold:#D9A441;
-    --gold-bright:#F1C97E;
-    --gold-dim:rgba(217,164,65,.55);
+    --gold:#E8A61A;
+    --gold-bright:#FFC53D;
+    --gold-dim:rgba(232,166,26,.55);
     --teal:#3FA79B;
     --serif:"Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif;
     --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
@@ -112,7 +112,7 @@
     letter-spacing:.14em;background:var(--gold);color:var(--ink);border-radius:3px;padding:2px 7px;font-weight:700;
   }
   .opt[aria-pressed="true"]{
-    border-color:var(--gold);background:linear-gradient(170deg,rgba(217,164,65,.12),rgba(217,164,65,.04));
+    border-color:var(--gold);background:linear-gradient(170deg,rgba(232,166,26,.12),rgba(232,166,26,.04));
   }
   .opt[aria-pressed="true"]::after{
     content:"✓";position:absolute;top:10px;right:12px;color:var(--gold-bright);
@@ -130,7 +130,7 @@
     transition:border-color .18s;appearance:none;
   }
   select{
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23D9A441' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23E8A61A' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");
     background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;
   }
   select:hover,input[type=text]:hover,textarea:hover{border-color:var(--gold-dim)}
@@ -149,7 +149,7 @@
     padding:10px 8px;transition:all .18s;
   }
   .seg button:hover{border-color:var(--gold-dim);color:var(--text)}
-  .seg button[aria-pressed="true"]{border-color:var(--gold);color:var(--gold-bright);background:rgba(217,164,65,.08)}
+  .seg button[aria-pressed="true"]{border-color:var(--gold);color:var(--gold-bright);background:rgba(232,166,26,.08)}
 
   /* advanced */
   details.adv{border:1px solid var(--line-soft);border-radius:10px;overflow:hidden}
@@ -178,7 +178,7 @@
     color:var(--muted);font-size:.78rem;padding:7px 14px;font-family:var(--sans);transition:all .16s;
   }
   .chip:hover{border-color:var(--gold-dim);color:var(--text)}
-  .chip[aria-pressed="true"]{border-color:var(--gold);color:var(--gold-bright);background:rgba(217,164,65,.1)}
+  .chip[aria-pressed="true"]{border-color:var(--gold);color:var(--gold-bright);background:rgba(232,166,26,.1)}
   .chip[disabled]{opacity:.35;cursor:not-allowed}
   .sector-count{font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;color:var(--muted);margin-top:14px}
   .sector-count b{color:var(--gold-bright)}
@@ -204,7 +204,7 @@
   .rule b{color:var(--text);font-weight:600}
 
   /* toggle */
-  .toggle-row{display:flex;align-items:flex-start;gap:16px;margin-top:24px;padding:18px;border:1px solid var(--line);border-radius:8px;background:rgba(217,164,65,.03)}
+  .toggle-row{display:flex;align-items:flex-start;gap:16px;margin-top:24px;padding:18px;border:1px solid var(--line);border-radius:8px;background:rgba(232,166,26,.03)}
   .toggle-row .tx .t{font-weight:600;font-size:.95rem}
   .toggle-row .tx .d{font-size:.78rem;color:var(--muted);margin-top:3px}
   .toggle-row .tx .d b{color:var(--gold-bright);font-family:var(--mono);font-weight:600}
@@ -216,7 +216,7 @@
     position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;
     background:var(--muted);transition:all .2s;display:block;
   }
-  .switch[aria-checked="true"]{background:rgba(217,164,65,.35);border-color:var(--gold)}
+  .switch[aria-checked="true"]{background:rgba(232,166,26,.35);border-color:var(--gold)}
   .switch[aria-checked="true"] i{left:22px;background:var(--gold-bright)}
 
   /* ---------- RAIL ---------- */
@@ -305,7 +305,7 @@
     <span style="display:flex;align-items:center;gap:18px">
       <a href="dashboard.html" style="font-size:.82rem;color:var(--muted);text-decoration:none">Command Center</a>
       <span class="sync"><i aria-hidden="true"></i>AUTOSAVE ON</span>
-      <span class="sync" id="acuBalance" style="color:var(--gold-bright);border:1px solid var(--line);border-radius:99px;padding:6px 14px">— ACU</span><span aria-label="Account" title="Operator account" style="width:30px;height:30px;border-radius:50%;border:1px solid var(--gold-dim);display:inline-grid;place-items:center;font-family:var(--mono);font-size:.66rem;color:var(--gold-bright);background:rgba(217,164,65,.08);cursor:pointer">U</span>
+      <span class="sync" id="acuBalance" style="color:var(--gold-bright);border:1px solid var(--line);border-radius:99px;padding:6px 14px">— ACU</span><span aria-label="Account" title="Operator account" style="width:30px;height:30px;border-radius:50%;border:1px solid var(--gold-dim);display:inline-grid;place-items:center;font-family:var(--mono);font-size:.66rem;color:var(--gold-bright);background:rgba(232,166,26,.08);cursor:pointer">U</span>
     </span>
   </div>
 </header>
@@ -671,7 +671,7 @@
     document.getElementById('acuCost').innerHTML = searchCostNow() + ' <small>ACU</small>';
     var k = document.querySelector('.acu .k');
     if (k) k.innerHTML = 'Search Cost <small style="display:block;font-size:.56rem;letter-spacing:.12em;color:' +
-      (b.tier > 1 ? '#F1C97E' : '#8B93A5') + '">BRACKET ' + b.tier + ' · ' + b.band + ' PROVIDER COST</small>';
+      (b.tier > 1 ? '#FFC53D' : '#8B93A5') + '">BRACKET ' + b.tier + ' · ' + b.band + ' PROVIDER COST</small>';
   }
 
   /* ---------- generate: AI gateway with demo fallback ---------- */
@@ -910,7 +910,7 @@
       (priority === 'Breakthrough Concepts' && !fallbackNote ? ' · BREAKTHROUGH RANKED' : '');
     if (fallbackNote){
       var fb = document.createElement('div');
-      fb.style.cssText = 'border:1px solid rgba(217,164,65,.4);background:rgba(217,164,65,.07);border-radius:12px;padding:12px 16px;font-size:.85rem;color:var(--gold-bright);margin-bottom:14px';
+      fb.style.cssText = 'border:1px solid rgba(232,166,26,.4);background:rgba(232,166,26,.07);border-radius:12px;padding:12px 16px;font-size:.85rem;color:var(--gold-bright);margin-bottom:14px';
       fb.textContent = fallbackNote;
       nichesEl.appendChild(fb);
     }
