@@ -1,0 +1,73 @@
+/* Niche Finder — product polish layer.
+   Loaded after each page's own styles; carries the micro-craft that separates
+   an operating product from a generated mockup: one radius scale, engineered
+   form controls, hover/press states, quiet scrollbars, and restrained motion. */
+
+/* ---------- brand hairline: single signature accent, top of viewport ---------- */
+body::before{
+  content:"";position:fixed;top:0;left:0;right:0;height:2px;z-index:120;pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(217,164,65,.0) 8%,rgba(217,164,65,.55) 38%,rgba(241,201,126,.8) 50%,rgba(217,164,65,.55) 62%,rgba(217,164,65,0) 92%,transparent);
+}
+
+/* ---------- one radius scale: 8px surfaces, 5px controls, pills stay pills ---------- */
+.block,.panel,.rail-card,.kpi,.tile,section.blk,.hub-card,.bcard,.brief-card,.card,.dash,.metric,
+details.adv,.niche,.doc,.note{border-radius:8px !important}
+.opt,.seg button,select,input[type=text],input[type=email],input[type=number],textarea,
+.btn,.hub-btn,.action,.btn-generate,.field,.chip-btn{border-radius:5px !important}
+
+/* ---------- engineered range slider (the default one screams template) ---------- */
+input[type=range]{
+  -webkit-appearance:none;appearance:none;height:26px;background:transparent;cursor:pointer;padding:0;border:none;
+}
+input[type=range]::-webkit-slider-runnable-track{
+  height:3px;border-radius:2px;
+  background:linear-gradient(90deg,#D9A441 0%,#D9A441 var(--fill,10%),rgba(139,147,165,.25) var(--fill,10%));
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;width:16px;height:16px;margin-top:-6.5px;border-radius:50%;
+  background:#F1C97E;border:2px solid #070B14;box-shadow:0 0 0 1px #D9A441,0 2px 8px rgba(0,0,0,.5);
+  transition:transform .15s;
+}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15)}
+input[type=range]::-moz-range-track{height:3px;border-radius:2px;background:rgba(139,147,165,.25)}
+input[type=range]::-moz-range-progress{height:3px;border-radius:2px;background:#D9A441}
+input[type=range]::-moz-range-thumb{
+  width:14px;height:14px;border-radius:50%;background:#F1C97E;border:2px solid #070B14;
+  box-shadow:0 0 0 1px #D9A441,0 2px 8px rgba(0,0,0,.5);
+}
+
+/* ---------- quiet scrollbars ---------- */
+*::-webkit-scrollbar{width:10px;height:10px}
+*::-webkit-scrollbar-track{background:transparent}
+*::-webkit-scrollbar-thumb{background:rgba(139,147,165,.22);border-radius:5px;border:2px solid #070B14}
+*::-webkit-scrollbar-thumb:hover{background:rgba(217,164,65,.45)}
+*{scrollbar-width:thin;scrollbar-color:rgba(139,147,165,.3) transparent}
+
+/* ---------- press states: buttons should feel mechanical ---------- */
+.btn:active,.btn-generate:active,.hub-btn:active,.action:active,.opt:active,.seg button:active,
+.top-up:active,.chip:active,button[type=submit]:active{transform:translateY(1px) !important}
+.btn-generate,.btn.gold,.nav-cta{box-shadow:0 1px 0 rgba(255,255,255,.18) inset,0 8px 22px -10px rgba(217,164,65,.45)}
+
+/* ---------- data surfaces: row hover + tabular digits everywhere ---------- */
+table.simple tr:hover td,table.heat tr:hover td,table.fin tr:hover td,table.doc-t tr:hover td{
+  background:rgba(255,255,255,.022);
+}
+.v,.amt,.score10,.acu .v,td{font-variant-numeric:tabular-nums}
+
+/* ---------- typography discipline ---------- */
+h1,h2,h3{text-wrap:balance}
+p{text-wrap:pretty}
+
+/* ---------- restrained motion: one heartbeat per page is enough ---------- */
+.sync i,.strip i,.dash-bar .live i{animation-duration:3.2s}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none !important;transition:none !important}
+}
+
+/* ---------- selection + focus, consistent everywhere ---------- */
+::selection{background:#D9A441;color:#070B14}
+a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,
+[role="switch"]:focus-visible{outline:2px solid #F1C97E;outline-offset:2px}
+
+/* ---------- footer links: reveal underline on hover, like a publication ---------- */
+footer.site a:hover{color:#F1C97E !important;text-decoration:underline;text-underline-offset:3px}

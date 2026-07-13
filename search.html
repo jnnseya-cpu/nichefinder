@@ -292,6 +292,7 @@
     .niche{opacity:1;transform:none}
   }
 </style>
+<link rel="stylesheet" href="nf-polish.css">
 </head>
 <body>
 
@@ -640,6 +641,7 @@
     document.getElementById('budgetVal').textContent = main;
     document.getElementById('budgetLocal').textContent = local ? ' ' + local : '';
     document.getElementById('sumBudget').textContent = main;
+    budget.style.setProperty('--fill', ((usd - budget.min) / (budget.max - budget.min) * 100) + '%');
     updAcu(); // bracket (and therefore every ACU price) follows the capital slider
   }
   budget.addEventListener('input', updBudget);
