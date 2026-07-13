@@ -142,13 +142,55 @@
     overlay = null;
   }
 
+  /* ---------- optional server sync (P0 wallet backend) ----------
+     When nf-config.js sets NF_GATEWAY_URL, the gateway's /v1/wallet endpoints
+     become the system of record: local mutations are mirrored to the server,
+     and on page load the server balance hydrates the local cache. All calls
+     are fire-and-forget with graceful fallback — offline demo keeps working. */
+  function gatewayBase() { return (window.NF_GATEWAY_URL || '').replace(/\/$/, ''); }
+  function serverSync(path, payload) {
+    var base = gatewayBase();
+    if (!base || typeof fetch !== 'function') return;
+    try {
+      fetch(base + path, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(Object.assign({ user: window.NF_WALLET_USER || 'op_anonymous' }, payload))
+      }).then(function (r) { return r.ok ? r.json() : null; }).then(function (data) {
+        if (data && data.wallet) saveWallet({ paid: data.wallet.paid, free: data.wallet.free });
+      }).catch(function () {});
+    } catch (e) {}
+  }
+  function hydrateFromServer() {
+    var base = gatewayBase();
+    if (!base || typeof fetch !== 'function') return;
+    try {
+      fetch(base + '/v1/wallet?user=' + encodeURIComponent(window.NF_WALLET_USER || 'op_anonymous'))
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (w) { if (w && typeof w.paid === 'number') saveWallet({ paid: w.paid, free: w.free }); })
+        .catch(function () {});
+    } catch (e) {}
+  }
+
+  var _charge = charge, _credit = credit;
+  charge = function (cost, label, onAfter) {
+    var ok = _charge(cost, label, onAfter);
+    if (ok) serverSync('/v1/wallet/charge', { amount: cost, label: label });
+    return ok;
+  };
+  credit = function (pkg) {
+    _credit(pkg);
+    serverSync('/v1/wallet/credit', { packageId: pkg.id });
+  };
+  hydrateFromServer();
+
   window.NF = {
     PACKAGES: PACKAGES,
     COSTS: COSTS,
     wallet: loadWallet,
     total: function () { var w = loadWallet(); return w.paid + w.free; },
-    charge: charge,
-    credit: credit,
+    charge: function (cost, label, onAfter) { return charge(cost, label, onAfter); },
+    credit: function (pkg) { return credit(pkg); },
     logLedger: logLedger,
     band: band,
     decision: decision,

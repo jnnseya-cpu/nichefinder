@@ -66,6 +66,31 @@ Same body shape; returns `estimatedAcu` without calling any model — for showin
 ### `GET /v1/health` · `GET /v1/models`
 Liveness, configured providers, and the active model per provider.
 
+### Wallet (P0 — server-side ACU system of record)
+
+The AI-OS roadmap's P0 milestone: ACU balances move off `localStorage` and onto the server. File-persisted (`WALLET_STORE`, default `./data/wallets.json`), atomic writes, idempotency keys, and the platform's core rules enforced server-side — new users get 100 free read-only welcome ACUs, and **only paid ACUs can fund generation**.
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /v1/wallet?user=ID` | `{ paid, free, total }` — creates the wallet with the welcome grant on first touch |
+| `GET /v1/wallet/ledger?user=ID&limit=50` | Append-only ledger tail |
+| `GET /v1/wallet/packages` | GBP top-up packages (mirrors `nf-wallet.js`) |
+| `POST /v1/wallet/charge` | `{ user, amount, label, idempotencyKey? }` — paid-only deduction; `402 insufficient_acu` when short |
+| `POST /v1/wallet/credit` | `{ user, packageId, idempotencyKey? }` — credits a package (starter_5 / builder_10 / founder_20 / investor_50) |
+
+The front-end syncs automatically: set your deployed gateway URL in `nf-config.js` (repo root) and `nf-wallet.js` hydrates from `/v1/wallet` on load and mirrors every charge/credit. Leave it empty and the pages run fully offline on localStorage.
+
+## Deploying
+
+Any Node 18+ host works (Render, Railway, Fly.io, Cloud Run, a VPS):
+
+```bash
+cd gateway && npm install
+ANTHROPIC_API_KEY=... GEMINI_API_KEY=... OPENAI_API_KEY=... PORT=8787 npm start
+```
+
+Then set `window.NF_GATEWAY_URL = 'https://your-gateway-host'` in `nf-config.js`. API keys live only in the host's environment variables — never in this repository.
+
 ## Configuration
 
 | Env var | Default | Purpose |

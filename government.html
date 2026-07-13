@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Niche Finder — Government Mode</title>
+<meta name="description" content="Aggregated venture-demand analytics for governments and development-finance institutions. No personal data.">
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="page.css">
+<style>
+  .gov-head{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:18px;margin-bottom:8px}
+  .role-pill{font-family:var(--mono);font-size:.6rem;letter-spacing:.18em;color:var(--blue);border:1px solid rgba(107,155,209,.45);border-radius:99px;padding:6px 14px}
+  .privacy-note{border:1px solid var(--line-soft);border-left:3px solid var(--teal);border-radius:8px;padding:12px 16px;background:linear-gradient(170deg,var(--panel-2),var(--panel) 70%);font-size:.8rem;color:var(--muted);margin:18px 0 26px;max-width:70ch}
+  .filter-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:26px}
+  .filter-row label{font-family:var(--mono);font-size:.6rem;letter-spacing:.18em;color:var(--gold)}
+  select.field{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:7px;padding:10px 14px;color:var(--text);font-family:inherit;font-size:.9rem;min-width:240px}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+  .kpi{border:1px solid var(--line-soft);border-radius:12px;padding:20px;background:linear-gradient(170deg,var(--panel-2),var(--panel) 65%);border-top:3px solid var(--kc,var(--gold))}
+  .kpi .k{font-family:var(--mono);font-size:.56rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+  .kpi .v{font-family:var(--serif);font-size:1.9rem;margin:8px 0 2px;color:var(--text);font-variant-numeric:tabular-nums}
+  .kpi .d{font-size:.74rem;color:var(--muted)}
+  .panel{border:1px solid var(--line-soft);border-radius:14px;padding:24px;background:linear-gradient(170deg,var(--panel-2),var(--panel) 65%);margin-top:20px}
+  .panel h3{font-family:var(--serif);font-weight:400;font-size:1.2rem;margin-bottom:4px}
+  .panel .sub{font-size:.82rem;color:var(--muted);margin-bottom:16px}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  @media (max-width:900px){ .two-col{grid-template-columns:1fr} }
+  canvas.chart{width:100%;height:230px;display:block}
+  .heat-wrap{overflow-x:auto}
+  table.heat{width:100%;border-collapse:collapse;font-size:.86rem;min-width:640px}
+  table.heat th{font-family:var(--mono);font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);text-align:left;padding:10px 12px;border-bottom:1px solid var(--line)}
+  table.heat td{padding:10px 12px;border-bottom:1px solid var(--line-soft);color:#C3C9D6;font-variant-numeric:tabular-nums}
+  .heat-cell{display:inline-block;min-width:52px;text-align:center;border-radius:6px;padding:4px 10px;font-family:var(--mono);font-size:.74rem;color:var(--ink);font-weight:700}
+  .brief-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:14px}
+  .brief-card{border:1px solid var(--line-soft);border-left:3px solid var(--bc,var(--gold));border-radius:10px;padding:18px;background:rgba(255,255,255,.02)}
+  .brief-card b{font-family:var(--serif);font-weight:400;font-size:1.02rem;display:block;margin-bottom:6px}
+  .brief-card p{font-size:.82rem;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"><i></i></span><span>Niche<em>Finder</em></span></a>
+    <nav class="main">
+      <a href="search.html">Search Canvas</a>
+      <a href="dashboard.html">Command Center</a>
+      <a href="admin.html">Super Admin OS</a>
+      <a href="government.html" aria-current="page">Government Mode</a>
+    </nav>
+    <span class="role-pill">GOVERNMENT / DFI ACCESS</span>
+  </div>
+</header>
+
+<main class="page">
+  <div class="wrap">
+    <div class="gov-head">
+      <div>
+        <span class="kicker">GOVERNMENT MODE · AGGREGATED ANALYTICS</span>
+        <h1 class="page-title" style="margin-bottom:6px">Venture Demand Observatory</h1>
+        <p class="lede">Where entrepreneurial demand is forming, by country and sector — for SME programmes, development finance, and policy design.</p>
+      </div>
+    </div>
+
+    <div class="privacy-note"><b style="color:var(--teal)">PRIVACY BY DESIGN.</b> This view contains aggregated, anonymised metrics only. No personal data, no individual searches, no user identities. Cells with fewer than 20 operators are suppressed (k-anonymity, k = 20).</div>
+
+    <div class="filter-row">
+      <label for="countrySel">COUNTRY FOCUS</label>
+      <select class="field" id="countrySel"></select>
+      <span style="font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;color:var(--muted)" id="periodLabel">PERIOD: LAST 90 DAYS</span>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi" style="--kc:var(--gold)"><div class="k">Discovery Runs</div><div class="v" id="kRuns">—</div><div class="d">Searches executed</div></div>
+      <div class="kpi" style="--kc:var(--teal)"><div class="k">Opportunities Unlocked</div><div class="v" id="kUnlocks">—</div><div class="d">Deep-dives opened</div></div>
+      <div class="kpi" style="--kc:var(--violet)"><div class="k">Adoption Rate</div><div class="v" id="kAdopt">—</div><div class="d">Unlocks ÷ runs</div></div>
+      <div class="kpi" style="--kc:var(--blue)"><div class="k">Median Capital Sought</div><div class="v" id="kCapital">—</div><div class="d">Within the 10k class</div></div>
+      <div class="kpi" style="--kc:var(--red)"><div class="k">Avg Viability Score</div><div class="v" id="kScore">—</div><div class="d">PRS·35 + CS·30 + PSS·35</div></div>
+    </div>
+
+    <div class="two-col">
+      <div class="panel">
+        <h3>Sector Demand</h3>
+        <p class="sub">Share of discovery runs by five-sector model.</p>
+        <canvas class="chart" id="sectorChart"></canvas>
+      </div>
+      <div class="panel">
+        <h3>Adoption Velocity</h3>
+        <p class="sub">Weekly unlocks over the last 12 weeks.</p>
+        <canvas class="chart" id="adoptChart"></canvas>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Geographic Heatmap</h3>
+      <p class="sub">Regional intensity of venture demand. Heat = adoption rate band (green ≥ 30%, amber 15–29%, red &lt; 15%).</p>
+      <div class="heat-wrap">
+        <table class="heat" id="heatTable">
+          <tr><th>Region</th><th>Runs</th><th>Unlocks</th><th>Adoption</th><th>Top Sector</th><th>Avg Score /10</th></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Policy Brief</h3>
+      <p class="sub" style="font-family:var(--mono);font-size:.6rem;letter-spacing:.18em;color:var(--teal)">GENERATED FROM AGGREGATES ONLY</p>
+      <div class="brief-grid">
+        <div class="brief-card" style="--bc:var(--gold)"><b>Demand Signal</b><p id="briefSignal">—</p></div>
+        <div class="brief-card" style="--bc:var(--teal)"><b>Programme Opportunity</b><p id="briefProgramme">—</p></div>
+        <div class="brief-card" style="--bc:var(--red)"><b>Structural Gap</b><p id="briefGap">—</p></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"><i></i></span><span>Niche<em>Finder</em></span></a>
+        <p style="font-size:.82rem;margin-top:12px;max-width:34ch">The AI Operating System for Venture Creation. Discover, validate, and build your next investor-ready business.</p>
+      </div>
+      <div><h4>Platform</h4><a href="how-it-works.html">How It Works</a><a href="about.html">About Us</a><a href="blog.html">Blog</a><a href="contact.html">Contact</a></div>
+      <div><h4>Legal</h4><a href="terms.html">Terms of Use</a><a href="privacy.html">Privacy Policy</a><a href="disclaimer.html">Disclaimer</a><a href="cookies.html">Cookies</a></div>
+      <div><h4>Connect</h4><a href="https://www.linkedin.com/company/nichefinder" rel="noopener">LinkedIn</a><a href="https://x.com/nichefinderhq" rel="noopener">Twitter / X</a></div>
+    </div>
+    <div class="foot-base">
+      <span>© 2026 Niche Finder Ltd. All rights reserved.</span>
+      <span>Use of Niche Finder is subject to our <a href="terms.html" style="color:var(--muted)">Terms of Use</a> and <a href="privacy.html" style="color:var(--muted)">Privacy Policy</a>.</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  /* Aggregated demonstration dataset — representative shapes, no personal data.
+     In production this endpoint is GET /v1/gov/heatmap (enterprise scope, k-anonymised). */
+  var DATA = {
+    GB: { name:'United Kingdom', cur:'£', runs:4820, unlocks:1610, capital:6400, score:7.1,
+      sectors:{Primary:6, Secondary:14, Tertiary:41, Quaternary:31, Quinary:8},
+      weekly:[74,81,90,88,102,110,121,118,134,141,150,166],
+      regions:[['London',1480,560,'Quaternary',7.4],['Midlands',830,262,'Tertiary',6.9],['North West',760,231,'Tertiary',7.0],['Scotland',540,148,'Secondary',6.7],['Wales',410,96,'Tertiary',6.5],['Northern Ireland',300,71,'Primary',6.6]],
+      brief:['Quaternary (AI-enabled services, SaaS) demand up sharply in London and the Midlands; boring-business searches dominate outside the capital.',
+             'A micro-grant programme matched to CONDITIONAL-GO scores (6.0–7.4) would convert the largest cohort of near-ready operators.',
+             'Adoption drops below 15% in regions where median capital sought exceeds £8k — access to first-cheque finance is the binding constraint.'] },
+    CD: { name:'DR Congo', cur:'$', runs:2140, unlocks:790, capital:7800, score:7.4,
+      sectors:{Primary:34, Secondary:18, Tertiary:33, Quaternary:11, Quinary:4},
+      weekly:[22,25,31,36,40,44,52,58,63,71,78,88],
+      regions:[['Kinshasa',960,392,'Primary',7.6],['Lubumbashi',420,146,'Secondary',7.1],['Goma',310,102,'Primary',7.3],['Matadi',240,74,'Tertiary',6.8],['Kisangani',210,58,'Primary',6.9]],
+      brief:['Agribusiness cold-chain and logistics niches score highest nationwide; solar-first infrastructure is a recurring structural advantage.',
+             'Kinshasa corridor shows 41% adoption — pilot a cooperative equipment-finance window against validated cold-chain opportunities.',
+             'Equipment import lead times (6–14 weeks) appear as the dominant risk in most unlocked projects; customs facilitation would raise readiness scores directly.'] },
+    NG: { name:'Nigeria', cur:'₦', runs:3660, unlocks:1120, capital:7200, score:7.0,
+      sectors:{Primary:19, Secondary:16, Tertiary:36, Quaternary:25, Quinary:4},
+      weekly:[48,52,58,61,70,76,81,90,97,104,111,123],
+      regions:[['Lagos',1520,540,'Quaternary',7.3],['Abuja',680,206,'Tertiary',7.0],['Kano',540,141,'Primary',6.8],['Port Harcourt',480,133,'Secondary',6.9],['Ibadan',440,100,'Tertiary',6.6]],
+      brief:['Fintech-adjacent and logistics niches lead Lagos; agro-processing dominates the north with strong profitability scores.',
+             'Payment-rail maturity makes subscription models viable — SME programmes should prioritise recurring-revenue business models.',
+             'Grid unreliability suppresses PRS in manufacturing niches; energy-access interventions would unlock a suppressed Secondary-sector pipeline.'] },
+    KE: { name:'Kenya', cur:'KSh', runs:1980, unlocks:660, capital:6900, score:7.2,
+      sectors:{Primary:26, Secondary:13, Tertiary:38, Quaternary:19, Quinary:4},
+      weekly:[26,29,33,36,41,45,49,55,58,64,69,75],
+      regions:[['Nairobi',920,340,'Quaternary',7.4],['Mombasa',390,118,'Tertiary',7.0],['Kisumu',280,81,'Primary',6.9],['Nakuru',230,66,'Primary',6.8],['Eldoret',160,42,'Primary',6.7]],
+      brief:['Mobile-money penetration lifts PSS across service niches; agri-logistics between Kisumu and Nairobi is the strongest corridor signal.',
+             'County-level matching grants tied to STRONG-GO verdicts (≥ 7.5) would concentrate capital on the highest-probability cohort.',
+             'Cold-chain and post-harvest niches recur with high BPS but low unlock conversion — a voucher pilot could close the intent-to-action gap.'] },
+    FR: { name:'France', cur:'€', runs:2310, unlocks:640, capital:7100, score:6.8,
+      sectors:{Primary:8, Secondary:17, Tertiary:44, Quaternary:26, Quinary:5},
+      weekly:[31,33,36,35,40,43,47,50,54,57,60,66],
+      regions:[['Île-de-France',890,281,'Quaternary',7.1],['Auvergne-Rhône-Alpes',420,116,'Secondary',6.8],['PACA',360,94,'Tertiary',6.7],['Occitanie',330,80,'Tertiary',6.5],['Hauts-de-France',310,69,'Secondary',6.4]],
+      brief:['Diaspora-services searches are a distinctive national pattern — cross-border commerce niches score well on PSS.',
+             'Micro-entreprise regime aligns with the €10k class; onboarding content localised to that regime would raise adoption.',
+             'Regulatory-simplicity sub-scores lag peers; simplification pilots would move PRS across the whole national cohort.'] },
+    US: { name:'United States', cur:'$', runs:5240, unlocks:1490, capital:8300, score:6.9,
+      sectors:{Primary:7, Secondary:15, Tertiary:43, Quaternary:30, Quinary:5},
+      weekly:[82,85,92,96,101,108,112,124,129,138,146,158],
+      regions:[['Sun Belt',1620,520,'Tertiary',7.1],['Northeast',1180,331,'Quaternary',7.0],['Midwest',980,258,'Secondary',6.7],['West Coast',940,289,'Quaternary',7.2],['Mountain West',520,92,'Tertiary',6.5]],
+      brief:['Home-services and "boring business" acquisition-style niches dominate volume; AI-enabled service wrappers dominate score leaders.',
+             'SBA-microloan alignment: most unlocked projects sit under the $10k class ceiling with break-even inside 18 months.',
+             'Insurance and licensing costs recur as PRS suppressors in trade niches — state-level licensing reciprocity would lift readiness.'] }
+  };
+
+  var sel = document.getElementById('countrySel');
+  Object.keys(DATA).forEach(function(k){
+    var o = document.createElement('option'); o.value = k; o.textContent = DATA[k].name; sel.appendChild(o);
+  });
+
+  var C = { gold:'#D9A441', bright:'#F1C97E', teal:'#3FA79B', red:'#C4604F', muted:'#8B93A5', grid:'rgba(139,147,165,.14)' };
+  function band(rate){ return rate >= .30 ? C.teal : rate >= .15 ? C.gold : C.red; }
+  function fmt(n){ return n.toLocaleString('en-US'); }
+
+  function drawBars(cv, labels, values, color){
+    var DPR = Math.min(devicePixelRatio || 1, 2), w = cv.clientWidth, h = cv.clientHeight || 230;
+    cv.width = w * DPR; cv.height = h * DPR;
+    var g = cv.getContext('2d'); g.setTransform(DPR,0,0,DPR,0,0); g.clearRect(0,0,w,h);
+    var pad = { l:8, r:8, t:14, b:26 }, max = Math.max.apply(null, values) * 1.15, n = values.length;
+    g.strokeStyle = C.grid; g.lineWidth = 1;
+    for (var gy = 1; gy <= 3; gy++){ var yy = pad.t + gy*(h-pad.t-pad.b)/4; g.beginPath(); g.moveTo(pad.l,yy); g.lineTo(w-pad.r,yy); g.stroke(); }
+    var slot = (w-pad.l-pad.r)/n, bw = Math.min(46, slot*.56);
+    var fam = getComputedStyle(document.body).fontFamily;
+    for (var i = 0; i < n; i++){
+      var x = pad.l + i*slot + (slot-bw)/2;
+      var y = pad.t + (1 - values[i]/max)*(h-pad.t-pad.b);
+      g.fillStyle = color; g.fillRect(x, y, bw, h-pad.b-y);
+      g.fillStyle = C.muted; g.font = '10px ' + fam; g.textAlign = 'center';
+      g.fillText(labels[i], pad.l + i*slot + slot/2, h-8);
+      g.fillStyle = C.bright; g.fillText(String(values[i]), pad.l + i*slot + slot/2, y-6);
+    }
+  }
+
+  function render(){
+    var d = DATA[sel.value];
+    var adopt = d.unlocks / d.runs;
+    document.getElementById('kRuns').textContent = fmt(d.runs);
+    document.getElementById('kUnlocks').textContent = fmt(d.unlocks);
+    document.getElementById('kAdopt').textContent = Math.round(adopt*100) + '%';
+    document.getElementById('kCapital').textContent = d.cur + fmt(d.capital);
+    document.getElementById('kScore').textContent = d.score.toFixed(1) + '/10';
+
+    drawBars(document.getElementById('sectorChart'), Object.keys(d.sectors),
+      Object.keys(d.sectors).map(function(k){ return d.sectors[k]; }), 'rgba(217,164,65,.85)');
+    drawBars(document.getElementById('adoptChart'),
+      d.weekly.map(function(_,i){ return 'W'+(i+1); }), d.weekly, 'rgba(63,167,155,.8)');
+
+    var tbl = document.getElementById('heatTable');
+    tbl.innerHTML = '<tr><th>Region</th><th>Runs</th><th>Unlocks</th><th>Adoption</th><th>Top Sector</th><th>Avg Score /10</th></tr>' +
+      d.regions.map(function(r){
+        var rate = r[2]/r[1];
+        return '<tr><td style="color:var(--text)">' + r[0] + '</td><td>' + fmt(r[1]) + '</td><td>' + fmt(r[2]) + '</td>' +
+          '<td><span class="heat-cell" style="background:' + band(rate) + '">' + Math.round(rate*100) + '%</span></td>' +
+          '<td>' + r[3] + '</td><td>' + r[4].toFixed(1) + '</td></tr>';
+      }).join('');
+
+    document.getElementById('briefSignal').textContent = d.brief[0];
+    document.getElementById('briefProgramme').textContent = d.brief[1];
+    document.getElementById('briefGap').textContent = d.brief[2];
+  }
+
+  sel.addEventListener('change', render);
+  addEventListener('resize', render);
+  render();
+})();
+</script>
+</body>
+</html>

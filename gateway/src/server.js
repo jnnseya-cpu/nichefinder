@@ -2,6 +2,7 @@ import http from 'node:http';
 import { config } from './config.js';
 import { GatewayError } from './errors.js';
 import { route, availableProviders, meterAcu } from './router.js';
+import { getWallet, getLedger, charge, credit, PACKAGES } from './wallet.js';
 
 const MAX_BODY_BYTES = 2 * 1024 * 1024;
 
@@ -68,6 +69,37 @@ const server = http.createServer(async (req, res) => {
     } catch (err) {
       return handleError(res, err);
     }
+  }
+
+  // ---- P0 wallet: server-side ACU system of record ----
+  if (req.method === 'GET' && url.pathname === '/v1/wallet') {
+    try {
+      return json(res, 200, getWallet(url.searchParams.get('user')));
+    } catch (err) { return handleError(res, err); }
+  }
+
+  if (req.method === 'GET' && url.pathname === '/v1/wallet/ledger') {
+    try {
+      return json(res, 200, { ledger: getLedger(url.searchParams.get('user'), url.searchParams.get('limit')) });
+    } catch (err) { return handleError(res, err); }
+  }
+
+  if (req.method === 'GET' && url.pathname === '/v1/wallet/packages') {
+    return json(res, 200, { packages: PACKAGES });
+  }
+
+  if (req.method === 'POST' && (url.pathname === '/v1/wallet/charge' || url.pathname === '/v1/wallet/credit')) {
+    try {
+      let body;
+      try {
+        body = JSON.parse((await readBody(req)) || '{}');
+      } catch {
+        throw new GatewayError('Body must be valid JSON.', { status: 400, code: 'invalid_json' });
+      }
+      body.idempotencyKey = body.idempotencyKey || req.headers['idempotency-key'];
+      const result = url.pathname.endsWith('charge') ? charge(body) : credit(body);
+      return json(res, 200, result);
+    } catch (err) { return handleError(res, err); }
   }
 
   if (req.method === 'POST' && url.pathname === '/v1/generate') {
