@@ -542,6 +542,44 @@ The Niche Finder AI-OS is built on a cloud-native, event-driven, microservices a
 | created_at | TIMESTAMPTZ | DEFAULT NOW() |
 | updated_at | TIMESTAMPTZ | Auto-updated on any change |
 
+**Table: acu_transactions**
+
+| Column | Type | Constraints / Notes |
+|---|---|---|
+| id | UUID | PRIMARY KEY |
+| user_id | UUID | FOREIGN KEY → users.id; indexed |
+| transaction_type | ENUM | credit_welcome, credit_purchase, credit_refund, credit_bonus, debit_search, debit_unlock, debit_validation, debit_financial, debit_business_plan, debit_pitch_deck (extends 1:1 to every action key in the canonical schedule — P&L, risk map, Excel model, bundles, memo, roadmap, market entry, full package, support message) |
+| acu_amount | INTEGER | Positive for credits, negative for debits (debit = base action price × bracket_factor × Investor Mode ×1.4 where active) |
+| balance_before | INTEGER | Snapshot of balance before transaction |
+| balance_after | INTEGER | Snapshot of balance after transaction |
+| acu_type | ENUM | welcome, paid; tracks which pool was used (welcome pool is read-only — spendable only on support messages, never generation) |
+| bracket_factor | INTEGER | Capital-bracket multiplier applied to this debit (1 for credits) |
+| idempotency_key | VARCHAR(255) | UNIQUE; carries the existing wallet contract's exactly-once guarantee |
+| reference_id | UUID | FK to project, payment, or system event causing transaction |
+| reference_type | VARCHAR(50) | project, payment, system, promotion |
+| payment_id | UUID | FK → payments.id if this is a purchase credit |
+| created_at | TIMESTAMPTZ | DEFAULT NOW(); immutable after insert |
+
+**Table: payments**
+
+| Column | Type | Constraints / Notes |
+|---|---|---|
+| id | UUID | PRIMARY KEY |
+| user_id | UUID | FOREIGN KEY → users.id |
+| payment_gateway | ENUM | stripe, bitripay |
+| gateway_payment_id | VARCHAR(255) | Stripe payment_intent_id or BitriPay transaction_id |
+| acu_package | VARCHAR(20) | Canonical package purchased: starter_500 (£5), builder_1100 (£10), founder_2400 (£20), investor_6500 (£50), or enterprise_custom |
+| acu_granted | INTEGER | ACUs credited (package grant incl. bonus, fixed at purchase) |
+| amount_gross | DECIMAL(10,2) | Gross amount charged to user |
+| currency | CHAR(3) | ISO 4217 |
+| gateway_fee | DECIMAL(10,2) | Payment gateway fee |
+| amount_net | DECIMAL(10,2) | Net revenue to Niche Finder |
+| status | ENUM | pending, completed, failed, refunded, disputed |
+| failure_reason | VARCHAR(500) | NULL if successful |
+| invoice_url | TEXT | Link to generated PDF invoice |
+| created_at | TIMESTAMPTZ | DEFAULT NOW() |
+| completed_at | TIMESTAMPTZ | Timestamp of successful payment |
+
 ---
 
 # ENGINEERING ANNEX — TRANSFORMATION PILLARS
