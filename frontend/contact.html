@@ -79,7 +79,16 @@
             form.innerHTML = '<div class="k" style="color:var(--red)">SUBMISSION BLOCKED</div><b>Automated submission detected.</b><p>This platform enforces human-only access. If you believe this is an error, email support@nichefinderhq.com directly.</p>';
             return;
           }
-          form.innerHTML = '<div class="k">MESSAGE QUEUED</div><b>Thank you.</b><p>Your message has been noted in this prototype. Accounts and live inboxes ship with the production release — for now, email us directly at support@nichefinderhq.com.</p>';
+          // deliver to the platform lead store when a gateway is deployed
+          try {
+            var base = (window.NF_GATEWAY_URL || '').replace(/\/$/, '');
+            if (base) {
+              var f = form.querySelectorAll('input,textarea');
+              fetch(base + '/v1/leads', { method: 'POST', headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ name: f[0].value, email: f[1].value, message: form.querySelector('textarea').value }) }).catch(function(){});
+            }
+          } catch (err) {}
+          form.innerHTML = '<div class="k">MESSAGE QUEUED</div><b>Thank you.</b><p>Your message has been received. We reply within one business day at the address you provided.</p>';
         });
       })();
       </script>
@@ -105,6 +114,7 @@
   </div>
 </footer>
 
+<script src="nf-config.js"></script>
 <script src="nf-consent.js" defer></script>
 </body>
 </html>

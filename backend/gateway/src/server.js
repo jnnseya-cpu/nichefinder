@@ -1,10 +1,60 @@
 import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { config } from './config.js';
 import { GatewayError } from './errors.js';
 import { route, availableProviders, meterAcu } from './router.js';
 import { getWallet, getLedger, charge, credit, PACKAGES } from './wallet.js';
+import { createCheckout, handleWebhook, paymentsConfigured } from './payments.js';
 
 const MAX_BODY_BYTES = 2 * 1024 * 1024;
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
+const LEADS_PATH = process.env.LEADS_STORE || path.join(process.cwd(), 'data', 'leads.jsonl');
+
+/* Per-IP rate limit: cheap, in-memory, resets each minute. Protects the
+   public deployment from scripted abuse (human-only access law). */
+const RATE_LIMIT = Number(process.env.RATE_LIMIT_PER_MIN || 120);
+const hits = new Map();
+function rateLimited(ip) {
+  const now = Date.now();
+  const slot = hits.get(ip);
+  if (!slot || now > slot.reset) { hits.set(ip, { n: 1, reset: now + 60000 }); return false; }
+  slot.n += 1;
+  if (hits.size > 50000) hits.clear(); // memory backstop
+  return slot.n > RATE_LIMIT;
+}
+
+const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript',
+  '.svg': 'image/svg+xml', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.json': 'application/json' };
+
+/* Serve the frontend + shared modules from this same service, so one deploy
+   is the whole OS: pages at /frontend/, economy at /shared/, API at /v1/. */
+function serveStatic(req, res, url) {
+  let p = decodeURIComponent(url.pathname);
+  if (p === '/' || p === '') p = '/frontend/index.html';
+  const abs = path.normalize(path.join(REPO_ROOT, p));
+  if (!abs.startsWith(REPO_ROOT) || (!p.startsWith('/frontend/') && !p.startsWith('/shared/'))) {
+    return json(res, 404, { error: 'not_found' });
+  }
+  // Operator cockpits stay off the public deploy until real admin auth lands.
+  // Set EXPOSE_ADMIN=1 only on an internal/private deployment.
+  if (process.env.EXPOSE_ADMIN !== '1' && /\/(admin|comms)\.html$/.test(p)) {
+    return json(res, 404, { error: 'not_found' });
+  }
+  let file = abs;
+  try {
+    if (fs.statSync(file).isDirectory()) file = path.join(file, 'index.html');
+  } catch { /* fall through to 404 */ }
+  const ext = path.extname(file);
+  try {
+    const body = fs.readFileSync(file);
+    res.writeHead(200, { 'content-type': MIME[ext] || 'application/octet-stream', 'cache-control': ext === '.html' ? 'no-cache' : 'public, max-age=300' });
+    return res.end(body);
+  } catch {
+    return json(res, 404, { error: 'not_found', message: `No file at ${p}` });
+  }
+}
 
 function json(res, status, body) {
   const payload = JSON.stringify(body);
@@ -40,13 +90,55 @@ const server = http.createServer(async (req, res) => {
 
   if (req.method === 'OPTIONS') return json(res, 204, {});
 
+  const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress || 'unknown';
+  if (url.pathname.startsWith('/v1/') && rateLimited(ip)) {
+    return json(res, 429, { error: 'rate_limited', message: 'Too many requests — try again in a minute.' });
+  }
+
+  if (req.method === 'GET' && !url.pathname.startsWith('/v1/')) return serveStatic(req, res, url);
+
   if (req.method === 'GET' && url.pathname === '/v1/health') {
     return json(res, 200, {
       status: 'ok',
       mock: config.mock,
       providers: availableProviders(),
+      payments: paymentsConfigured(),
       fallbackChain: config.fallbackChain,
     });
+  }
+
+  // ---- payments: the real-money door (Stripe Checkout + settlement webhook) ----
+  if (req.method === 'POST' && url.pathname === '/v1/payments/checkout') {
+    try {
+      const body = JSON.parse((await readBody(req)) || '{}');
+      const origin = process.env.PUBLIC_ORIGIN || `${req.headers['x-forwarded-proto'] || 'http'}://${req.headers.host}`;
+      return json(res, 200, await createCheckout({ user: body.user, packageId: body.packageId, origin }));
+    } catch (err) { return handleError(res, err); }
+  }
+
+  if (req.method === 'POST' && url.pathname === '/v1/payments/stripe-webhook') {
+    try {
+      const raw = await readBody(req);
+      return json(res, 200, handleWebhook(raw, req.headers['stripe-signature']));
+    } catch (err) { return handleError(res, err); }
+  }
+
+  // ---- leads: waitlist / contact capture (human-paced only; honeypot server-side too) ----
+  if (req.method === 'POST' && url.pathname === '/v1/leads') {
+    try {
+      const body = JSON.parse((await readBody(req)) || '{}');
+      if (body.website) return json(res, 200, { received: true }); // honeypot filled → swallow silently
+      const email = String(body.email || '').slice(0, 200);
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+        throw new GatewayError('A valid email is required.', { status: 400, code: 'invalid_email' });
+      }
+      fs.mkdirSync(path.dirname(LEADS_PATH), { recursive: true });
+      fs.appendFileSync(LEADS_PATH, JSON.stringify({
+        email, name: String(body.name || '').slice(0, 120), message: String(body.message || '').slice(0, 2000),
+        ip, ts: Date.now(),
+      }) + '\n');
+      return json(res, 200, { received: true });
+    } catch (err) { return handleError(res, err); }
   }
 
   if (req.method === 'GET' && url.pathname === '/v1/models') {

@@ -206,6 +206,25 @@
       var btn = e.target.closest('[data-pkg]');
       if (!btn) return;
       var pkg = PACKAGES.filter(function (p) { return p.id === btn.getAttribute('data-pkg'); })[0];
+      /* Real money first: when a gateway with Stripe is deployed, purchases go
+         through hosted Checkout and ACUs are credited by the settlement
+         webhook — never by the client. Demo crediting only when payments are
+         absent (no gateway, or gateway reports payment_not_configured). */
+      var base = (window.NF_GATEWAY_URL || '').replace(/\/$/, '');
+      if (base && typeof fetch === 'function') {
+        btn.style.opacity = '.6';
+        fetch(base + '/v1/payments/checkout', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ user: window.NF_WALLET_USER || 'op_anonymous', packageId: pkg.id })
+        }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+          .then(function (res) {
+            if (res.ok && res.d && res.d.url) { location.href = res.d.url; return; }
+            credit(pkg); closeTopup(); if (onAfter) onAfter(); // payments not configured → demo credit
+          })
+          .catch(function () { credit(pkg); closeTopup(); if (onAfter) onAfter(); });
+        return;
+      }
       credit(pkg);
       closeTopup();
       if (onAfter) onAfter();

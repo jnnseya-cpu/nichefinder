@@ -111,5 +111,45 @@ let tampered = false;
 try { decryptStore(envelope.slice(0, -8) + 'AAAAAAAA', testKey); } catch { tampered = true; }
 check('tampered ciphertext is rejected (GCM auth)', tampered);
 
+// launch surface: single-service static hosting of the frontend
+res = await fetch(`${BASE}/frontend/index.html`);
+check('frontend served by gateway', res.status === 200 && (res.headers.get('content-type') || '').includes('text/html'));
+res = await fetch(`${BASE}/shared/nf-economy.js`);
+check('shared economy served by gateway', res.status === 200);
+res = await fetch(`${BASE}/frontend/../src/config.js`);
+check('path traversal blocked', res.status === 404);
+res = await fetch(`${BASE}/frontend/admin.html`);
+check('admin cockpit hidden on public deploy by default', res.status === 404);
+
+// payments: unconfigured deployment answers loudly, never silently
+res = await fetch(`${BASE}/v1/payments/checkout`, {
+  method: 'POST', headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({ user: 'qa', packageId: 'builder_10' }),
+});
+check('checkout without Stripe keys → 503 payment_not_configured', res.status === 503 && (await res.json()).error === 'payment_not_configured');
+
+// webhook signature scheme (unit)
+const { verifySignature } = await import('../src/payments.js');
+const cryptoMod = await import('node:crypto');
+const whsec = 'whsec_test_secret';
+const payload = '{"id":"evt_1","type":"checkout.session.completed"}';
+const t = Math.floor(Date.now() / 1000);
+const v1 = cryptoMod.createHmac('sha256', whsec).update(`${t}.${payload}`).digest('hex');
+check('valid Stripe signature accepted', verifySignature(payload, `t=${t},v1=${v1}`, whsec) === true);
+check('tampered Stripe signature rejected', verifySignature(payload + 'x', `t=${t},v1=${v1}`, whsec) === false);
+check('stale Stripe signature rejected', verifySignature(payload, `t=${t - 4000},v1=${v1}`, whsec) === false);
+
+// leads capture
+res = await fetch(`${BASE}/v1/leads`, {
+  method: 'POST', headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({ email: 'qa@example.com', name: 'QA', message: 'launch check' }),
+});
+check('lead accepted', res.status === 200 && (await res.json()).received === true);
+res = await fetch(`${BASE}/v1/leads`, {
+  method: 'POST', headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({ email: 'not-an-email' }),
+});
+check('invalid lead email rejected', res.status === 400);
+
 console.log(failures === 0 ? '\nAll smoke tests passed.' : `\n${failures} test(s) FAILED.`);
 process.exit(failures === 0 ? 0 : 1);
