@@ -41,6 +41,15 @@ export const config = {
     },
     investorModeMultiplier: 1.4,
     minimumCharge: Number(process.env.ACU_MINIMUM || 1),
+    // Raw upstream provider cost in GBP per 1K tokens (approximate list
+    // prices; override per deployment). Used by the fully-loaded profit
+    // floor — never shown to users, never below-priced.
+    rawCostGBPPer1K: {
+      claude: { input: Number(process.env.RAW_CLAUDE_IN || 0.0024), output: Number(process.env.RAW_CLAUDE_OUT || 0.012) },
+      gemini: { input: Number(process.env.RAW_GEMINI_IN || 0.0008), output: Number(process.env.RAW_GEMINI_OUT || 0.004) },
+      openai: { input: Number(process.env.RAW_OPENAI_IN || 0.0016), output: Number(process.env.RAW_OPENAI_OUT || 0.008) },
+      mock: { input: 0, output: 0 },
+    },
   },
 
   defaults: {

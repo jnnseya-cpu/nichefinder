@@ -1033,6 +1033,37 @@ Prices are anchored to real AI-provider cost, not arbitrary numbers:
 - Engine: `tier = min(ceil(capital/10000), 11)`, `factor = 2^(tier−1)`, capped at ×1024. Enforced identically in the client (`NF.bracket`, `NF.costFor`) and the gateway (`bracketFactor`, `meterAcu`); unlocked projects carry their bracket factor into the Build Hub.
 - The Search Canvas shows the live bracket and band as the capital slider moves; no price ever changes after commit.
 
+### 6.2b The fully-loaded margin law (100%-profit floor)
+
+The bracket bands price against the AI bill, but the platform's compliance floor
+is defined on **fully-loaded cost**:
+
+```
+COGS per action = AI provider cost
+                + cloud/Firebase infrastructure allocation (£0.02/action)
+                + Stripe processing (2.9% of revenue + £0.05/action fixed-fee allocation)
+                + operating overhead (15% of revenue)
+
+LAW: price ≥ 2 × fully-loaded COGS  (≥ 100% net profit, bracket 1 minimum)
+```
+
+Solved for price, the floor is ≈ **3.1× direct cost** — which is exactly why the
+bracket-1 band floors at 3×: the 3× floor is what funds Stripe, cloud, and
+overhead while still doubling the money. Enforced in code, not policy:
+`shared/nf-economy.js` (`UNIT_ECONOMICS`, `minAcuFor`, `meetsProfitFloor`) and
+the gateway meter (`meterAcu` lifts any metered charge to the compliant
+minimum using per-provider raw token costs). Consequences:
+
+- Catalogue prices are floor-compliant up to ≈ £0.33 of AI cost per search
+  (£1.25 price); heavier runs are floored upward automatically by the live meter.
+- Every capital bracket doubles revenue against near-flat COGS, so realised
+  profit rises well past 100% as brackets climb.
+- Package net revenue (after Stripe 2.9% + 20p): £5 → £4.66 · £10 → £9.51 ·
+  £20 → £19.22 · £50 → £48.35 — the £5 Starter is the fee-heaviest (6.9%);
+  minimum top-up stays at £5 by design to keep fees under 7% of revenue.
+- **Sole governed exemption**: the 1-ACU support message is customer-acquisition
+  spend, not a revenue action, and is excluded from the floor by S-ADMIN decision.
+
 ### 6.3 Production target
 
 - Wallet as system of record in Postgres (P0 store exists on the gateway; migrate file → DB, keep the idempotency-key contract and `402 insufficient_acu` semantics).

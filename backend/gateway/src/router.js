@@ -49,9 +49,18 @@ export function bracketFactor(capitalGBP) {
 export function meterAcu(provider, usage, investorMode = false, capitalGBP = 0) {
   const rates = config.acu.ratesPer1K[provider] || config.acu.ratesPer1K.claude;
   let acu = (usage.inputTokens / 1000) * rates.input + (usage.outputTokens / 1000) * rates.output;
+  if (rates.input === 0 && rates.output === 0) return 0;
+
+  // Fully-loaded profit floor (100%-profit law): the charge must clear
+  // MIN_PROFIT_MULTIPLE × (AI cost + infra + Stripe + overhead), so the
+  // metered ACU can never fall below the compliant minimum, whatever the
+  // configured rates say.
+  const raw = config.acu.rawCostGBPPer1K[provider] || config.acu.rawCostGBPPer1K.claude;
+  const aiCostGBP = (usage.inputTokens / 1000) * raw.input + (usage.outputTokens / 1000) * raw.output;
+  acu = Math.max(acu, globalThis.NF_ECONOMY.minAcuFor(aiCostGBP));
+
   if (investorMode) acu *= config.acu.investorModeMultiplier;
   acu *= bracketFactor(capitalGBP);
-  if (rates.input === 0 && rates.output === 0) return 0;
   return Math.max(config.acu.minimumCharge, Math.ceil(acu));
 }
 

@@ -81,11 +81,18 @@ res = await fetch(`${BASE}/v1/estimate`, {
 body = await res.json();
 check('estimate returns ACU number', res.status === 200 && typeof body.estimatedAcu === 'number');
 
-// ACU metering math (direct unit check)
+// ACU metering math (direct unit check) — expectations derived from the
+// fully-loaded 100%-profit floor law, never hardcoded.
 const { meterAcu, bracketFactor } = await import('../src/router.js');
-check('claude 10k-in/2k-out meters correctly', meterAcu('claude', { inputTokens: 10000, outputTokens: 2000 }) === 10);
-check('investor mode adds 40%', meterAcu('claude', { inputTokens: 10000, outputTokens: 2000 }, true) === 14);
-check('minimum charge applies', meterAcu('gemini', { inputTokens: 10, outputTokens: 10 }) === 1);
+const ECO = globalThis.NF_ECONOMY;
+const usage = { inputTokens: 10000, outputTokens: 2000 };
+const aiCost = 10 * 0.0024 + 2 * 0.012; // claude raw £/1K defaults
+const floorAcu = ECO.minAcuFor(aiCost); // compliant bracket-1 minimum
+const base = Math.max(10, floorAcu);    // rate-metered 10 vs the floor
+check('metered charge respects the fully-loaded profit floor', meterAcu('claude', usage) === Math.ceil(base));
+check('floor guarantees ≥100% profit fully loaded', ECO.meetsProfitFloor(meterAcu('claude', usage) / 100, aiCost));
+check('investor mode adds 40% on the floored charge', meterAcu('claude', usage, true) === Math.ceil(base * 1.4));
+check('tiny requests still clear the floor', meterAcu('gemini', { inputTokens: 10, outputTokens: 10 }) >= ECO.minAcuFor(0));
 
 // capital-bracket pricing: band doubles per £10k bracket
 check('bracket 1 (≤£10k) factor is 1', bracketFactor(10000) === 1 && bracketFactor(0) === 1 && bracketFactor(undefined) === 1);
@@ -93,8 +100,13 @@ check('bracket 2 (£10,001–£20k) factor is 2', bracketFactor(10001) === 2 && 
 check('bracket 3 (£20,001–£30k) factor is 4', bracketFactor(25000) === 4);
 check('bracket 5 (£45k) factor is 16', bracketFactor(45000) === 16);
 check('bracket factor caps at 1024', bracketFactor(500000) === 1024);
-check('meterAcu doubles in bracket 2', meterAcu('claude', { inputTokens: 10000, outputTokens: 2000 }, false, 15000) === 20);
-check('investor mode stacks on bracket', meterAcu('claude', { inputTokens: 10000, outputTokens: 2000 }, true, 15000) === 28);
+check('meterAcu doubles in bracket 2', meterAcu('claude', usage, false, 15000) === Math.ceil(base * 2));
+check('investor mode stacks on bracket', meterAcu('claude', usage, true, 15000) === Math.ceil(base * 1.4 * 2));
+
+// canonical action schedule itself clears the floor at realistic AI costs
+// (worst case: a search burning ~£0.20 of provider tokens sells at £1.25)
+check('search price (125 ACU) clears floor at £0.20 AI cost', ECO.meetsProfitFloor(1.25, 0.20));
+check('business plan (500 ACU) clears floor at £0.80 AI cost', ECO.meetsProfitFloor(5.00, 0.80));
 
 // shared economy module: gateway and client enforce identical constants
 const ECONOMY = globalThis.NF_ECONOMY;

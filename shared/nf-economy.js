@@ -72,12 +72,68 @@
     return Math.round(base * bracketFor(capitalAmount).factor);
   }
 
+  /* ---------- fully-loaded unit economics (the 100%-profit floor law) ----------
+     Price is anchored to FULLY-LOADED cost, not just the AI provider bill:
+       COGS per action = AI provider cost
+                       + cloud/Firebase infra allocation
+                       + payment processing (Stripe % of revenue + fixed fee,
+                         allocated per action)
+                       + operating overhead (allocated as % of revenue)
+     LAW: every action's price must be at least MIN_PROFIT_MULTIPLE × its
+     fully-loaded cost — i.e. ≥ 100% net profit at bracket 1, before the
+     capital-bracket doubling widens it further. Solving
+       price ≥ 2 × (ai + infra + fix + (stripePct + overheadPct) × price)
+     gives  price ≥ 2 × (ai + infra + fix) / (1 − 2 × (stripePct + overheadPct)),
+     ≈ 3.1 × direct cost with the defaults below — which is exactly why the
+     bracket-1 band floors at 3×: the 3× floor is what funds Stripe, cloud,
+     and overhead while still doubling the money. */
+  var UNIT_ECONOMICS = {
+    stripePct: 0.029,          // card fee % (intl card, worst common case)
+    stripeFixedGBP: 0.20,      // fixed fee per charge, allocated across ~4 actions/purchase
+    stripeFixedPerActionGBP: 0.05,
+    infraPerActionGBP: 0.02,   // Cloud Run / Firebase / storage / egress per action
+    overheadPctRevenue: 0.15,  // support, tooling, monitoring, misc. ops
+    minProfitMultiple: 2       // 100% profit on fully-loaded cost, minimum
+  };
+
+  /* Fully-loaded cost of one action given the raw AI provider cost and price. */
+  function loadedCostGBP(aiCostGBP, priceGBP) {
+    return aiCostGBP +
+      UNIT_ECONOMICS.infraPerActionGBP +
+      UNIT_ECONOMICS.stripeFixedPerActionGBP +
+      (UNIT_ECONOMICS.stripePct + UNIT_ECONOMICS.overheadPctRevenue) * priceGBP;
+  }
+
+  /* Minimum compliant price (GBP) for an action with this raw AI cost. */
+  function minPriceGBP(aiCostGBP) {
+    var m = UNIT_ECONOMICS.minProfitMultiple;
+    var variable = UNIT_ECONOMICS.stripePct + UNIT_ECONOMICS.overheadPctRevenue;
+    return (m * (aiCostGBP + UNIT_ECONOMICS.infraPerActionGBP + UNIT_ECONOMICS.stripeFixedPerActionGBP)) /
+      (1 - m * variable);
+  }
+
+  /* Minimum compliant ACU charge for an action (bracket 1; multiply by the
+     bracket factor after). £1 = 100 ACU. */
+  function minAcuFor(aiCostGBP) {
+    return Math.ceil(minPriceGBP(aiCostGBP) * 100);
+  }
+
+  /* True profit check: does this price clear ≥100% profit fully loaded? */
+  function meetsProfitFloor(priceGBP, aiCostGBP) {
+    return priceGBP >= UNIT_ECONOMICS.minProfitMultiple * loadedCostGBP(aiCostGBP, priceGBP);
+  }
+
   globalThis.NF_ECONOMY = {
     ANCHOR_GBP_PER_100_ACU: ANCHOR_GBP_PER_100_ACU,
     WELCOME_FREE: WELCOME_FREE,
     PACKAGES: PACKAGES,
     COSTS: COSTS,
     bracketFor: bracketFor,
-    costFor: costFor
+    costFor: costFor,
+    UNIT_ECONOMICS: UNIT_ECONOMICS,
+    loadedCostGBP: loadedCostGBP,
+    minPriceGBP: minPriceGBP,
+    minAcuFor: minAcuFor,
+    meetsProfitFloor: meetsProfitFloor
   };
 })();
