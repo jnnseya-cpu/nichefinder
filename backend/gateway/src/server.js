@@ -25,6 +25,27 @@ function rateLimited(ip) {
   return slot.n > RATE_LIMIT;
 }
 
+/* Billing enforcement is automatic the moment real money is configured;
+   REQUIRE_WALLET=1 forces it on keyless/staging deployments too. */
+const billingEnforced = () => paymentsConfigured() || process.env.REQUIRE_WALLET === '1';
+
+/* Wallet ids act as bearer capabilities until account auth lands: they must
+   be high-entropy client-generated ids (nf-config.js format), never guessable
+   names. Enforced only when billing is enforced, so local demos stay easy. */
+function requireCapabilityId(user) {
+  if (!/^op_[a-z0-9]{10,}$/.test(String(user || ''))) {
+    throw new GatewayError('Wallet ids must be platform-issued capability ids.', { status: 403, code: 'invalid_user_id' });
+  }
+}
+
+/* Pre-flight ACU estimate for a generation body (same math as /v1/estimate). */
+function estimateAcuFor(body) {
+  const chars = JSON.stringify(body.messages || '').length + (body.system?.length || 0);
+  const usage = { inputTokens: Math.ceil(chars / 4), outputTokens: body.expectedOutputTokens || 2000 };
+  const provider = body.provider && body.provider !== 'auto' ? body.provider : availableProviders()[0] || 'claude';
+  return meterAcu(provider, usage, body.investorMode === true, body.capitalGBP);
+}
+
 const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript',
   '.svg': 'image/svg+xml', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.json': 'application/json' };
 
@@ -190,6 +211,18 @@ const server = http.createServer(async (req, res) => {
       } catch {
         throw new GatewayError('Body must be valid JSON.', { status: 400, code: 'invalid_json' });
       }
+      // Production wallet law: when real money is on (or REQUIRE_WALLET=1),
+      // client-initiated credits are DISABLED — ACUs enter only via the Stripe
+      // settlement webhook or an admin key. Charges require a capability-grade
+      // user id (high-entropy, never displayed), so balances can't be guessed at.
+      if (billingEnforced()) {
+        if (url.pathname.endsWith('credit') && req.headers['x-admin-key'] !== process.env.ADMIN_API_KEY) {
+          throw new GatewayError('Direct crediting is disabled in production — ACUs are credited by payment settlement only.', {
+            status: 403, code: 'credit_disabled',
+          });
+        }
+        requireCapabilityId(body.user);
+      }
       body.idempotencyKey = body.idempotencyKey || req.headers['idempotency-key'];
       const result = url.pathname.endsWith('charge') ? charge(body) : credit(body);
       return json(res, 200, result);
@@ -205,8 +238,32 @@ const server = http.createServer(async (req, res) => {
       } catch {
         throw new GatewayError('Body must be valid JSON.', { status: 400, code: 'invalid_json' });
       }
+      // Production billing law: with payments live (or REQUIRE_WALLET=1), the
+      // SERVER meters and debits every generation — the client never bills
+      // itself and anonymous calls can't burn provider spend.
+      let debit = null;
+      if (billingEnforced()) {
+        requireCapabilityId(body.user);
+        const est = estimateAcuFor(body);
+        const w = getWallet(body.user);
+        if (w.paid < est) {
+          throw new GatewayError(`Insufficient paid ACU for this generation: estimated ${est}, balance ${w.paid}.`, {
+            status: 402, code: 'insufficient_acu', platformCode: 4001,
+          });
+        }
+        debit = { user: body.user, estimate: est };
+      }
       const started = Date.now();
       const result = await route(body);
+      if (debit) {
+        const metered = Math.max(config.acu.minimumCharge, Math.min(result.acu || 0, getWallet(debit.user).paid));
+        const charged = charge({
+          user: debit.user, amount: metered, label: `generation · ${result.provider}`,
+          action: 'generation', bracketFactor: result.bracketFactor || 1,
+          idempotencyKey: body.idempotencyKey || `gen_${started}_${debit.user.slice(-8)}`,
+        });
+        return json(res, 200, { ...result, latencyMs: Date.now() - started, charged: charged.charged, wallet: charged.wallet });
+      }
       return json(res, 200, { ...result, latencyMs: Date.now() - started });
     } catch (err) {
       return handleError(res, err);

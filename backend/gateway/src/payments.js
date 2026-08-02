@@ -13,6 +13,8 @@ import { credit, PACKAGES } from './wallet.js';
 
 const KEY = process.env.STRIPE_SECRET_KEY || '';
 const WHSEC = process.env.STRIPE_WEBHOOK_SECRET || '';
+// Overridable for the full-cycle payment test (points at a local Stripe mock).
+const STRIPE_API = process.env.STRIPE_API_BASE || 'https://api.stripe.com';
 
 export const paymentsConfigured = () => Boolean(KEY && WHSEC);
 
@@ -50,7 +52,7 @@ export async function createCheckout({ user, packageId, origin }) {
     success_url: `${base}/frontend/dashboard.html?payment=success`,
     cancel_url: `${base}/frontend/dashboard.html?payment=cancelled`,
   });
-  const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+  const res = await fetch(`${STRIPE_API}/v1/checkout/sessions`, {
     method: 'POST',
     headers: { authorization: `Bearer ${KEY}`, 'content-type': 'application/x-www-form-urlencoded' },
     body,

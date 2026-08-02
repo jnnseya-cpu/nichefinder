@@ -16,7 +16,13 @@ window.NF_WALLET_USER = (function () {
   try {
     var id = localStorage.getItem('nf_user_id');
     if (!id) {
-      id = 'op_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+      // Capability-grade id: ~130 bits of CSPRNG entropy. Until account auth
+      // lands, this id IS the wallet credential — treat it like one.
+      var bytes = new Uint8Array(16);
+      (window.crypto || {}).getRandomValues ? crypto.getRandomValues(bytes)
+        : bytes.forEach(function (_, i) { bytes[i] = Math.floor(Math.random() * 256); });
+      id = 'op_' + Array.from(bytes, function (b) { return (b % 36).toString(36); }).join('') +
+        Date.now().toString(36);
       localStorage.setItem('nf_user_id', id);
     }
     return id;

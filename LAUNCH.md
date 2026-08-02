@@ -23,6 +23,33 @@ One deploy of `backend/gateway` now serves the **entire OS**: the frontend at
 - Per-IP rate limiting, CORS, path-traversal-safe static hosting
 - 27-check smoke suite + 38-check browser QA harness (`qa/e2e.js`)
 
+## ⚡ GO-LIVE MORNING CHECKLIST (final — everything below is already tested)
+
+The code side is DONE and proven tonight: 38/38 browser QA, 35-check backend
+smoke, and a **15-check FULL PAYMENT CYCLE test** (checkout → signed settlement
+webhook → exactly-once credit → server-metered generation debit → overdraft
+refusal → self-credit lockout → encrypted store). Production billing enforcement
+turns itself on the moment Stripe keys are present:
+
+- The SERVER meters and debits every generation — clients can never bill themselves
+- Client-side crediting is disabled — ACUs enter only via Stripe settlement (or the ADMIN_API_KEY support path)
+- Anonymous and guessable wallet ids are refused (capability-grade ids, ~130-bit entropy)
+- Admin cockpits are hidden from the public deploy unless EXPOSE_ADMIN=1
+
+Morning sequence (60–90 min of founder admin, in order):
+
+1. **Stripe**: create account → copy `sk_live_` → add webhook endpoint
+   `https://<host>/v1/payments/stripe-webhook` (event: `checkout.session.completed`) → copy `whsec_`
+2. **Anthropic**: create API key, load £50–100 credit (Gemini/OpenAI optional failover)
+3. **Deploy**: push this repo to Render using `render.yaml` (or `docker build` anywhere) —
+   paste the 3–5 secrets in the dashboard; `WALLET_STORE_KEY`/`ADMIN_API_KEY` auto-generate
+4. **Domain**: point DNS at the service; set `PUBLIC_ORIGIN`; set `window.NF_GATEWAY_URL`
+   in `frontend/nf-config.js` to the same origin; redeploy (one commit)
+5. **Rehearse with test keys first**: `sk_test_` + card 4242 4242 4242 4242 → watch ACUs land
+   → run one real search → THEN swap to live keys
+6. **Verify live**: `/v1/health` shows `"payments": true` and your providers; buy the £5 Starter
+   yourself as customer zero
+
 ## LAUNCH TOMORROW — Day-1 runbook (≈ half a day of founder work)
 
 | # | Step | Owner | Time |
