@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /frontend/admin.html
+Disallow: /frontend/comms.html
+Disallow: /frontend/dashboard.html
+Disallow: /frontend/project.html
+Disallow: /frontend/asset.html
+Sitemap: /sitemap.xml

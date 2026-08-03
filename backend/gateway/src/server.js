@@ -47,13 +47,14 @@ function estimateAcuFor(body) {
 }
 
 const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript',
-  '.svg': 'image/svg+xml', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.json': 'application/json' };
+  '.svg': 'image/svg+xml', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.json': 'application/json', '.txt': 'text/plain', '.xml': 'application/xml' };
 
 /* Serve the frontend + shared modules from this same service, so one deploy
    is the whole OS: pages at /frontend/, economy at /shared/, API at /v1/. */
 function serveStatic(req, res, url) {
   let p = decodeURIComponent(url.pathname);
   if (p === '/' || p === '') p = '/frontend/index.html';
+  if (p === '/robots.txt' || p === '/sitemap.xml') p = '/frontend' + p; // SEO files at the domain root
   const abs = path.normalize(path.join(REPO_ROOT, p));
   if (!abs.startsWith(REPO_ROOT) || (!p.startsWith('/frontend/') && !p.startsWith('/shared/'))) {
     return json(res, 404, { error: 'not_found' });

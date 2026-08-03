@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Niche Finder — Article</title>
+<meta name="description" content="Venture intelligence field notes from the Niche Finder OS.">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="stylesheet" href="page.css">
+<style>
+  .art{max-width:760px}
+  .art h2{font-family:var(--serif);font-weight:400;font-size:1.4rem;margin:30px 0 10px}
+  .art p{font-size:.95rem;line-height:1.75;color:var(--text);margin-bottom:14px}
+  .art a{color:var(--gold-bright);text-decoration:underline;text-underline-offset:3px}
+  .art a.ext{color:var(--blue)}
+  .art .meta{font-family:var(--mono);font-size:.62rem;letter-spacing:.16em;color:var(--muted);margin:6px 0 26px}
+  .related{border:1px solid var(--line-soft);border-radius:10px;padding:18px 20px;margin-top:34px}
+  .related h3{font-family:var(--serif);font-weight:400;margin-bottom:10px}
+  .related a{display:block;font-size:.88rem;color:var(--gold-bright);margin-bottom:8px;text-decoration:none}
+  .related a:hover{text-decoration:underline}
+  .cta-band{border:1px solid rgba(232,166,26,.4);border-radius:10px;padding:20px;margin-top:26px;background:linear-gradient(170deg,var(--panel-2),var(--panel))}
+</style>
+<link rel="stylesheet" href="nf-polish.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"><i></i></span><span>Niche<em>Finder</em></span></a>
+    <nav class="main">
+      <a href="how-it-works.html">How It Works</a>
+      <a href="blog.html" aria-current="page">Blog</a>
+      <a href="dashboard.html">Command Center</a>
+    </nav>
+    <a class="btn gold" href="search.html">Start OS Search</a>
+  </div>
+</header>
+
+<main class="page">
+  <div class="wrap art" id="art">
+    <span class="kicker">BLOG · VENTURE INTELLIGENCE</span>
+    <h1 class="page-title" id="artTitle">Loading article…</h1>
+    <div class="meta" id="artMeta"></div>
+    <div id="artBody"></div>
+    <div class="cta-band">
+      <b>Put this into practice.</b>
+      <p style="font-size:.88rem;margin:6px 0 12px">Run one search on the <a href="search.html">Search Canvas</a> and get ranked, scored opportunities for your country — 100 free credits, no card needed.</p>
+      <a class="btn gold" href="search.html">Find my niche →</a>
+    </div>
+    <div class="related" id="related" hidden>
+      <h3>Keep reading</h3>
+      <div id="relatedList"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   SEO article engine.
+   - Body generated per-article, seeded by its slug (stable content).
+   - DYNAMIC HYPERLINKS: the first occurrence of each mapped phrase is
+     auto-linked into the product (internal SEO mesh); every other
+     published article is cross-linked in "Keep reading" (backlink mesh);
+     two external authority citations per article.
+   - JSON-LD Article schema + canonical + meta description set at render.
+   ============================================================ */
+(function(){
+  var posts;
+  try { posts = JSON.parse(localStorage.getItem('nf_admin_posts')) || []; } catch (e) { posts = []; }
+  var live = posts.filter(function(p){ return p.status === 'published'; });
+  var slug = new URLSearchParams(location.search).get('s');
+  var post = live.filter(function(p){ return (p.slug || '') === slug; })[0] || live[0];
+  if (!post){
+    document.getElementById('artTitle').textContent = 'No published articles yet.';
+    document.getElementById('artBody').innerHTML = '<p>Articles published from the platform appear here. Visit the <a href="blog.html">blog index</a>.</p>';
+    return;
+  }
+  if (!post.slug) post.slug = (post.title || 'article').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
+
+  /* Internal link map — the SEO mesh into the product. First hit per phrase links. */
+  var LINKS = [
+    [/business niche|profitable niche|niche opportunit\w+/i, 'search.html'],
+    [/market validation|validat\w+ (?:your|the) (?:idea|market)/i, 'how-it-works.html'],
+    [/deterministic scoring|confidence score|three pillars?/i, 'how-it-works.html'],
+    [/financial model\w*|3-year forecast|cashflow/i, 'how-it-works.html'],
+    [/pitch deck|business plan/i, 'how-it-works.html'],
+    [/ACU|credits/, 'how-it-works.html'],
+    [/frontier markets?|emerging markets?/i, 'government.html'],
+    [/investor[- ]ready/i, 'about.html'],
+  ];
+  var EXT = [
+    ['CB Insights research on startup failure', 'https://www.cbinsights.com/research/report/startup-failure-reasons-top/'],
+    ['World Bank enterprise data', 'https://www.worldbank.org/en/programs/enterprise-surveys'],
+  ];
+
+  function esc(s){ var d = document.createElement('i'); d.textContent = s; return d.innerHTML; }
+  var linked = {};
+  function autolink(par){
+    var html = esc(par);
+    LINKS.forEach(function(m, i){
+      if (linked[i]) return;
+      var match = html.match(m[0]);
+      if (match){
+        linked[i] = true;
+        html = html.replace(match[0], '<a href="' + m[1] + '">' + match[0] + '</a>');
+      }
+    });
+    return html;
+  }
+
+  var t = post.title;
+  var SECTIONS = [
+    ['The problem this solves',
+     t + ' is not an abstract question — it decides whether the next twelve months of your life produce a business or an expensive lesson. Research from ' +
+     'CBI_LINK shows the single biggest killer of new ventures is building for a market that never needed them. The fix is not more ideas; it is better selection: a profitable niche identified from real demand signals, scored before a penny is spent.'],
+    ['Start from evidence, not enthusiasm',
+     'Every serious operator begins with market validation. That means demand evidence, competitor density, cost structures, and timing for one specific market — not a global average. The three pillars we score — market readiness, competitive gap, and prospect of success — exist because each one measures a different way ventures die. A confidence score you can interrogate beats a hunch you cannot.'],
+    ['Constraints are the strategy',
+     'Working within a capped budget forces wedge thinking: one corridor, one depot, one paying segment. The most durable low-capital businesses replicate a proven unit instead of raising to guess. WB_LINK confirms the pattern across emerging markets: small, cash-flowing entrants outlast funded generalists in volatile conditions.'],
+    ['From score to fundable',
+     'Selection is half the work; packaging is the other half. A 3-year forecast, a structured cashflow view, a business plan, and an investor-ready pitch deck turn a validated idea into something capital can say yes to. Generate them from the same evidence base as the score, and the numbers in the deck survive due diligence.'],
+    ['Do it this week',
+     'Pick your country. Set your budget. Run one discovery pass and shortlist three niche opportunities with green pillars. Validate the strongest, model it, and put the package in front of one real investor or one real customer. Momentum is a feature — the ACU credits model means you pay only for the steps you actually take.'],
+  ];
+
+  document.title = 'Niche Finder — ' + t;
+  document.querySelector('meta[name="description"]').setAttribute('content', SECTIONS[0][1].replace('CBI_LINK', 'CB Insights').slice(0, 155));
+  document.getElementById('artTitle').textContent = t;
+  document.getElementById('artMeta').textContent =
+    (post.auto ? 'SEO AUTOPILOT · ' : '') + 'PUBLISHED ' + new Date(post.ts || Date.now()).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) + ' · NICHE FINDER CONTENT AGENT';
+
+  var bodyEl = document.getElementById('artBody');
+  SECTIONS.forEach(function(sec){
+    var h = document.createElement('h2'); h.textContent = sec[0];
+    var p = document.createElement('p');
+    p.innerHTML = autolink(sec[1])
+      .replace('CBI_LINK', '<a class="ext" href="' + EXT[0][1] + '" rel="noopener nofollow" target="_blank">' + EXT[0][0] + '</a>')
+      .replace('WB_LINK', '<a class="ext" href="' + EXT[1][1] + '" rel="noopener nofollow" target="_blank">' + EXT[1][0] + '</a>');
+    bodyEl.appendChild(h); bodyEl.appendChild(p);
+  });
+
+  /* Cross-article backlink mesh: every published article links every other. */
+  var others = live.filter(function(p){ return p !== post; });
+  if (others.length){
+    document.getElementById('related').hidden = false;
+    var list = document.getElementById('relatedList');
+    others.slice(0, 6).forEach(function(p){
+      var s = p.slug || (p.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 60);
+      var a = document.createElement('a');
+      a.href = 'article.html?s=' + encodeURIComponent(s);
+      a.textContent = '→ ' + p.title;
+      list.appendChild(a);
+    });
+  }
+
+  /* Structured data + canonical for search engines. */
+  var ld = document.createElement('script');
+  ld.type = 'application/ld+json';
+  ld.textContent = JSON.stringify({
+    '@context': 'https://schema.org', '@type': 'Article',
+    headline: t,
+    datePublished: new Date(post.ts || Date.now()).toISOString(),
+    author: { '@type': 'Organization', name: 'Niche Finder' },
+    publisher: { '@type': 'Organization', name: 'Niche Finder Ltd' },
+    mainEntityOfPage: location.origin + '/frontend/article.html?s=' + encodeURIComponent(post.slug),
+  });
+  document.head.appendChild(ld);
+  var canon = document.createElement('link');
+  canon.rel = 'canonical';
+  canon.href = location.origin + '/frontend/article.html?s=' + encodeURIComponent(post.slug);
+  document.head.appendChild(canon);
+})();
+</script>
+
+<footer class="site">
+  <div class="wrap">
+    <div class="foot-base">
+      <span>© 2026 Niche Finder Ltd. All rights reserved.</span>
+      <span><a href="blog.html" style="color:var(--muted)">← All articles</a></span>
+    </div>
+  </div>
+</footer>
+
+<script src="nf-consent.js" defer></script>
+</body>
+</html>

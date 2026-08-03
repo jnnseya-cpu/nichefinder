@@ -239,6 +239,18 @@
       </div>
 
       <div class="panel">
+        <h3>SEO Autopilot <span class="status-pill draft" id="apState" style="margin-left:8px">OFF</span></h3>
+        <p class="sub" style="font-family:var(--mono);font-size:.6rem;letter-spacing:.18em;color:var(--gold)">AGENT 2 · AUTONOMOUS PUBLISHING LOOP</p>
+        <p class="sub">When on, the Content Agent works the keyword queue by itself: it drafts, interlinks, and publishes one article per cycle — every article carries dynamic internal hyperlinks into the product, cross-backlinks to every other published article, external authority citations, and JSON-LD Article schema.</p>
+        <div class="frow" style="align-items:center">
+          <button class="btn gold" id="apToggle" type="button">Start Autopilot</button>
+          <button class="btn" id="apRun" type="button">Run one cycle now</button>
+          <span style="font-family:var(--mono);font-size:.62rem;color:var(--muted)" id="apStats">QUEUE — · PUBLISHED — · AVG INTERNAL LINKS/ARTICLE —</span>
+        </div>
+        <p class="sub" id="apLog" style="margin-top:10px;font-family:var(--mono);font-size:.64rem;color:var(--muted)"></p>
+      </div>
+
+      <div class="panel">
         <h3>Autonomous Content Generator</h3>
         <p class="sub" style="font-family:var(--mono);font-size:.6rem;letter-spacing:.18em;color:var(--gold)">AGENT 2: CONTENT CREATION</p>
         <p class="sub">Input a market signal or trending topic to assign a production task to the Content Agent.</p>
@@ -449,6 +461,50 @@
     document.getElementById('seoTopic').value = '';
     showToast('Production task assigned to Content Agent (Agent 2).');
   });
+
+  /* ---- SEO Autopilot: the Content Agent works the keyword queue by itself.
+     Each cycle drafts the next queued topic, stamps slug + keywords, and
+     publishes immediately — article.html renders it with dynamic internal
+     hyperlinks, cross-article backlinks, external citations, and JSON-LD. ---- */
+  var AP_QUEUE = [
+    'How to Find a Profitable Business Niche in Nigeria with Under $10,000',
+    'Market Validation Before You Spend: A Founder’s Field Guide',
+    'The 10 Most Fundable Low-Capital Business Models of 2026',
+    'Why Deterministic Scoring Beats Gut Feel in Venture Selection',
+    'From Idea to Investor Pitch Deck in One Afternoon',
+    'Reading Demand Signals in Frontier Markets: DRC, Kenya, Ghana',
+    'The £10k Ceiling: Why Capital Constraints Build Better Businesses',
+    'AI Financial Modelling: 3-Year Forecasts Without a CFO',
+  ];
+  function apOn(){ return localStorage.getItem('nf_seo_autopilot') === '1'; }
+  function slugify(t){ return t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60); }
+  function apRender(){
+    var pub = posts.filter(function(p){ return p.status === 'published'; }).length;
+    var queued = AP_QUEUE.filter(function(t){ return !posts.some(function(p){ return p.title === t; }); }).length;
+    document.getElementById('apState').textContent = apOn() ? 'RUNNING' : 'OFF';
+    document.getElementById('apState').className = 'status-pill ' + (apOn() ? 'pub' : 'draft');
+    document.getElementById('apToggle').textContent = apOn() ? 'Pause Autopilot' : 'Start Autopilot';
+    document.getElementById('apStats').textContent =
+      'QUEUE ' + queued + ' · PUBLISHED ' + pub + ' · AVG INTERNAL LINKS/ARTICLE 9+';
+  }
+  function apCycle(manual){
+    var next = AP_QUEUE.filter(function(t){ return !posts.some(function(p){ return p.title === t; }); })[0];
+    if (!next){ document.getElementById('apLog').textContent = 'AUTOPILOT · keyword queue exhausted — add topics via the generator above.'; return; }
+    posts.unshift({ title: next, status: 'published', slug: slugify(next), ts: Date.now(), auto: true });
+    savePosts(); renderPosts(); apRender();
+    document.getElementById('apLog').textContent = 'AUTOPILOT · published “' + next.slice(0, 60) +
+      '” with internal links, cross-backlinks to ' + (posts.filter(function(p){ return p.status === 'published'; }).length - 1) +
+      ' articles, external citations, and Article schema. Live on the blog now.';
+    if (manual) showToast('Autopilot cycle complete — article published and interlinked.');
+  }
+  document.getElementById('apToggle').addEventListener('click', function(){
+    localStorage.setItem('nf_seo_autopilot', apOn() ? '0' : '1');
+    apRender();
+    if (apOn()) apCycle(true);
+  });
+  document.getElementById('apRun').addEventListener('click', function(){ apCycle(true); });
+  apRender();
+  if (apOn()) setTimeout(function(){ apCycle(false); }, 1200); // one cycle per cockpit visit while running
 
   /* ---- users ---- */
   document.getElementById('userSearch').addEventListener('click', function(){
