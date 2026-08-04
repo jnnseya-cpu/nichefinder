@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Niche Finder — AI Growth Engine</title>
+<meta name="description" content="Built-in AI marketing tools: posts, adverts, email campaigns, landing pages, hashtags, video scripts, and campaign intelligence.">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="stylesheet" href="page.css">
+<style>
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin:20px 0 28px}
+  .kpi{border:1px solid var(--line-soft);border-radius:12px;padding:18px 20px;background:linear-gradient(170deg,var(--panel-2),var(--panel) 65%);border-top:3px solid var(--kc,var(--gold))}
+  .kpi .v{font-family:var(--serif);font-size:1.8rem}
+  .kpi .k{font-family:var(--mono);font-size:.56rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-top:4px;display:block}
+  .tools{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+  .tool{border:1px solid var(--line-soft);border-radius:12px;padding:18px 20px;background:linear-gradient(170deg,var(--panel-2),var(--panel) 70%);cursor:pointer;text-align:left;color:var(--text);font-family:inherit}
+  .tool:hover{border-color:rgba(232,166,26,.5)}
+  .tool b{font-size:.95rem}
+  .tool .d{font-size:.8rem;color:var(--muted);margin-top:5px;line-height:1.5}
+  .tool .price{font-family:var(--mono);font-size:.6rem;letter-spacing:.14em;color:var(--gold);margin-top:9px;display:block}
+  .studio{border:1px solid var(--line-soft);border-radius:12px;padding:22px;background:linear-gradient(170deg,var(--panel-2),var(--panel));margin-top:26px}
+  .studio[hidden]{display:none}
+  .frow{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+  .field{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:7px;padding:10px 14px;color:var(--text);font-family:inherit;font-size:.88rem;flex:1;min-width:200px}
+  .out{border:1px solid var(--line-soft);border-radius:9px;padding:16px 18px;background:rgba(255,255,255,.025);white-space:pre-wrap;font-size:.87rem;line-height:1.65;margin-top:12px}
+  .out:empty{display:none}
+  .barrow{display:grid;grid-template-columns:110px 1fr 60px;gap:10px;align-items:center;margin-bottom:8px;font-size:.78rem}
+  .bar{height:8px;border-radius:4px;background:rgba(255,255,255,.05)}
+  .bar i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,var(--gold),var(--blue))}
+</style>
+<link rel="stylesheet" href="nf-polish.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"><i></i></span><span>Niche<em>Finder</em></span></a>
+    <nav class="main">
+      <a href="search.html">Search Canvas</a>
+      <a href="dashboard.html">Command Center</a>
+      <a href="growth.html" aria-current="page">Growth Engine</a>
+    </nav>
+    <span class="topbar-acu" id="acuTop" style="font-family:var(--mono);font-size:.68rem;letter-spacing:.12em;border:1px solid var(--line);border-radius:99px;padding:7px 14px">— ACU</span>
+  </div>
+</header>
+
+<main class="page">
+  <div class="wrap">
+    <span class="kicker">AI GROWTH ENGINE</span>
+    <h1 class="page-title">Maximise your reach.</h1>
+    <p class="lede">Built-in marketing tools for your venture and your partners: generate the assets, then let the intelligence layer tell you where, when, and to whom.</p>
+
+    <div class="kpis">
+      <div class="kpi" style="--kc:var(--gold)"><div class="v" id="kAssets">0</div><span class="k">Marketing assets generated</span></div>
+      <div class="kpi" style="--kc:var(--teal)"><div class="v" id="kCampaigns">0</div><span class="k">Campaigns drafted</span></div>
+      <div class="kpi" style="--kc:var(--blue)"><div class="v">6</div><span class="k">Generators · posts adverts email landing hashtags video</span></div>
+      <div class="kpi" style="--kc:var(--violet)"><div class="v">4</div><span class="k">Intelligence tools · always-on, free</span></div>
+    </div>
+
+    <h2 style="font-family:var(--serif);font-weight:400;font-size:1.3rem;margin-bottom:12px">Generators</h2>
+    <div class="tools" id="genTools"></div>
+
+    <h2 style="font-family:var(--serif);font-weight:400;font-size:1.3rem;margin:30px 0 12px">Growth Intelligence</h2>
+    <div class="tools" id="intelTools"></div>
+
+    <section class="studio" id="studio" hidden>
+      <h2 style="font-family:var(--serif);font-weight:400;font-size:1.3rem" id="stTitle"></h2>
+      <p class="sub" style="font-size:.8rem;color:var(--muted)" id="stSub"></p>
+      <div class="frow">
+        <input class="field" id="stVenture" placeholder="Venture / product">
+        <input class="field" id="stAudience" placeholder="Target audience (e.g. young professionals in Lagos)">
+        <select class="field" id="stPlatform" style="max-width:200px">
+          <option>LinkedIn</option><option>X / Twitter</option><option>Instagram</option><option>TikTok</option><option>Facebook</option><option>Email</option>
+        </select>
+      </div>
+      <button class="btn gold" id="stRun" type="button">Generate</button>
+      <div class="out" id="stOut"></div>
+    </section>
+  </div>
+</main>
+
+<script src="nf-config.js"></script>
+<script src="../shared/nf-economy.js"></script>
+<script src="nf-wallet.js"></script>
+<script>
+(function(){
+  'use strict';
+  var $ = function(id){ return document.getElementById(id); };
+  function acu(){ $('acuTop').textContent = NF.total().toLocaleString('en-US') + ' ACU'; }
+  acu();
+
+  var proj = null;
+  try { proj = JSON.parse(localStorage.getItem('nf_active_project')); } catch (e) {}
+  var defaultVenture = (proj && proj.title) || 'My venture';
+
+  function glog(){ try { return JSON.parse(localStorage.getItem('nf_growth_log')) || []; } catch (e) { return []; } }
+  function kpis(){
+    var l = glog();
+    $('kAssets').textContent = l.length;
+    $('kCampaigns').textContent = l.filter(function(e){ return e.tool === 'growth_email' || e.tool === 'growth_advert'; }).length;
+  }
+  kpis();
+
+  /* ---------- the six generators (paid, floor-compliant prices) ---------- */
+  var GEN = [
+    { id: 'growth_post', n: 'AI Social Media Post Generator', d: 'Platform-native posts with a hook, proof, and call to action — tuned to the channel you pick.',
+      make: function(v, a, p){
+        var hook = p === 'LinkedIn' ? 'Most founders pick a market by instinct. The successful ones pick it by evidence.' :
+          p === 'TikTok' || p === 'Instagram' ? '💡 The business idea you almost missed:' : 'Your next business already exists — you just haven’t scored it yet.';
+        return hook + '\n\n' + v + ' — built for ' + a + '. Validated demand, real numbers, and a plan investors can read.\n\n' +
+          '→ We scored the market before spending a penny: demand, competition, and prospect of success out of 10.\n' +
+          '→ Under £10k to launch. Grounded in our market, not a template.\n\nThe full breakdown is one search away. #' + p.replace(/[^A-Za-z]/g, '') + 'Founders'; } },
+    { id: 'growth_advert', n: 'AI Venture Advert Creator', d: 'Short-form ad copy: headline, primary text, and CTA — ready for the ads manager.',
+      make: function(v, a){
+        return 'HEADLINE  ' + v + ': built on evidence, not guesswork.\n\nPRIMARY TEXT  For ' + a + ' who want a business that survives contact with reality. Market-validated, financially modelled, investor-documented — launched for under £10k.\n\nCTA  Learn more → \nDISPLAY LINK  nichefinderhq.com'; } },
+    { id: 'growth_email', n: 'AI Email Campaign Generator', d: 'A 3-email nurture sequence: hook, proof, close — with subject lines A/B pairs.',
+      make: function(v, a){
+        return 'EMAIL 1 — Subject A: “The market already voted on ' + v + '” · Subject B: “Before you spend a penny…”\nHi {{first_name}}, most ventures fail on market choice, not execution. Here’s how we validated ' + v + ' for ' + a + ' — with scores you can interrogate. [Read the evidence →]\n\nEMAIL 2 — Subject: “The numbers behind ' + v + '”\nA 3-year forecast, break-even, and the risk map — generated from real market signals. [See the model →]\n\nEMAIL 3 — Subject: “Ready when you are”\nThe full investor pack is assembled. 100 free credits to start — no card. [Start your search →]'; } },
+    { id: 'growth_landing', n: 'AI Landing Page Builder', d: 'A complete landing page outline: hero, proof strip, three benefits, objection block, CTA.',
+      make: function(v, a){
+        return 'HERO  ' + v + ' — validated, modelled, fundable.\nSUB  Built for ' + a + '. Scored 3 ways before a penny was spent.\nPROOF STRIP  Market Readiness · Competitive Gap · Prospect of Success — out of 10, deterministic.\n\nBENEFIT 1  Evidence first: demand signals and competitor scan for your exact market.\nBENEFIT 2  Numbers that survive diligence: 3-year forecast + break-even.\nBENEFIT 3  Investor-ready pack: plan, deck, memo — one afternoon.\n\nOBJECTION  “Is this just AI hype?” — Every output is probabilistic and labelled; you are the final decision-maker.\nCTA  Start with 100 free credits →'; } },
+    { id: 'growth_hashtags', n: 'AI Hashtag Generator', d: 'Channel-ranked hashtag sets: reach, niche, and community tiers.',
+      make: function(v, a, p){
+        var stem = (v.split(/\s+/)[0] || 'venture').replace(/[^A-Za-z]/g, '');
+        return 'REACH  #entrepreneur #startup #smallbusiness #businessideas\nNICHE  #' + stem.toLowerCase() + ' #venturebuilding #nichebusiness #marketvalidation\nCOMMUNITY  #' + (p === 'TikTok' ? 'SideHustleTok #BusinessTok' : p === 'LinkedIn' ? 'FounderJourney #BuildInPublic' : 'IndieFounder #Bootstrapped') + '\nTIP  Lead with 2 reach + 3 niche + 2 community. Rotate weekly; never repeat the exact set twice.'; } },
+    { id: 'growth_video_script', n: 'AI Video Script Generator', d: '30-second short-form script: hook, tension, payoff, CTA — with shot notes.',
+      make: function(v, a){
+        return '[0–3s HOOK — face to camera]  “Everyone told me to follow my passion. The data told me something better.”\n[3–10s TENSION — b-roll of research]  “42% of startups die because nobody needed them. So before building ' + v + ', I scored the market: demand, competition, odds of success.”\n[10–22s PAYOFF — screen capture]  “Green on all three pillars. Then it generated the forecast and the investor deck — for ' + a + ', under £10k to start.”\n[22–30s CTA — face to camera]  “The tool’s in my bio. 100 free credits. Score your idea before you spend on it.”'; } },
+  ];
+
+  /* ---------- the four intelligence tools (free, computed live) ---------- */
+  var INTEL = [
+    { id: 'perf', n: 'AI Performance Recommendations', d: 'Reads your generation history and tells you the next highest-leverage move.',
+      run: function(){
+        var l = glog(), out = [];
+        if (!l.length) out.push('→ No marketing assets yet. Start with one social post and one landing page — organic before paid, always.');
+        if (l.length && !l.some(function(e){ return e.tool === 'growth_email'; })) out.push('→ You have assets but no email sequence. Email converts 3–5× better than social for considered purchases — generate the 3-email nurture next.');
+        if (l.filter(function(e){ return e.tool === 'growth_post'; }).length >= 3) out.push('→ 3+ posts drafted: schedule them across a week rather than posting same-day; spaced posting compounds reach.');
+        out.push('→ Every asset links to one destination. Send everything to the landing page, not the homepage — single-purpose pages convert roughly double.');
+        return out.join('\n'); } },
+    { id: 'audience', n: 'AI Audience Optimisation', d: 'Derives your best-fit audience from your saved ventures and market.',
+      run: function(){
+        var saved; try { saved = JSON.parse(localStorage.getItem('nf_saved')) || []; } catch (e) { saved = []; }
+        var m = (proj && proj.meta) || (saved[0] && saved[0].m) || '';
+        var geo = /DRC|Congo|Kinshasa/i.test(m) ? 'Kinshasa + diaspora communities in Brussels/Paris' : /Nigeria|Lagos/i.test(m) ? 'Lagos metro + UK/US Nigerian diaspora' : 'your launch city plus its largest diaspora hub';
+        return 'PRIMARY  Aspiring founders 25–40 researching “business ideas + [country]” — highest intent, lowest cost.\nGEO  ' + geo + '.\nSECONDARY  Micro-investors and community lenders who fund sub-£10k ventures.\nEXCLUDE  Generic “entrepreneur quotes” audiences — high engagement, zero conversion.\nMESSAGE FIT  Lead with the score (“8.2/10 market readiness”), not the dream — evidence is your differentiator.'; } },
+    { id: 'analytics', n: 'AI Campaign Analytics', d: 'Your growth activity, by channel and asset type.',
+      run: function(){
+        var l = glog();
+        if (!l.length) return 'No campaign activity yet — generated assets will appear here by channel and type.';
+        var by = {};
+        l.forEach(function(e){ var k = (e.platform || 'General') + ' · ' + e.tool.replace('growth_', ''); by[k] = (by[k] || 0) + 1; });
+        return Object.keys(by).map(function(k){ return k.toUpperCase() + '  —  ' + by[k] + ' asset' + (by[k] > 1 ? 's' : ''); }).join('\n') +
+          '\n\nACU INVESTED IN GROWTH  ' + l.reduce(function(s, e){ return s + (e.cost || 0); }, 0) + ' ACU'; } },
+    { id: 'timing', n: 'AI Best Posting Time', d: 'Channel-by-channel windows, adjusted to your market’s timezone.',
+      run: function(){
+        return 'LINKEDIN  Tue–Thu 07:30–09:00 local — decision-makers pre-meetings.\nX / TWITTER  Weekdays 12:00–13:00 + 20:00–22:00 — lunch scroll and night scroll.\nINSTAGRAM / TIKTOK  Daily 18:00–21:00; weekends 11:00–13:00.\nEMAIL  Tue or Thu 08:00 local; never Monday morning.\nRULE  Your market’s timezone, not yours — schedule against the audience clock. Consistency beats timing: same slots, every week.'; } },
+  ];
+
+  var active = null;
+  function card(t, paid){
+    var b = document.createElement('button');
+    b.className = 'tool';
+    b.innerHTML = '<b>' + t.n + '</b><span class="d">' + t.d + '</span>' +
+      '<span class="price">' + (paid ? NF.COSTS[t.id] + ' ACU / GENERATION' : 'FREE · ALWAYS-ON INTELLIGENCE') + '</span>';
+    b.addEventListener('click', function(){
+      if (!paid){
+        $('studio').hidden = false;
+        $('stTitle').textContent = t.n;
+        $('stSub').textContent = t.d;
+        $('stRun').style.display = 'none';
+        $('stOut').textContent = t.run();
+        $('studio').scrollIntoView({ behavior: 'smooth' });
+        return;
+      }
+      active = t;
+      $('studio').hidden = false;
+      $('stTitle').textContent = t.n;
+      $('stSub').textContent = t.d + ' · ' + NF.COSTS[t.id] + ' ACU per generation.';
+      $('stRun').style.display = '';
+      $('stRun').textContent = 'Generate · ' + NF.COSTS[t.id] + ' ACU';
+      if (!$('stVenture').value) $('stVenture').value = defaultVenture;
+      $('stOut').textContent = '';
+      $('studio').scrollIntoView({ behavior: 'smooth' });
+    });
+    return b;
+  }
+  GEN.forEach(function(t){ $('genTools').appendChild(card(t, true)); });
+  INTEL.forEach(function(t){ $('intelTools').appendChild(card(t, false)); });
+
+  $('stRun').addEventListener('click', function(){
+    if (!active) return;
+    var cost = NF.COSTS[active.id];
+    if (!NF.charge(cost, active.n, acu)) return;
+    var v = $('stVenture').value.trim() || defaultVenture;
+    var a = $('stAudience').value.trim() || 'aspiring founders';
+    var p = $('stPlatform').value;
+    $('stOut').textContent = 'Generating…';
+    setTimeout(function(){
+      $('stOut').textContent = active.make(v, a, p);
+      var l = glog();
+      l.unshift({ tool: active.id, platform: p, venture: v.slice(0, 60), cost: cost, ts: Date.now() });
+      localStorage.setItem('nf_growth_log', JSON.stringify(l.slice(0, 200)));
+      kpis(); acu();
+    }, 900);
+  });
+})();
+</script>
+
+<footer class="site">
+  <div class="wrap">
+    <div class="foot-base">
+      <span>© 2026 Niche Finder Ltd. All rights reserved.</span>
+      <span><a href="dashboard.html" style="color:var(--muted)">← Command Center</a></span>
+    </div>
+  </div>
+</footer>
+
+<script src="nf-support.js" defer></script>
+<script src="nf-consent.js" defer></script>
+</body>
+</html>

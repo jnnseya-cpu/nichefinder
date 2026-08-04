@@ -42,6 +42,12 @@
     execution_roadmap: 300,
     market_entry: 350,
     full_investor_package: 1500,
+    growth_hashtags: 25,    // AI Growth Engine — floor-compliant marketing tools
+    growth_post: 40,
+    growth_advert: 60,
+    growth_email: 80,
+    growth_video_script: 90,
+    growth_landing: 120,
     support_message: 1,     // support chat — 1 ACU per message, free ACUs allowed
     investor_multiplier: 1.4
   };
