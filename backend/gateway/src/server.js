@@ -25,9 +25,11 @@ function rateLimited(ip) {
   return slot.n > RATE_LIMIT;
 }
 
-/* Billing enforcement is automatic the moment real money is configured;
-   REQUIRE_WALLET=1 forces it on keyless/staging deployments too. */
-const billingEnforced = () => paymentsConfigured() || process.env.REQUIRE_WALLET === '1';
+/* PLATFORM LAW: every AI action is metered and gated by available ACUs —
+   no free AI action, regardless. Enforcement is the DEFAULT; the only way
+   to run an un-gated gateway is the explicit ALLOW_FREE_AI=1 escape hatch
+   for keyless local demos and CI. */
+const billingEnforced = () => process.env.ALLOW_FREE_AI !== '1';
 
 /* Wallet ids act as bearer capabilities until account auth lands: they must
    be high-entropy client-generated ids (nf-config.js format), never guessable

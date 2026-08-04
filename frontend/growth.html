@@ -55,7 +55,7 @@
       <div class="kpi" style="--kc:var(--gold)"><div class="v" id="kAssets">0</div><span class="k">Marketing assets generated</span></div>
       <div class="kpi" style="--kc:var(--teal)"><div class="v" id="kCampaigns">0</div><span class="k">Campaigns drafted</span></div>
       <div class="kpi" style="--kc:var(--blue)"><div class="v">6</div><span class="k">Generators · posts adverts email landing hashtags video</span></div>
-      <div class="kpi" style="--kc:var(--violet)"><div class="v">4</div><span class="k">Intelligence tools · always-on, free</span></div>
+      <div class="kpi" style="--kc:var(--violet)"><div class="v">4</div><span class="k">Intelligence tools · 25 ACU per analysis</span></div>
     </div>
 
     <h2 style="font-family:var(--serif);font-weight:400;font-size:1.3rem;margin-bottom:12px">Generators</h2>
@@ -163,14 +163,23 @@
     var b = document.createElement('button');
     b.className = 'tool';
     b.innerHTML = '<b>' + t.n + '</b><span class="d">' + t.d + '</span>' +
-      '<span class="price">' + (paid ? NF.COSTS[t.id] + ' ACU / GENERATION' : 'FREE · ALWAYS-ON INTELLIGENCE') + '</span>';
+      '<span class="price">' + (paid ? NF.COSTS[t.id] + ' ACU / GENERATION' : NF.COSTS.growth_insight + ' ACU / ANALYSIS') + '</span>';
     b.addEventListener('click', function(){
       if (!paid){
+        // Platform law: every AI action is metered and gated by ACUs — no free AI action.
+        if (!NF.charge(NF.COSTS.growth_insight, t.n, acu)) return;
         $('studio').hidden = false;
         $('stTitle').textContent = t.n;
-        $('stSub').textContent = t.d;
+        $('stSub').textContent = t.d + ' · ' + NF.COSTS.growth_insight + ' ACU per analysis.';
         $('stRun').style.display = 'none';
-        $('stOut').textContent = t.run();
+        $('stOut').textContent = 'Analysing…';
+        setTimeout(function(){
+          $('stOut').textContent = t.run();
+          var l = glog();
+          l.unshift({ tool: 'growth_insight', platform: t.n, cost: NF.COSTS.growth_insight, ts: Date.now() });
+          localStorage.setItem('nf_growth_log', JSON.stringify(l.slice(0, 200)));
+          kpis();
+        }, 600);
         $('studio').scrollIntoView({ behavior: 'smooth' });
         return;
       }

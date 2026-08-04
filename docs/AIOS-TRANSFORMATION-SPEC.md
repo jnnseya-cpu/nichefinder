@@ -1061,8 +1061,14 @@ minimum using per-provider raw token costs). Consequences:
 - Package net revenue (after Stripe 2.9% + 20p): £5 → £4.66 · £10 → £9.51 ·
   £20 → £19.22 · £50 → £48.35 — the £5 Starter is the fee-heaviest (6.9%);
   minimum top-up stays at £5 by design to keep fees under 7% of revenue.
-- **Sole governed exemption**: the 1-ACU support message is customer-acquisition
-  spend, not a revenue action, and is excluded from the floor by S-ADMIN decision.
+- **No-free-AI law (S-ADMIN, ratified)**: every AI action on the platform is
+  metered and gated by available ACUs — no free AI action, regardless. The
+  gateway enforces metering by default (`ALLOW_FREE_AI=1` is the sole
+  explicit escape hatch, for keyless local demos/CI only); Growth Engine
+  intelligence analyses are metered at 25 ACU.
+- **Sole floor exemption**: the support message stays at 1 ACU — still
+  metered and gated (it refuses when the wallet is empty), but priced as
+  customer-acquisition spend below the fully-loaded floor by S-ADMIN decision.
 
 ### 6.3 Production target
 

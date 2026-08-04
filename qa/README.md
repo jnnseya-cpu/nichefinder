@@ -12,7 +12,7 @@ python3 -m http.server 8901
 
 # 2. start the gateway in mock mode with an encrypted store
 cd backend/gateway
-MOCK_AI=1 WALLET_STORE_KEY=<64-hex-chars> WALLET_STORE=/tmp/qa-wallets.json PORT=8902 node src/server.js
+MOCK_AI=1 ALLOW_FREE_AI=1 WALLET_STORE_KEY=<64-hex-chars> WALLET_STORE=/tmp/qa-wallets.json PORT=8902 node src/server.js
 
 # 3. run the suite
 npm install playwright-core

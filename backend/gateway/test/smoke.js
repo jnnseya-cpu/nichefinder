@@ -2,6 +2,7 @@
 // endpoint plus router validation and ACU metering. Run: npm test
 
 process.env.MOCK_AI = '1';
+process.env.ALLOW_FREE_AI = '1'; // keyless demo suite; enforcement is covered by test/paycycle.js
 process.env.PORT = process.env.PORT || '18787';
 
 const BASE = `http://127.0.0.1:${process.env.PORT}`;

@@ -43,6 +43,7 @@
     market_entry: 350,
     full_investor_package: 1500,
     growth_hashtags: 25,    // AI Growth Engine — floor-compliant marketing tools
+    growth_insight: 25,     // intelligence tools — every AI action is metered, none free
     growth_post: 40,
     growth_advert: 60,
     growth_email: 80,

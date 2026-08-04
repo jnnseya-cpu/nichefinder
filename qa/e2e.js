@@ -321,6 +321,7 @@ function log(id, ok, desc, extra) {
   await shot('A11-government-nigeria');
 
   /* ============ BACKEND API (real HTTP against the gateway) ============ */
+  const QA_USER = 'op_qa' + Math.random().toString(36).slice(2, 12);
   const api = [];
   const j = (r) => r.json();
   const health = await fetch(GW + '/v1/health').then(j);
@@ -335,27 +336,27 @@ function log(id, ok, desc, extra) {
     body: JSON.stringify({ messages: [{ role: 'user', content: 'estimate' }], capitalGBP: 25000 }) }).then(j);
   api.push(['POST /v1/estimate (capital £25k)', typeof est.estimatedAcu === 'number', 'estimatedAcu=' + est.estimatedAcu]);
 
-  const wallet0 = await fetch(GW + '/v1/wallet?user=qa_admin_test').then(j);
+  const wallet0 = await fetch(GW + '/v1/wallet?user=' + QA_USER).then(j);
   api.push(['GET /v1/wallet — welcome grant', wallet0.paid === 0 && wallet0.free === 100, JSON.stringify(wallet0)]);
 
   const cred = await fetch(GW + '/v1/wallet/credit', { method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ user: 'qa_admin_test', packageId: 'builder_10', idempotencyKey: 'qa-credit-1' }) }).then(j);
+    body: JSON.stringify({ user: QA_USER, packageId: 'builder_10', idempotencyKey: 'qa-credit-' + QA_USER }) }).then(j);
   api.push(['POST /v1/wallet/credit builder_10', cred.credited === 1100 && cred.wallet.paid === 1100, JSON.stringify(cred.wallet)]);
 
   const ch1 = await fetch(GW + '/v1/wallet/charge', { method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ user: 'qa_admin_test', amount: 125, label: 'niche search', action: 'niche_search', bracketFactor: 1, idempotencyKey: 'qa-charge-1' }) }).then(j);
+    body: JSON.stringify({ user: QA_USER, amount: 125, label: 'niche search', action: 'niche_search', bracketFactor: 1, idempotencyKey: 'qa-charge-' + QA_USER }) }).then(j);
   const ch2 = await fetch(GW + '/v1/wallet/charge', { method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ user: 'qa_admin_test', amount: 125, label: 'niche search', action: 'niche_search', bracketFactor: 1, idempotencyKey: 'qa-charge-1' }) }).then(j);
+    body: JSON.stringify({ user: QA_USER, amount: 125, label: 'niche search', action: 'niche_search', bracketFactor: 1, idempotencyKey: 'qa-charge-' + QA_USER }) }).then(j);
   api.push(['POST /v1/wallet/charge + idempotent replay', ch1.wallet.paid === 975 && ch2.replayed === true && ch2.wallet.paid === 975,
     'paid=' + ch1.wallet.paid + ' replayed=' + ch2.replayed]);
 
   const overRes = await fetch(GW + '/v1/wallet/charge', { method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ user: 'qa_admin_test', amount: 99999, label: 'overdraft attempt' }) });
+    body: JSON.stringify({ user: QA_USER, amount: 99999, label: 'overdraft attempt' }) });
   const over = await overRes.json();
   api.push(['Overdraft → 402 insufficient_acu (code 4001)', overRes.status === 402 && over.error === 'insufficient_acu' && over.platformCode === 4001,
     'status=' + overRes.status + ' platformCode=' + over.platformCode]);
 
-  const tx = await fetch(GW + '/v1/wallet/transactions?user=qa_admin_test').then(j);
+  const tx = await fetch(GW + '/v1/wallet/transactions?user=' + QA_USER).then(j);
   const t0 = tx.ledger[0];
   api.push(['GET /v1/wallet/transactions — enriched entries', t0 && typeof t0.balanceAfter === 'number' && t0.pool === 'paid' && t0.bracketFactor === 1,
     JSON.stringify({ t: t0.t.slice(0, 30), balanceBefore: t0.balanceBefore, balanceAfter: t0.balanceAfter, pool: t0.pool })]);
