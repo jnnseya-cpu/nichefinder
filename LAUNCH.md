@@ -73,24 +73,36 @@ Launch as a **paid public beta**: marketing pages + live Search Canvas + top-ups
 visible "beta — account sync coming" notice. Collect every visitor into
 `/v1/leads`. This is honest, chargeable, and shippable tomorrow.
 
-## BLOCKERS for a full (non-beta) public launch — and the fixes
+## VENDOR POLICY — no new vendors
 
-| Severity | Blocker | Why it matters | Fix | Est. |
+The only external vendors the OS uses are the ones already committed: **the AI
+providers** (Anthropic required; Google/OpenAI optional failover), **Stripe**
+(payments), and **your chosen host** (one Node service). Everything else —
+human verification, anti-hacking, auth, sessions, the wallet store — is built
+in-house on the gateway with Node's standard library and the encrypted file
+store. No Firebase, no Supabase, no Cloudflare Turnstile, no Resend/SendGrid.
+The blocker fixes below all honour that.
+
+## BLOCKERS for a full (non-beta) public launch — and the in-house fixes
+
+| Severity | Blocker | Why it matters | In-house fix (no new vendor) | Est. |
 |---|---|---|---|---|
-| 🔴 | **No real accounts** — wallet is keyed to a per-browser id | Clear cookies = lose balance; can't use two devices; welcome-ACU farming | Email magic-link auth (Firebase Auth or Supabase, free tier) binding `NF_WALLET_USER` to the account id; migration = claim browser wallet on first login | 2–3 days dev |
-| 🔴 | **Business & legal reality** — Stripe requires a legal entity, bank account, and your Terms/Privacy reviewed for the jurisdictions you sell in | Payments and refunds are regulated | Register the company (or use existing), open business bank account, solicitor pass over Terms/Privacy/refund policy | Founder, days |
-| 🟠 | **AI quality pass at scale** — generation prompts are tested but not tuned against volume with fresh provider keys | Public output quality = the brand | Once keys are live, run structured evals on 20–30 real searches across countries; tune prompts (I can do this the day keys exist) | 1 day |
-| 🟠 | **File-store wallet on one instance** — fine for beta scale (single Render instance + disk), not for horizontal scale | Two instances would race the store | Postgres migration (schema already specified in the docs, contract already stable) | 2–3 days dev |
-| 🟠 | **Refund/chargeback ops** — webhook credits, but reversals are manual | Disputes will happen | Add `charge.refunded`/`dispute` webhook handlers issuing compensating debits (small) + written refund policy | ½ day dev |
-| 🟡 | Email (receipts, magic links, escalation alerts) | Trust + auth dependency | Resend/SendGrid free tier; templates already designed in the Comms Engine catalogue | ½ day dev |
-| 🟡 | CAPTCHA on auth/checkout (human-only law, production grade) | Honeypot+timing ships today; Turnstile is the production control | Cloudflare Turnstile (free) on auth + checkout | ¼ day dev |
-| 🟡 | Admin auth — `admin.html`/`comms.html` must not ship on the public domain | Anyone could open the cockpit | Exclude both from the public deploy (one-line static-server denylist) until real auth lands; operate them locally | minutes, do at deploy |
+| 🔴 | **No real accounts** — wallet is keyed to a per-browser id | Clear cookies = lose balance; can't use two devices; welcome-ACU farming | Build email+password auth **inside the gateway**: bcrypt-style hashing via Node `crypto.scrypt`, accounts in the existing AES-256-GCM encrypted store, signed session tokens (HMAC), `NF_WALLET_USER` bound to the account id. Gate signup with the in-house human challenge (`NF_verifyHuman`). Zero third parties. | 2–3 days dev |
+| 🔴 | **Business & legal reality** — Stripe needs a legal entity + bank account; Terms/Privacy reviewed for your jurisdictions | Payments and refunds are regulated | Register the company (or use existing), open business bank account, solicitor pass over Terms/Privacy/refund policy | Founder, days |
+| 🟠 | **AI quality pass at scale** — prompts tested but not tuned against volume with fresh keys | Public output quality = the brand | Once keys are live, structured evals on 20–30 real searches across countries; tune prompts | 1 day |
+| 🟠 | **File-store wallet on one instance** — fine for a single-instance beta, races if scaled horizontally | Two instances would race the store | Stay single-instance for beta (no new vendor). When scale demands it, use the managed database **your existing host already offers** (Render/Railway/Fly Postgres) — same vendor, not a new one; schema already specified | 2–3 days dev when needed |
+| 🟠 | **Refund/chargeback ops** — webhook credits, but reversals are manual | Disputes will happen | Add `charge.refunded`/`dispute` handlers to the **existing Stripe webhook** issuing compensating debits + written refund policy | ½ day dev |
+| 🟢 | **Human verification (CAPTCHA)** — DONE in-house | Human-only law, production grade | ✅ Proof-of-work challenge on the gateway (`/v1/human/*`) + browser solver (`NF_verifyHuman`); no Turnstile/reCAPTCHA. Stacks with honeypot, submission-timing, and the Sentinel agent | shipped |
+| 🟢 | **Anti-hacking + non-human instruction blocking** — DONE in-house | Attack + prompt-injection defence | ✅ Sentinel agent screens every request, blocks injection before provider calls, strike-bans abusers | shipped |
+| 🟡 | **Transactional email** (receipts, password resets, alerts) | Trust + auth dependency | Use the founder's **existing** business email over SMTP (Node `nodemailer`-style, no new SaaS), or run beta on in-app Comms-Engine notifications only. No Resend/SendGrid onboarding | ½ day dev |
+| 🟢 | **Admin cockpit exposure** — DONE | Anyone could open the cockpit | ✅ `admin.html`/`comms.html` return 404 on public deploys unless `EXPOSE_ADMIN=1` | shipped |
 | ⚪ | Government Mode data pipeline, BitriPay/mobile money, subscriptions billing, PWA store wrap | Post-launch roadmap (P1–P2), not launch blockers | Per the transformation spec | weeks |
 
 ## The one-sentence answer
 
-**Tomorrow you can be live and taking money as a paid public beta** — runbook
-above, half a day of founder admin (Stripe + keys + deploy) on top of a codebase
-that is tested end-to-end; **a full consumer launch needs ~1 week more** (real
-accounts, Postgres wallet, refund ops, email, Turnstile) plus the legal/banking
-items only a founder can do.
+**Tomorrow you can be live and taking money as a paid public beta** on three
+vendors only (AI provider + Stripe + one host); human verification,
+anti-hacking, and admin lockdown already ship in-house. **A full consumer
+launch needs ~1 week more** — in-house accounts/auth, refund handlers, and
+SMTP over your existing email — plus the legal/banking items only a founder
+can do. No new vendor is introduced at any stage.

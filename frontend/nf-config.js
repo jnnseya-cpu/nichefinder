@@ -28,3 +28,27 @@ window.NF_WALLET_USER = (function () {
     return id;
   } catch (e) { return 'op_anonymous'; }
 })();
+
+/* In-house human verification (no third-party vendor). Fetches a proof-of-work
+   challenge from the gateway and solves it in the browser — a few hundred ms
+   for a human, prohibitively expensive at bot scale. Call NF_verifyHuman()
+   before signup/login/sensitive actions when a gateway is configured. */
+window.NF_verifyHuman = function () {
+  var base = (window.NF_GATEWAY_URL || '').replace(/\/$/, '');
+  if (!base || typeof fetch !== 'function' || !(window.crypto && crypto.subtle)) return Promise.resolve({ human: true, skipped: true });
+  return fetch(base + '/v1/human/challenge').then(function (r) { return r.json(); }).then(function (ch) {
+    var enc = new TextEncoder();
+    function lz(buf){ var b=0; for(var i=0;i<buf.length;i++){ var v=buf[i]; if(v===0){b+=8;continue;} b+=Math.clz32(v)-24; break;} return b; }
+    function solve(n){
+      return crypto.subtle.digest('SHA-256', enc.encode(ch.challenge + n)).then(function(d){
+        if (lz(new Uint8Array(d)) >= ch.difficulty) return String(n);
+        if (n > 5000000) throw new Error('challenge timeout');
+        return solve(n + 1);
+      });
+    }
+    return solve(0).then(function (nonce) {
+      return fetch(base + '/v1/human/verify', { method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ challenge: ch.challenge, nonce: nonce }) }).then(function (r) { return r.json(); });
+    });
+  }).catch(function () { return { human: false }; });
+};

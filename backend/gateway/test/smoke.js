@@ -143,6 +143,21 @@ check('attack-pattern URL refused by Sentinel', res.status === 403);
 res = await fetch(`${BASE}/frontend/admin.html`);
 check('admin cockpit hidden on public deploy by default', res.status === 404);
 
+// in-house human verification (no third-party vendor): PoW challenge roundtrip
+const cryptoH = await import('node:crypto');
+res = await fetch(`${BASE}/v1/human/challenge`);
+const ch = await res.json();
+check('human challenge issued', res.status === 200 && typeof ch.challenge === 'string' && ch.difficulty >= 8);
+let hnonce = 0, solved = null;
+function lz(hex){ let b=0; for(const c of hex){ const v=parseInt(c,16); if(v===0){b+=4;continue;} b+=Math.clz32(v)-28; break;} return b; }
+for (; hnonce < 5_000_000; hnonce++) {
+  if (lz(cryptoH.createHash('sha256').update(ch.challenge + hnonce).digest('hex')) >= ch.difficulty) { solved = String(hnonce); break; }
+}
+res = await fetch(`${BASE}/v1/human/verify`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ challenge: ch.challenge, nonce: solved }) });
+check('valid proof-of-work verified as human', res.status === 200 && (await res.json()).human === true);
+res = await fetch(`${BASE}/v1/human/verify`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ challenge: ch.challenge, nonce: solved }) });
+check('single-use challenge cannot be replayed', res.status === 403);
+
 // payments: unconfigured deployment answers loudly, never silently
 res = await fetch(`${BASE}/v1/payments/checkout`, {
   method: 'POST', headers: { 'content-type': 'application/json' },

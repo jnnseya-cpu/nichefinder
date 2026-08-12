@@ -7,6 +7,7 @@ import { GatewayError } from './errors.js';
 import { route, availableProviders, meterAcu } from './router.js';
 import { getWallet, getLedger, charge, credit, PACKAGES } from './wallet.js';
 import { createCheckout, handleWebhook, paymentsConfigured } from './payments.js';
+import { issueChallenge, verifyChallenge } from './human.js';
 
 const MAX_BODY_BYTES = 2 * 1024 * 1024;
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -205,6 +206,19 @@ const server = http.createServer(async (req, res) => {
         ip, ts: Date.now(),
       }) + '\n');
       return json(res, 200, { received: true });
+    } catch (err) { return handleError(res, err); }
+  }
+
+  // ---- in-house human verification (no third-party vendor) ----
+  if (req.method === 'GET' && url.pathname === '/v1/human/challenge') {
+    return json(res, 200, issueChallenge(ip));
+  }
+  if (req.method === 'POST' && url.pathname === '/v1/human/verify') {
+    try {
+      const body = JSON.parse((await readBody(req)) || '{}');
+      const result = verifyChallenge(ip, body.challenge, body.nonce);
+      if (!result.human) strike(ip, 'human_challenge_failed', result.reason);
+      return json(res, result.human ? 200 : 403, result);
     } catch (err) { return handleError(res, err); }
   }
 
