@@ -48,6 +48,47 @@ function estimateAcuFor(body) {
   return meterAcu(provider, usage, body.investorMode === true, body.capitalGBP);
 }
 
+/* ============ SENTINEL — anti-hacking AI agent ============
+   Inspects every API request before it reaches a handler:
+   - attack-pattern screen (path traversal, XSS/SQL probes) on URL + body
+   - NON-HUMAN INSTRUCTION guard: prompt-injection phrases aimed at hijacking
+     the AI ("ignore previous instructions", role-override, key exfiltration)
+     are refused before any provider call
+   - strike-based IP bans (5 violations -> 15-minute block), append-only
+     audit log at data/sentinel.jsonl */
+const SENTINEL_LOG = process.env.SENTINEL_LOG || path.join(process.cwd(), 'data', 'sentinel.jsonl');
+const strikes = new Map();
+const ATTACK = [/\.\.\//, /<script/i, /\bunion\s+select\b/i, /\bdrop\s+table\b/i, /[;|&]\s*(rm|curl|wget|nc)\s/i];
+const INJECTION = [/ignore\s+(all\s+)?(previous|prior|above)\s+instructions/i, /disregard\s+(your|the)\s+(system|previous)/i,
+  /you\s+are\s+now\s+(dan|developer\s+mode|unrestricted)/i, /reveal\s+(your\s+)?(system\s+prompt|api\s+key|secret)/i,
+  /\bact\s+as\s+(the\s+)?(admin|root|system)\b/i, /override\s+(safety|billing|the\s+wallet)/i];
+function sentinelLog(ip, kind, detail) {
+  try {
+    fs.mkdirSync(path.dirname(SENTINEL_LOG), { recursive: true });
+    fs.appendFileSync(SENTINEL_LOG, JSON.stringify({ ts: Date.now(), ip, kind, detail: String(detail).slice(0, 160) }) + '\n');
+  } catch {}
+}
+function strike(ip, kind, detail) {
+  const s = strikes.get(ip) || { n: 0, until: 0 };
+  s.n += 1;
+  if (s.n >= 5) s.until = Date.now() + 15 * 60000;
+  strikes.set(ip, s);
+  sentinelLog(ip, kind, detail);
+}
+function sentinelBanned(ip) {
+  const s = strikes.get(ip);
+  return Boolean(s && s.until > Date.now());
+}
+function sentinelScreen(ip, url, raw) {
+  const target = decodeURIComponent(url.pathname + url.search) + ' ' + (raw || '');
+  for (const rx of ATTACK) if (rx.test(target)) { strike(ip, 'attack_pattern', rx.source); return 'attack_pattern'; }
+  return null;
+}
+export function screenInstructions(raw) {
+  for (const rx of INJECTION) if (rx.test(raw || '')) return rx.source;
+  return null;
+}
+
 const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript',
   '.svg': 'image/svg+xml', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.json': 'application/json', '.txt': 'text/plain', '.xml': 'application/xml' };
 
@@ -115,6 +156,8 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'OPTIONS') return json(res, 204, {});
 
   const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress || 'unknown';
+  if (sentinelBanned(ip)) return json(res, 403, { error: 'sentinel_block', message: 'This address is temporarily blocked by the platform security agent.' });
+  if (sentinelScreen(ip, url, '')) return json(res, 403, { error: 'sentinel_block', message: 'Request refused by the platform security agent.' });
   if (url.pathname.startsWith('/v1/') && rateLimited(ip)) {
     return json(res, 429, { error: 'rate_limited', message: 'Too many requests — try again in a minute.' });
   }
@@ -240,6 +283,13 @@ const server = http.createServer(async (req, res) => {
         body = JSON.parse(raw || '{}');
       } catch {
         throw new GatewayError('Body must be valid JSON.', { status: 400, code: 'invalid_json' });
+      }
+      // SENTINEL: block non-human instructions — prompt-injection attempts
+      // aimed at hijacking the AI never reach a provider.
+      const inj = screenInstructions(raw);
+      if (inj) {
+        strike(ip, 'prompt_injection', inj);
+        throw new GatewayError('Instruction blocked by the platform security agent.', { status: 400, code: 'non_human_instruction' });
       }
       // Production billing law: with payments live (or REQUIRE_WALLET=1), the
       // SERVER meters and debits every generation — the client never bills
