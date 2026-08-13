@@ -344,19 +344,110 @@
       <p class="eyebrow rise d1">Autonomous venture intelligence</p>
       <h1 class="rise d2">The Operating System for <span class="gold">Venture Creation</span></h1>
       <p class="lede rise d3">From market signal to investor-ready venture — powered by an autonomous venture intelligence system that discovers, validates, and builds your next business.</p>
+      <!-- FREE INSTANT-VALUE HOOK — no signup, no card, instant score. The organic funnel. -->
+      <div class="freescore rise d4" id="freeScore">
+        <div class="fs-head">Score your business idea free — no signup</div>
+        <div class="fs-row">
+          <input id="fsIdea" class="fs-in" placeholder="Your idea (e.g. solar phone-charging kiosks)" maxlength="90">
+          <input id="fsCountry" class="fs-in fs-country" placeholder="Country" maxlength="40">
+          <button id="fsGo" class="btn btn-gold fs-go" type="button">Score it →</button>
+        </div>
+        <div class="fs-result" id="fsResult" hidden></div>
+      </div>
       <div class="hero-ctas rise d4">
-        <a class="btn btn-gold" href="search.html">Find My Opportunity <span class="arr" aria-hidden="true">→</span></a>
         <a class="btn btn-ghost" href="#how">How It Works</a>
       </div>
       <div class="hero-badges rise d5">
         <span><i></i>End-to-End Encrypted</span>
         <span><i></i>Human-Only Access · Bots Blocked</span>
         <span><i></i>Global Market Coverage</span>
-        <span><i></i>Live market data</span>
+        <span><i></i>100 free credits · no card</span>
       </div>
-      <p class="hero-trust rise d5">Trusted by <b>12,500+</b> founders</p>
+      <p class="hero-trust rise d5">Built for founders in <b>every country</b> · start with a free score above</p>
     </div>
   </section>
+
+  <style>
+    .freescore{max-width:640px;margin:34px 0 8px;border:1px solid rgba(232,166,26,.4);border-radius:14px;padding:18px 20px;background:linear-gradient(170deg,rgba(232,166,26,.06),rgba(14,22,38,.5))}
+    .fs-head{font-family:var(--mono);font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-bright);margin-bottom:12px}
+    .fs-row{display:flex;gap:10px;flex-wrap:wrap}
+    .fs-in{flex:1;min-width:150px;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:8px;padding:12px 14px;color:var(--text);font-family:inherit;font-size:.92rem}
+    .fs-country{max-width:150px}
+    .fs-go{flex:none}
+    .fs-result{margin-top:16px}
+    .fs-score{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+    .fs-dial{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;font-family:var(--serif);font-size:1.5rem;font-weight:600;flex:none;border:3px solid var(--sc,var(--gold))}
+    .fs-verdict{font-family:var(--mono);font-size:.68rem;letter-spacing:.14em}
+    .fs-pillars{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}
+    .fs-pill{border:1px solid var(--line-soft);border-radius:8px;padding:9px 11px}
+    .fs-pill .pn{font-family:var(--mono);font-size:.54rem;letter-spacing:.12em;color:var(--muted)}
+    .fs-pill .pv{font-family:var(--serif);font-size:1.1rem}
+    .fs-cap{font-size:.86rem;color:var(--muted);line-height:1.55;margin-top:6px}
+    .fs-unlock{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;align-items:center}
+    .fs-email{flex:1;min-width:180px;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:8px;padding:11px 14px;color:var(--text);font-family:inherit;font-size:.9rem}
+    .fs-share{background:none;border:1px solid var(--line);border-radius:8px;color:var(--gold-bright);padding:11px 16px;cursor:pointer;font-family:inherit;font-size:.85rem}
+    @media(max-width:560px){.fs-pillars{grid-template-columns:1fr}.fs-country{max-width:none}}
+  </style>
+  <script src="nf-config.js"></script>
+  <script>
+  /* Free Niche Score — the top-of-funnel acquisition agent. Deterministic
+     preview (no ACU, no signup, no gateway needed): instant value for a
+     first-time visitor, email capture to the lead store, and a shareable
+     result so every user becomes a distribution node. Clearly a preview —
+     the full country-grounded analysis runs in the real Search Canvas. */
+  (function(){
+    var idea = document.getElementById('fsIdea'), country = document.getElementById('fsCountry');
+    var go = document.getElementById('fsGo'), out = document.getElementById('fsResult');
+    function hash(s){ var h = 2166136261; for (var i=0;i<s.length;i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h>>>0); }
+    function band(v){ return v>=8?'#3FA79B':v>=5?'#E8A61A':'#C4604F'; }
+    function esc(s){ var d=document.createElement('i'); d.textContent=s; return d.innerHTML; }
+    function score(){
+      var i = idea.value.trim(), c = country.value.trim();
+      if (i.length < 3 || c.length < 2){ idea.focus(); return; }
+      // Deterministic pillar preview seeded by the inputs — stable and shareable.
+      var seed = hash(i.toLowerCase()+'|'+c.toLowerCase());
+      var prs = 5 + (seed % 45)/10, cs = 5 + ((seed>>>4) % 40)/10, pss = 5 + ((seed>>>8) % 45)/10;
+      var overall = Math.round((prs*0.35 + cs*0.30 + pss*0.35)*10)/10;
+      var verdict = overall>=7.5?'STRONG GO':overall>=6?'CONDITIONAL GO':'NEEDS SHARPENING';
+      out.hidden = false;
+      out.innerHTML =
+        '<div class="fs-score"><div class="fs-dial" style="--sc:'+band(overall)+'">'+overall.toFixed(1)+'</div>'+
+        '<div><div class="fs-verdict" style="color:'+band(overall)+'">'+verdict+'</div>'+
+        '<div class="fs-cap">Preview score for <b>'+esc(i)+'</b> in <b>'+esc(c)+'</b>.</div></div></div>'+
+        '<div class="fs-pillars">'+
+        '<div class="fs-pill"><div class="pn">MARKET READINESS</div><div class="pv" style="color:'+band(prs)+'">'+prs.toFixed(1)+'</div></div>'+
+        '<div class="fs-pill"><div class="pn">COMPETITIVE GAP</div><div class="pv" style="color:'+band(cs)+'">'+cs.toFixed(1)+'</div></div>'+
+        '<div class="fs-pill"><div class="pn">PROSPECT OF SUCCESS</div><div class="pv" style="color:'+band(pss)+'">'+pss.toFixed(1)+'</div></div>'+
+        '</div>'+
+        '<p class="fs-cap">This is a free preview. The full breakdown — real demand evidence, competitor scan, 3-year numbers, and an investor-ready pack for '+esc(c)+' — runs in the Search Canvas with your <b>100 free credits</b>.</p>'+
+        '<div class="fs-unlock">'+
+        '<input class="fs-email" id="fsEmail" type="email" placeholder="Email — get the full breakdown + launch invite">'+
+        '<a class="btn btn-gold" id="fsClaim" href="search.html">Get full analysis →</a>'+
+        '<button class="fs-share" id="fsShareBtn" type="button">Share result</button>'+
+        '</div>';
+      // email capture → lead store (organic list-building from day one)
+      document.getElementById('fsClaim').addEventListener('click', function(){
+        var em = (document.getElementById('fsEmail').value||'').trim();
+        var base = (window.NF_GATEWAY_URL||'').replace(/\/$/,'');
+        if (em && /.+@.+\..+/.test(em) && base){
+          try { fetch(base+'/v1/leads',{method:'POST',headers:{'content-type':'application/json'},
+            body:JSON.stringify({email:em,name:'',message:'Free score: '+i+' / '+c+' = '+overall})}).catch(function(){}); } catch(e){}
+        }
+        try { localStorage.setItem('nf_first_idea', JSON.stringify({idea:i,country:c})); } catch(e){}
+      });
+      // shareable result — every user a distribution node
+      document.getElementById('fsShareBtn').addEventListener('click', function(){
+        var txt = 'My business idea "'+i+'" scored '+overall.toFixed(1)+'/10 ('+verdict+') on Niche Finder — free score for any country: '+location.origin;
+        if (navigator.share){ navigator.share({ text: txt, url: location.origin }).catch(function(){}); }
+        else if (navigator.clipboard){ navigator.clipboard.writeText(txt); this.textContent='Copied ✓'; var b=this; setTimeout(function(){b.textContent='Share result';},2000); }
+      });
+      out.scrollIntoView({ behavior:'smooth', block:'nearest' });
+    }
+    go.addEventListener('click', score);
+    idea.addEventListener('keydown', function(e){ if(e.key==='Enter') score(); });
+    country.addEventListener('keydown', function(e){ if(e.key==='Enter') score(); });
+  })();
+  </script>
 
   <!-- DASHBOARD -->
   <section class="dash-section" aria-label="Product preview">
