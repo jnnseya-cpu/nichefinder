@@ -27,64 +27,57 @@
   <div class="wrap">
     <span class="kicker">Platform · Blog</span>
     <h1 class="page-title">Field notes on venture selection.</h1>
-    <p class="lede">Short, practical essays on finding real opportunities, reading markets, and building with less than £10k. Publishing begins at launch.</p>
+    <p class="lede">Field guides to every part of the venture operating system — how to discover, validate, and build a fundable business under £10k. Start with the <a href="index.html#top" style="color:var(--gold-bright)">free niche score</a>.</p>
 
     <div class="page-body" style="max-width:none">
       <section id="livePosts" hidden>
-        <h2 style="font-family:var(--serif);font-weight:400;font-size:1.45rem;margin-bottom:4px">Latest articles</h2>
-        <p style="font-size:.85rem;color:var(--muted);margin-bottom:16px">Published from the platform's SEO content pipeline.</p>
+        <h2 style="font-family:var(--serif);font-weight:400;font-size:1.45rem;margin-bottom:4px">Fresh from the Content Agent</h2>
+        <p style="font-size:.85rem;color:var(--muted);margin-bottom:16px">Auto-published by the SEO pipeline.</p>
         <div class="card-grid" id="livePostGrid"></div>
       </section>
 
-      <h2 style="font-family:var(--serif);font-weight:400;font-size:1.45rem;margin:26px 0 16px">In production</h2>
-      <div class="card-grid">
-        <div class="card">
-          <div class="k">COMING SOON · METHODOLOGY</div>
-          <b>Why we score with three pillars, not one number</b>
-          <p>Market Readiness, Competitive Gap, and Prospect of Success measure different failure modes. Collapsing them too early hides the reason a venture dies.</p>
-        </div>
-        <div class="card">
-          <div class="k">COMING SOON · PLAYBOOK</div>
-          <b>The £10k ceiling is a feature</b>
-          <p>Capital constraints force wedge thinking: one depot, one corridor, one paying customer segment — then replication.</p>
-        </div>
-        <div class="card">
-          <div class="k">COMING SOON · MARKETS</div>
-          <b>Reading demand signals in frontier markets</b>
-          <p>Post-harvest loss rates, mobile-money penetration, grid reliability — the proxies that predict whether a niche is real.</p>
-        </div>
-        <div class="card">
-          <div class="k">COMING SOON · BREAKTHROUGH</div>
-          <b>What makes an opportunity a breakthrough</b>
-          <p>Breakthrough Potential is not novelty for its own sake — it's unmet demand meeting a structural timing advantage.</p>
-        </div>
-      </div>
-      <div class="note" style="margin-top:26px">Want these in your inbox when they ship? <a href="contact.html">Leave your email on the contact page</a>.</div>
+      <h2 style="font-family:var(--serif);font-weight:400;font-size:1.45rem;margin:8px 0 16px">Feature guides</h2>
+      <div class="card-grid" id="featureGrid"></div>
+
+      <div class="note" style="margin-top:26px">Every guide links straight into the tool it describes. Ready? <a href="search.html">Run your first search</a> with 100 free credits.</div>
     </div>
   </div>
 </main>
 
+<script src="nf-articles.js"></script>
 <script>
-/* Live publishing loop: posts published in the Super Admin OS (Platform Ops → Blog
-   or the SEO War Room) appear here immediately. */
+/* Public feature-article catalogue (nf-articles.js) — visible to every visitor,
+   no localStorage needed — plus any admin/autopilot posts layered on top. */
 (function(){
+  var NFA = window.NF_ARTICLES || { list: [] };
+  var fg = document.getElementById('featureGrid');
+  NFA.list.forEach(function(a){
+    var card = document.createElement('article');
+    card.className = 'card';
+    var link = 'article.html?s=' + encodeURIComponent(a.slug);
+    card.innerHTML = '<div class="k">' + a.cat + '</div>' +
+      '<b><a href="' + link + '" style="color:inherit;text-decoration:none"></a></b>' +
+      '<p></p><a class="read" href="' + link + '" style="font-size:.82rem;color:var(--gold-bright)">Read the guide →</a>';
+    card.querySelector('b a').textContent = a.title;
+    card.querySelector('p').textContent = a.lead;
+    fg.appendChild(card);
+  });
+
   var posts;
   try { posts = JSON.parse(localStorage.getItem('nf_admin_posts')) || []; } catch (e) { posts = []; }
   var live = posts.filter(function(p){ return p.status === 'published'; });
   if (!live.length) return;
   var grid = document.getElementById('livePostGrid');
-  live.forEach(function(p, i){
+  live.forEach(function(p){
     var slug = p.slug || (p.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
     var card = document.createElement('article');
     card.className = 'card';
+    var link = 'article.html?s=' + encodeURIComponent(slug);
     card.innerHTML = '<div class="k">PUBLISHED · SEO PIPELINE</div>' +
-      '<b><a style="color:inherit;text-decoration:none"></a></b>' +
+      '<b><a href="' + link + '" style="color:inherit;text-decoration:none"></a></b>' +
       '<p>Field-tested venture intelligence — interlinked, cited, and schema-tagged by the Content Agent.</p>' +
-      '<a class="read" style="font-size:.82rem;color:var(--gold-bright)">Read the article →</a>';
-    var title = card.querySelector('b a');
-    title.textContent = p.title;
-    title.href = 'article.html?s=' + encodeURIComponent(slug);
-    card.querySelector('a.read').href = 'article.html?s=' + encodeURIComponent(slug);
+      '<a class="read" href="' + link + '" style="font-size:.82rem;color:var(--gold-bright)">Read the article →</a>';
+    card.querySelector('b a').textContent = p.title;
     grid.appendChild(card);
   });
   document.getElementById('livePosts').hidden = false;

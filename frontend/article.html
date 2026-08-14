@@ -54,6 +54,7 @@
   </div>
 </main>
 
+<script src="nf-articles.js"></script>
 <script>
 /* ============================================================
    SEO article engine.
@@ -65,109 +66,103 @@
    - JSON-LD Article schema + canonical + meta description set at render.
    ============================================================ */
 (function(){
-  var posts;
-  try { posts = JSON.parse(localStorage.getItem('nf_admin_posts')) || []; } catch (e) { posts = []; }
-  var live = posts.filter(function(p){ return p.status === 'published'; });
+  var NFA = window.NF_ARTICLES || { list: [], LINKS: [], EXT: [], bySlug: function(){ return null; }, autolink: function(p){ return p; } };
+  var EXT = NFA.EXT;
   var slug = new URLSearchParams(location.search).get('s');
-  var post = live.filter(function(p){ return (p.slug || '') === slug; })[0] || live[0];
-  if (!post){
-    document.getElementById('artTitle').textContent = 'No published articles yet.';
-    document.getElementById('artBody').innerHTML = '<p>Articles published from the platform appear here. Visit the <a href="blog.html">blog index</a>.</p>';
-    return;
-  }
-  if (!post.slug) post.slug = (post.title || 'article').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
 
-  /* Internal link map — the SEO mesh into the product. First hit per phrase links. */
-  var LINKS = [
-    [/business niche|profitable niche|niche opportunit\w+/i, 'search.html'],
-    [/market validation|validat\w+ (?:your|the) (?:idea|market)/i, 'how-it-works.html'],
-    [/deterministic scoring|confidence score|three pillars?/i, 'how-it-works.html'],
-    [/financial model\w*|3-year forecast|cashflow/i, 'how-it-works.html'],
-    [/pitch deck|business plan/i, 'how-it-works.html'],
-    [/ACU|credits/, 'how-it-works.html'],
-    [/frontier markets?|emerging markets?/i, 'government.html'],
-    [/investor[- ]ready/i, 'about.html'],
-  ];
-  var EXT = [
-    ['CB Insights research on startup failure', 'https://www.cbinsights.com/research/report/startup-failure-reasons-top/'],
-    ['World Bank enterprise data', 'https://www.worldbank.org/en/programs/enterprise-surveys'],
-  ];
+  // 1) public feature-article catalogue (every visitor sees these)
+  var feature = slug ? NFA.bySlug(slug) : NFA.list[0];
+  // 2) admin/autopilot posts layered on top (this browser only)
+  var posts; try { posts = JSON.parse(localStorage.getItem('nf_admin_posts')) || []; } catch (e) { posts = []; }
+  var adminPost = posts.filter(function(p){ return p.status === 'published' && (p.slug || '') === slug; })[0];
 
   function esc(s){ var d = document.createElement('i'); d.textContent = s; return d.innerHTML; }
-  var linked = {};
-  function autolink(par){
-    var html = esc(par);
-    LINKS.forEach(function(m, i){
-      if (linked[i]) return;
-      var match = html.match(m[0]);
-      if (match){
-        linked[i] = true;
-        html = html.replace(match[0], '<a href="' + m[1] + '">' + match[0] + '</a>');
-      }
-    });
-    return html;
+  var bodyEl = document.getElementById('artBody');
+  var title, metaDesc, sections, isFeature = !!feature && (!slug || feature.slug === slug);
+
+  if (isFeature){
+    title = feature.title;
+    metaDesc = feature.meta;
+    sections = [['', feature.lead]].concat(feature.s);
+  } else if (adminPost){
+    title = adminPost.title;
+    metaDesc = title;
+    sections = [['Why this matters', title + ' — here is how the Niche Finder operating system turns it into a real, fundable venture, and why founders are choosing evidence over guesswork.'],
+      ['Start from evidence', 'Every serious operator begins with market validation and a deterministic scoring pass before spending a penny. CBI_LINK shows most startups die from no market need.'],
+      ['Build the pack', 'A 3-year financial model, business plan, and pitch deck turn a validated idea into something capital can say yes to — all from one evidence base.'],
+      ['Do it this week', 'Run the free niche score, then one real search with your welcome credits. WB_LINK confirms small, cash-flowing entrants outlast funded generalists.']];
+  } else {
+    // no slug match: show the catalogue index
+    title = 'Niche Finder — the operating system for venture creation';
+    metaDesc = 'Feature guides for discovering, validating, and building your next business.';
+    sections = [['', 'Browse our field guides on every part of the venture operating system.']];
+    NFA.list.forEach(function(a){ sections.push(['→ ' + a.title, a.lead]); });
   }
 
-  var t = post.title;
-  var SECTIONS = [
-    ['The problem this solves',
-     t + ' is not an abstract question — it decides whether the next twelve months of your life produce a business or an expensive lesson. Research from ' +
-     'CBI_LINK shows the single biggest killer of new ventures is building for a market that never needed them. The fix is not more ideas; it is better selection: a profitable niche identified from real demand signals, scored before a penny is spent.'],
-    ['Start from evidence, not enthusiasm',
-     'Every serious operator begins with market validation. That means demand evidence, competitor density, cost structures, and timing for one specific market — not a global average. The three pillars we score — market readiness, competitive gap, and prospect of success — exist because each one measures a different way ventures die. A confidence score you can interrogate beats a hunch you cannot.'],
-    ['Constraints are the strategy',
-     'Working within a capped budget forces wedge thinking: one corridor, one depot, one paying segment. The most durable low-capital businesses replicate a proven unit instead of raising to guess. WB_LINK confirms the pattern across emerging markets: small, cash-flowing entrants outlast funded generalists in volatile conditions.'],
-    ['From score to fundable',
-     'Selection is half the work; packaging is the other half. A 3-year forecast, a structured cashflow view, a business plan, and an investor-ready pitch deck turn a validated idea into something capital can say yes to. Generate them from the same evidence base as the score, and the numbers in the deck survive due diligence.'],
-    ['Do it this week',
-     'Pick your country. Set your budget. Run one discovery pass and shortlist three niche opportunities with green pillars. Validate the strongest, model it, and put the package in front of one real investor or one real customer. Momentum is a feature — the ACU credits model means you pay only for the steps you actually take.'],
-  ];
-
-  document.title = 'Niche Finder — ' + t;
-  document.querySelector('meta[name="description"]').setAttribute('content', SECTIONS[0][1].replace('CBI_LINK', 'CB Insights').slice(0, 155));
-  document.getElementById('artTitle').textContent = t;
-  document.getElementById('artMeta').textContent =
-    (post.auto ? 'SEO AUTOPILOT · ' : '') + 'PUBLISHED ' + new Date(post.ts || Date.now()).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) + ' · NICHE FINDER CONTENT AGENT';
-
-  var bodyEl = document.getElementById('artBody');
-  SECTIONS.forEach(function(sec){
-    var h = document.createElement('h2'); h.textContent = sec[0];
-    var p = document.createElement('p');
-    p.innerHTML = autolink(sec[1])
+  var state = { used: {} };
+  function render(par){
+    return NFA.autolink(par, state)
       .replace('CBI_LINK', '<a class="ext" href="' + EXT[0][1] + '" rel="noopener nofollow" target="_blank">' + EXT[0][0] + '</a>')
       .replace('WB_LINK', '<a class="ext" href="' + EXT[1][1] + '" rel="noopener nofollow" target="_blank">' + EXT[1][0] + '</a>');
-    bodyEl.appendChild(h); bodyEl.appendChild(p);
+  }
+
+  document.title = 'Niche Finder — ' + title;
+  var md = document.querySelector('meta[name="description"]'); if (md) md.setAttribute('content', metaDesc.slice(0, 155));
+  document.getElementById('artTitle').textContent = title;
+  document.getElementById('artMeta').textContent = (isFeature ? 'FEATURE GUIDE' : (adminPost && adminPost.auto ? 'SEO AUTOPILOT' : 'GUIDE')) +
+    ' · NICHE FINDER · ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  sections.forEach(function(sec){
+    if (sec[0]){ var h = document.createElement('h2'); h.textContent = sec[0]; bodyEl.appendChild(h); }
+    var p = document.createElement('p'); p.innerHTML = render(sec[1]); bodyEl.appendChild(p);
   });
 
-  /* Cross-article backlink mesh: every published article links every other. */
-  var others = live.filter(function(p){ return p !== post; });
+  // Guaranteed high link density: every guide ends with an explicit tool map
+  // (deep internal links) + external sources — regardless of body phrasing.
+  if (isFeature || adminPost){
+    var tools = document.createElement('p');
+    tools.innerHTML = '<b>Explore the tools in this guide:</b> ' +
+      '<a href="index.html#top">free niche score</a> · ' +
+      '<a href="search.html">Search Canvas</a> · ' +
+      '<a href="project.html">Deep-Dive Build Hub</a> · ' +
+      '<a href="growth.html">AI Growth Engine</a> · ' +
+      '<a href="how-it-works.html">how the scoring works</a> · ' +
+      '<a href="dashboard.html">Command Center</a>.';
+    bodyEl.appendChild(tools);
+    var src = document.createElement('p');
+    src.style.fontSize = '.82rem'; src.style.color = 'var(--muted)';
+    src.innerHTML = '<b>Sources:</b> ' +
+      '<a class="ext" href="' + EXT[0][1] + '" rel="noopener nofollow" target="_blank">' + EXT[0][0] + '</a> · ' +
+      '<a class="ext" href="' + EXT[1][1] + '" rel="noopener nofollow" target="_blank">' + EXT[1][0] + '</a>.';
+    bodyEl.appendChild(src);
+  }
+
+  // Cross-article backlink mesh — every article links a rotating set of others.
+  var others = NFA.list.filter(function(a){ return !feature || a.slug !== feature.slug; });
   if (others.length){
     document.getElementById('related').hidden = false;
     var list = document.getElementById('relatedList');
-    others.slice(0, 6).forEach(function(p){
-      var s = p.slug || (p.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 60);
-      var a = document.createElement('a');
-      a.href = 'article.html?s=' + encodeURIComponent(s);
-      a.textContent = '→ ' + p.title;
-      list.appendChild(a);
-    });
+    var start = feature ? NFA.list.indexOf(feature) : 0;
+    for (var k = 1; k <= 6 && k < NFA.list.length; k++){
+      var a = NFA.list[(start + k) % NFA.list.length];
+      var link = document.createElement('a');
+      link.href = 'article.html?s=' + encodeURIComponent(a.slug);
+      link.textContent = '→ ' + a.title;
+      list.appendChild(link);
+    }
   }
 
-  /* Structured data + canonical for search engines. */
+  // Structured data + canonical
+  var canonSlug = feature ? feature.slug : (slug || 'index');
   var ld = document.createElement('script');
   ld.type = 'application/ld+json';
-  ld.textContent = JSON.stringify({
-    '@context': 'https://schema.org', '@type': 'Article',
-    headline: t,
-    datePublished: new Date(post.ts || Date.now()).toISOString(),
-    author: { '@type': 'Organization', name: 'Niche Finder' },
+  ld.textContent = JSON.stringify({ '@context': 'https://schema.org', '@type': 'Article', headline: title,
+    description: metaDesc, author: { '@type': 'Organization', name: 'Niche Finder' },
     publisher: { '@type': 'Organization', name: 'Niche Finder Ltd' },
-    mainEntityOfPage: location.origin + '/frontend/article.html?s=' + encodeURIComponent(post.slug),
-  });
+    mainEntityOfPage: location.origin + '/frontend/article.html?s=' + encodeURIComponent(canonSlug) });
   document.head.appendChild(ld);
-  var canon = document.createElement('link');
-  canon.rel = 'canonical';
-  canon.href = location.origin + '/frontend/article.html?s=' + encodeURIComponent(post.slug);
+  var canon = document.createElement('link'); canon.rel = 'canonical';
+  canon.href = location.origin + '/frontend/article.html?s=' + encodeURIComponent(canonSlug);
   document.head.appendChild(canon);
 })();
 </script>
