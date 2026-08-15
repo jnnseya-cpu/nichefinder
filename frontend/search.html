@@ -797,6 +797,9 @@
         messages: [{ role: 'user', content: 'Generate exactly 3 distinct, hyper-specific niche venture opportunities for these constraints. Every financial figure must be derived from explicit reasoning about this specific market:\n' + JSON.stringify(cfg, null, 2) }],
         jsonSchema: NICHE_SCHEMA,
         effort: 'xhigh',
+        // Wallet capability id: the server meters and debits this wallet. Without
+        // it, billing rejects the request with 403 before any provider is called.
+        user: window.NF_WALLET_USER,
         investorMode: cfg.investorMode,
         capitalGBP: cfg.maxInvestmentUsd
       })
