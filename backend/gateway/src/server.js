@@ -189,6 +189,20 @@ const server = http.createServer(async (req, res) => {
     return json(res, 429, { error: 'rate_limited', message: 'Too many requests — try again in a minute.' });
   }
 
+  // Serve nf-config.js with the live gateway origin injected from PUBLIC_ORIGIN.
+  // The committed file stays offline-safe (NF_GATEWAY_URL = ''), so the deployed
+  // box needs NO local edit — git pulls never conflict, which makes clean
+  // automatic deployment possible. Falls back to the file as-is if unset.
+  if (method === 'GET' && (url.pathname === '/nf-config.js' || url.pathname === '/frontend/nf-config.js')) {
+    try {
+      let src = fs.readFileSync(path.join(REPO_ROOT, 'frontend', 'nf-config.js'), 'utf8');
+      const origin = (process.env.PUBLIC_ORIGIN || '').replace(/\/$/, '');
+      if (origin) src = src.replace(/window\.NF_GATEWAY_URL\s*=\s*['"][^'"]*['"];/, `window.NF_GATEWAY_URL = '${origin}';`);
+      res.writeHead(200, { 'content-type': 'text/javascript', 'cache-control': 'no-cache' });
+      return res.end(src);
+    } catch { /* fall through to normal static handling / 404 */ }
+  }
+
   if (method === 'GET' && !url.pathname.startsWith('/v1/')) return serveStatic(req, res, url);
 
   if (method === 'GET' && url.pathname === '/v1/health') {

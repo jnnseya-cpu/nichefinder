@@ -1,0 +1,10 @@
+[Unit]
+Description=Niche Finder auto-deploy (poll GitHub, test-gate, restart)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/nichefinder/scripts/vps-autodeploy.sh
+# Give npm ci + tests room; a hung deploy should not run forever.
+TimeoutStartSec=600

@@ -167,3 +167,39 @@ to your VPS API origin (`https://app.yourdomain.com`). The gateway already sends
 permissive CORS headers, so cross-origin calls work. This adds a second thing to
 manage; serving the frontend from the VPS (default above) is simpler and needs
 no extra step.
+
+---
+
+## Automatic deployment (self-hosted, no new vendor)
+
+A systemd timer on the VPS polls the deploy branch every ~2 minutes; on a new
+commit it fast-forwards, installs deps only if the lockfile changed, runs the
+full test suite, and restarts the gateway **only if tests pass** (a failed build
+keeps the current version live). No GitHub secrets, no inbound ports, no external
+CI. The gateway injects `PUBLIC_ORIGIN` into `nf-config.js` at serve time, so the
+committed file is never edited on the box and pulls never conflict.
+
+**One-time setup on the VPS:**
+```bash
+# 1. Ensure PUBLIC_ORIGIN is set in /etc/nichefinder.env (e.g. https://nichefinderhq.com)
+#    and remove any manual edit to the tracked config so pulls stay clean:
+cd /opt/nichefinder
+sudo git checkout -- frontend/nf-config.js
+sudo git pull origin claude/niche-finder-overview-mj1rmw   # get the auto-deploy scripts
+
+# 2. Install the systemd units and enable the timer:
+sudo cp scripts/nf-deploy.service /etc/systemd/system/
+sudo cp scripts/nf-deploy.timer   /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now nf-deploy.timer
+```
+
+**Watch / manage it:**
+```bash
+systemctl status nf-deploy.timer          # next scheduled run
+sudo systemctl start nf-deploy.service     # deploy right now (don't wait for the timer)
+journalctl -u nf-deploy.service -f         # live deploy log
+cat /var/log/nf-deploy-test.log            # test output from the last deploy
+```
+From now on, every push to the deploy branch goes live automatically within a
+couple of minutes — only if it's green.

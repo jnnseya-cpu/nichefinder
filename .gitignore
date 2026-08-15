@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Runtime data stores — money/account system of record, NEVER commit these
+backend/gateway/data/
+*.wallets.json
+*.auth.json
+
+# Secrets — belong in /etc/nichefinder.env on the host, never in the repo
+.env
+*.env
+!.env.example
+
+# Logs & OS cruft
+*.log
+.DS_Store

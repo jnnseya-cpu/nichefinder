@@ -1,0 +1,11 @@
+[Unit]
+Description=Poll for Niche Finder deploys every ~2 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=2min
+# Don't stack runs if one deploy is still going.
+AccuracySec=15s
+
+[Install]
+WantedBy=timers.target
