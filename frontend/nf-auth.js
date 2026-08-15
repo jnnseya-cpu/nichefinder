@@ -54,5 +54,83 @@
     document.querySelectorAll('[data-auth-logout]').forEach(function (b) {
       b.addEventListener('click', function (e) { e.preventDefault(); NS.logout(); location.href = 'account.html'; });
     });
+    injectAccountMenu();
   });
+
+  /* A consistent account menu on every page that loads this script — so every
+     user AND the admin always have a visible way into their account. Mounts into
+     the site header when present, otherwise pins to the top-right. Suppressed on
+     the auth pages themselves (sign-in / reset) where it would be redundant. */
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function injectAccountMenu() {
+    if (document.getElementById('nf-acct-menu')) return;
+    if (/account\.html|reset\.html/.test(location.pathname)) return;
+    if (document.querySelector('[data-auth-nomenu]')) return; // opt-out hook
+
+    if (!document.getElementById('nf-acct-style')) {
+      var st = document.createElement('style');
+      st.id = 'nf-acct-style';
+      st.textContent = '#nf-acct-drop a:hover{background:rgba(232,166,26,.12)}#nf-acct-btn:hover{border-color:rgba(232,166,26,.5)}';
+      document.head.appendChild(st);
+    }
+
+    var base = (window.NF_GATEWAY_URL || '').replace(/\/$/, '');
+    var host = document.querySelector('header.site .wrap') || document.querySelector('header .wrap');
+    var wrap = document.createElement('div');
+    wrap.id = 'nf-acct-menu';
+    wrap.style.cssText = 'display:inline-flex;align-items:center;font-family:inherit;z-index:1200;' +
+      (host ? 'position:relative;margin-left:14px' : 'position:fixed;top:12px;right:16px');
+
+    function item(label, href) {
+      return '<a href="' + href + '" role="menuitem" style="display:block;padding:9px 12px;border-radius:8px;color:var(--text,#E8ECF4);text-decoration:none;font-size:.82rem">' + label + '</a>';
+    }
+
+    if (!NS.isLoggedIn()) {
+      wrap.innerHTML = '<a href="account.html" style="display:inline-flex;align-items:center;padding:7px 15px;border:1px solid var(--line,rgba(255,255,255,.18));border-radius:99px;color:var(--text,#E8ECF4);text-decoration:none;font-size:.8rem">Sign in</a>';
+      if (host) host.appendChild(wrap); else document.body.appendChild(wrap);
+      return;
+    }
+
+    var name = (acct && (acct.name || acct.email)) || 'Account';
+    var email = (acct && acct.email) || '';
+    var isAdmin = acct && acct.role === 'admin';
+    var av = 'width:30px;height:30px;border-radius:50%;background:var(--gold,#E8A61A);color:#0b0f18;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;overflow:hidden;background-size:cover;background-position:center;flex:0 0 auto;';
+    var avInner = (name || '?').trim().charAt(0).toUpperCase();
+    if (acct && acct.avatar) { av += "background-image:url('" + base + '/v1/media?f=' + encodeURIComponent(acct.avatar) + "');"; avInner = ''; }
+
+    wrap.innerHTML =
+      '<button id="nf-acct-btn" aria-haspopup="true" aria-expanded="false" style="display:inline-flex;align-items:center;gap:9px;background:var(--panel-2,rgba(255,255,255,.05));border:1px solid var(--line,rgba(255,255,255,.16));border-radius:99px;padding:4px 12px 4px 4px;cursor:pointer;color:var(--text,#E8ECF4);font-family:inherit;font-size:.82rem">' +
+        '<span style="' + av + '">' + avInner + '</span>' +
+        '<span style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(name) + '</span>' +
+        '<span style="opacity:.6;font-size:.7rem">▾</span>' +
+      '</button>' +
+      '<div id="nf-acct-drop" role="menu" style="display:none;position:absolute;top:calc(100% + 8px);right:0;min-width:210px;background:var(--panel,#0E1626);border:1px solid var(--line,rgba(255,255,255,.16));border-radius:12px;padding:6px;box-shadow:0 14px 44px rgba(0,0,0,.45)">' +
+        '<div style="padding:8px 12px 6px">' +
+          '<div style="font-size:.82rem;font-weight:600;color:var(--text,#E8ECF4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(name) + '</div>' +
+          '<div style="font-size:.66rem;letter-spacing:.04em;color:var(--muted,#8B93A5);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(email) + (isAdmin ? ' · ADMIN' : '') + '</div>' +
+        '</div>' +
+        '<div style="height:1px;background:var(--line,rgba(255,255,255,.1));margin:4px 0"></div>' +
+        item('My Account', 'settings.html') +
+        item('Command Center', 'dashboard.html') +
+        (isAdmin ? item('Admin Console', 'admin-console.html') : '') +
+        '<div style="height:1px;background:var(--line,rgba(255,255,255,.1));margin:4px 0"></div>' +
+        '<a href="#" id="nf-acct-out" role="menuitem" style="display:block;padding:9px 12px;border-radius:8px;color:#E0806F;text-decoration:none;font-size:.82rem">Sign out</a>' +
+      '</div>';
+    if (host) host.appendChild(wrap); else document.body.appendChild(wrap);
+
+    var btn = wrap.querySelector('#nf-acct-btn');
+    var drop = wrap.querySelector('#nf-acct-drop');
+    function close() { drop.style.display = 'none'; btn.setAttribute('aria-expanded', 'false'); }
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var open = drop.style.display === 'block';
+      drop.style.display = open ? 'none' : 'block';
+      btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+    });
+    document.addEventListener('click', function (e) { if (!wrap.contains(e.target)) close(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+    wrap.querySelector('#nf-acct-out').addEventListener('click', function (e) {
+      e.preventDefault(); NS.logout(); location.href = 'account.html';
+    });
+  }
 })();
