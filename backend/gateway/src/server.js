@@ -8,6 +8,7 @@ import { route, availableProviders, meterAcu } from './router.js';
 import { getWallet, getLedger, charge, credit, grant, PACKAGES } from './wallet.js';
 import { createCheckout, handleWebhook, paymentsConfigured } from './payments.js';
 import { issueChallenge, verifyChallenge } from './human.js';
+import { signup, login, logout, sessionFor, requestReset, resetPassword, listUsers, resolveUserId } from './auth.js';
 
 const MAX_BODY_BYTES = 2 * 1024 * 1024;
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -157,6 +158,20 @@ function readBody(req) {
   });
 }
 
+// Bearer token from the Authorization header (accounts / admin session auth).
+function bearer(req) {
+  const m = /^Bearer\s+(.+)$/i.exec(req.headers['authorization'] || '');
+  return m ? m[1].trim() : null;
+}
+
+// Password-reset delivery. No third-party email vendor: when SMTP is wired to
+// the operator's own mailserver (P1) this sends the link; until then it is
+// written to the server log so the operator can retrieve it during testing.
+// The link is NEVER returned in the HTTP response (that would leak the token).
+function deliverReset(email, link) {
+  console.log(`[auth] password reset requested for ${email} — reset link: ${link}`);
+}
+
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
 
@@ -230,6 +245,80 @@ const server = http.createServer(async (req, res) => {
       const result = verifyChallenge(ip, body.challenge, body.nonce);
       if (!result.human) strike(ip, 'human_challenge_failed', result.reason);
       return json(res, result.human ? 200 : 403, result);
+    } catch (err) { return handleError(res, err); }
+  }
+
+  // ---- accounts: in-house signup / login / session (no third-party vendor) ----
+  // Bot-sensitive endpoints (signup, forgot) require a solved proof-of-work
+  // challenge — the same in-house anti-bot layer used elsewhere.
+  const requireHuman = (body) => {
+    const proof = verifyChallenge(ip, body.challenge, body.nonce);
+    if (!proof.human) {
+      strike(ip, 'human_challenge_failed', proof.reason);
+      throw new GatewayError('Human verification failed — please try again.', { status: 403, code: 'human_required' });
+    }
+  };
+
+  if (req.method === 'POST' && url.pathname === '/v1/auth/signup') {
+    try {
+      const body = JSON.parse((await readBody(req)) || '{}');
+      requireHuman(body);
+      return json(res, 200, signup({ email: body.email, password: body.password }));
+    } catch (err) { return handleError(res, err); }
+  }
+
+  if (req.method === 'POST' && url.pathname === '/v1/auth/login') {
+    try {
+      const body = JSON.parse((await readBody(req)) || '{}');
+      return json(res, 200, login({ email: body.email, password: body.password }));
+    } catch (err) { return handleError(res, err); }
+  }
+
+  if (req.method === 'POST' && url.pathname === '/v1/auth/logout') {
+    try { return json(res, 200, logout(bearer(req))); } catch (err) { return handleError(res, err); }
+  }
+
+  if (method === 'GET' && url.pathname === '/v1/auth/me') {
+    const s = sessionFor(bearer(req));
+    if (!s) return json(res, 401, { error: 'unauthorized' });
+    return json(res, 200, { user: { email: s.email, userId: s.userId, role: s.role } });
+  }
+
+  if (req.method === 'POST' && url.pathname === '/v1/auth/forgot') {
+    try {
+      const body = JSON.parse((await readBody(req)) || '{}');
+      requireHuman(body);
+      const r = requestReset({ email: body.email });
+      if (r.sent) {
+        const origin = process.env.PUBLIC_ORIGIN || `${req.headers['x-forwarded-proto'] || 'http'}://${req.headers.host}`;
+        deliverReset(r.email, `${origin}/reset.html?email=${encodeURIComponent(r.email)}&token=${r.token}`);
+      }
+      return json(res, 200, { ok: true }); // never reveal whether the email exists
+    } catch (err) { return handleError(res, err); }
+  }
+
+  if (req.method === 'POST' && url.pathname === '/v1/auth/reset') {
+    try {
+      const body = JSON.parse((await readBody(req)) || '{}');
+      return json(res, 200, resetPassword({ email: body.email, token: body.token, password: body.password }));
+    } catch (err) { return handleError(res, err); }
+  }
+
+  // ---- admin: role-gated via session; NEVER exposes the raw admin key ----
+  if (method === 'GET' && url.pathname === '/v1/admin/users') {
+    const s = sessionFor(bearer(req));
+    if (!s || s.role !== 'admin') return json(res, 403, { error: 'admin_required' });
+    return json(res, 200, { users: listUsers() });
+  }
+
+  if (req.method === 'POST' && url.pathname === '/v1/admin/grant') {
+    try {
+      const s = sessionFor(bearer(req));
+      if (!s || s.role !== 'admin') return json(res, 403, { error: 'admin_required' });
+      const body = JSON.parse((await readBody(req)) || '{}');
+      const userId = resolveUserId(body.userId || body.email);
+      const result = grant({ user: userId, amount: body.amount, reason: body.reason || `Admin grant by ${s.email}`, idempotencyKey: body.idempotencyKey });
+      return json(res, 200, { ...result, userId });
     } catch (err) { return handleError(res, err); }
   }
 

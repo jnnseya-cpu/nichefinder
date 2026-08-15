@@ -59,8 +59,14 @@ WALLET_STORE_KEY=REPLACE_WITH_64_HEX
 # admin/support credit path — any long random string:
 #   run:  openssl rand -hex 24
 ADMIN_API_KEY=REPLACE_WITH_RANDOM
+# admin ACCOUNT (seeds the operator login for /admin-console.html on first boot).
+# The account is created with this email+password if it doesn't exist; an
+# account signing up with ADMIN_EMAIL is also granted the admin role.
+ADMIN_EMAIL=you@yourdomain.com
+ADMIN_PASSWORD=REPLACE_WITH_A_STRONG_PASSWORD
 # persistent stores (survive restarts)
 WALLET_STORE=/opt/nichefinder/backend/gateway/data/wallets.json
+AUTH_STORE=/opt/nichefinder/backend/gateway/data/auth.json
 LEADS_STORE=/opt/nichefinder/backend/gateway/data/leads.jsonl
 ```
 ```bash

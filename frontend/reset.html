@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Niche Finder — Set a new password</title>
+<meta name="theme-color" content="#070B14">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<meta name="robots" content="noindex">
+<style>
+  :root{--ink:#070B14;--ink-2:#0A1120;--panel:#0E1626;--panel-2:#121C30;--line:rgba(232,166,26,.18);--line-soft:rgba(139,147,165,.16);--text:#EAE5D9;--muted:#8B93A5;--gold:#E8A61A;--gold-bright:#FFC53D;--teal:#3FA79B;--red:#C4604F;--serif:"Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif;--sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:radial-gradient(1200px 700px at 50% -10%,#0d1730 0,var(--ink) 60%);color:var(--text);font-family:var(--sans);min-height:100vh;display:grid;place-items:center;padding:32px 18px;line-height:1.55}
+  a{color:var(--gold);text-decoration:none}a:hover{color:var(--gold-bright)}
+  .card{width:100%;max-width:420px;background:linear-gradient(180deg,var(--panel-2),var(--panel));border:1px solid var(--line);border-radius:16px;padding:clamp(24px,5vw,36px);box-shadow:0 30px 80px rgba(0,0,0,.5)}
+  .brand{display:flex;align-items:center;gap:10px;justify-content:center}
+  .brand-mark{width:30px;height:30px;border:1px solid var(--gold);border-radius:50%;display:grid;place-items:center}
+  .brand-mark i{width:8px;height:8px;border-radius:50%;background:var(--gold);display:block}
+  .brand b{font-family:var(--serif);font-size:1.15rem;font-weight:500}.brand em{font-style:normal;color:var(--gold)}
+  h1{font-family:var(--serif);font-weight:500;font-size:1.5rem;text-align:center;margin:14px 0 4px}
+  .sub{text-align:center;color:var(--muted);font-size:.9rem;margin-bottom:22px}
+  label{display:block;font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:14px 0 6px}
+  .field{position:relative}
+  input{width:100%;background:var(--ink-2);border:1px solid var(--line-soft);border-radius:10px;color:var(--text);font-size:1rem;padding:12px 14px;font-family:inherit}
+  input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(232,166,26,.14)}
+  .field .eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:0;color:var(--muted);cursor:pointer;padding:8px;line-height:0;border-radius:8px}
+  .field .eye:hover{color:var(--text)}
+  button.primary{width:100%;margin-top:20px;background:linear-gradient(180deg,var(--gold-bright),var(--gold));color:#241a02;font-weight:700;font-size:1rem;border:0;border-radius:10px;padding:13px;cursor:pointer}
+  button.primary:disabled{opacity:.6;cursor:default}
+  .msg{margin-top:14px;padding:11px 13px;border-radius:10px;font-size:.88rem;display:none}
+  .msg.err{display:block;background:rgba(196,96,79,.12);border:1px solid rgba(196,96,79,.4);color:#f0b6ab}
+  .msg.ok{display:block;background:rgba(63,167,155,.12);border:1px solid rgba(63,167,155,.4);color:#a7ded6}
+  .foot{text-align:center;margin-top:18px;font-size:.85rem}
+</style>
+</head>
+<body>
+  <main class="card">
+    <div class="brand"><span class="brand-mark"><i></i></span><b>Niche <em>Finder</em></b></div>
+    <h1>Set a new password</h1>
+    <p class="sub" id="sub">Choose a strong password you don't use elsewhere.</p>
+    <form id="form" novalidate>
+      <label for="pass">New password</label>
+      <div class="field">
+        <input id="pass" type="password" autocomplete="new-password" minlength="8" required>
+        <button type="button" class="eye" data-eye="pass" aria-label="Show password">👁</button>
+      </div>
+      <label for="pass2">Confirm password</label>
+      <div class="field">
+        <input id="pass2" type="password" autocomplete="new-password" minlength="8" required>
+        <button type="button" class="eye" data-eye="pass2" aria-label="Show password">👁</button>
+      </div>
+      <button type="submit" class="primary" id="btn">Update password</button>
+    </form>
+    <div class="msg" id="msg" role="status" aria-live="polite"></div>
+    <div class="foot"><a href="account.html">← Back to sign in</a></div>
+  </main>
+
+  <script src="nf-config.js"></script>
+  <script>
+  (function () {
+    'use strict';
+    var base = (window.NF_GATEWAY_URL || '').replace(/\/$/, '');
+    var params = new URLSearchParams(location.search);
+    var email = params.get('email') || '';
+    var token = params.get('token') || '';
+    var msg = document.getElementById('msg');
+    var btn = document.getElementById('btn');
+    function setMsg(t, k) { msg.textContent = t || ''; msg.className = 'msg' + (k ? ' ' + k : ''); }
+
+    if (!email || !token) { setMsg('This reset link is incomplete. Please request a new one from the sign-in page.', 'err'); btn.disabled = true; }
+    else { document.getElementById('sub').textContent = 'Resetting the password for ' + email + '.'; }
+
+    document.querySelectorAll('[data-eye]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var inp = document.getElementById(b.getAttribute('data-eye'));
+        var showing = inp.type === 'text';
+        inp.type = showing ? 'password' : 'text';
+        b.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+        b.style.color = showing ? '' : 'var(--gold)';
+      });
+    });
+
+    document.getElementById('form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var pw = document.getElementById('pass').value;
+      var pw2 = document.getElementById('pass2').value;
+      if (pw.length < 8) { setMsg('Password must be at least 8 characters.', 'err'); return; }
+      if (pw !== pw2) { setMsg('The two passwords do not match.', 'err'); return; }
+      btn.disabled = true; btn.textContent = 'Updating…'; setMsg('', '');
+      fetch(base + '/v1/auth/reset', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email: email, token: token, password: pw })
+      }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+        .then(function (res) {
+          if (!res.ok) { setMsg((res.data && (res.data.message || res.data.error)) || 'Reset failed.', 'err'); btn.disabled = false; btn.textContent = 'Update password'; return; }
+          setMsg('Password updated. You can now sign in with your new password.', 'ok');
+          btn.textContent = 'Done';
+          setTimeout(function () { location.href = 'account.html'; }, 1800);
+        }).catch(function () { setMsg('Network error. Please try again.', 'err'); btn.disabled = false; btn.textContent = 'Update password'; });
+    });
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Niche Finder — Sign in</title>
+<meta name="description" content="Sign in to your Niche Finder account, or create one to start scoring and building ventures.">
+<meta name="theme-color" content="#070B14">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<meta name="robots" content="noindex">
+<style>
+  :root{
+    --ink:#070B14;--ink-2:#0A1120;--panel:#0E1626;--panel-2:#121C30;
+    --line:rgba(232,166,26,.18);--line-soft:rgba(139,147,165,.16);
+    --text:#EAE5D9;--muted:#8B93A5;--gold:#E8A61A;--gold-bright:#FFC53D;
+    --teal:#3FA79B;--red:#C4604F;
+    --serif:"Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:radial-gradient(1200px 700px at 50% -10%,#0d1730 0,var(--ink) 60%);color:var(--text);font-family:var(--sans);min-height:100vh;display:grid;place-items:center;padding:32px 18px;line-height:1.55}
+  a{color:var(--gold);text-decoration:none}
+  a:hover{color:var(--gold-bright)}
+  .card{width:100%;max-width:420px;background:linear-gradient(180deg,var(--panel-2),var(--panel));border:1px solid var(--line);border-radius:16px;padding:clamp(24px,5vw,36px);box-shadow:0 30px 80px rgba(0,0,0,.5)}
+  .brand{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:6px}
+  .brand-mark{width:30px;height:30px;border:1px solid var(--gold);border-radius:50%;display:grid;place-items:center}
+  .brand-mark i{width:8px;height:8px;border-radius:50%;background:var(--gold);display:block}
+  .brand b{font-family:var(--serif);font-size:1.15rem;font-weight:500}
+  .brand em{font-style:normal;color:var(--gold)}
+  h1{font-family:var(--serif);font-weight:500;font-size:1.5rem;text-align:center;margin:14px 0 4px}
+  .sub{text-align:center;color:var(--muted);font-size:.9rem;margin-bottom:22px}
+  label{display:block;font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:14px 0 6px}
+  .field{position:relative}
+  input{width:100%;background:var(--ink-2);border:1px solid var(--line-soft);border-radius:10px;color:var(--text);font-size:1rem;padding:12px 14px;font-family:inherit}
+  input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(232,166,26,.14)}
+  .field .eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:0;color:var(--muted);cursor:pointer;padding:8px;line-height:0;border-radius:8px}
+  .field .eye:hover{color:var(--text)}
+  .field .eye:focus-visible{outline:2px solid var(--gold-bright)}
+  button.primary{width:100%;margin-top:20px;background:linear-gradient(180deg,var(--gold-bright),var(--gold));color:#241a02;font-weight:700;font-size:1rem;border:0;border-radius:10px;padding:13px;cursor:pointer}
+  button.primary:disabled{opacity:.6;cursor:default}
+  .row{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:.85rem}
+  .switch{text-align:center;margin-top:20px;padding-top:18px;border-top:1px solid var(--line-soft);color:var(--muted);font-size:.9rem}
+  .msg{margin-top:14px;padding:11px 13px;border-radius:10px;font-size:.88rem;display:none}
+  .msg.err{display:block;background:rgba(196,96,79,.12);border:1px solid rgba(196,96,79,.4);color:#f0b6ab}
+  .msg.ok{display:block;background:rgba(63,167,155,.12);border:1px solid rgba(63,167,155,.4);color:#a7ded6}
+  .hide{display:none!important}
+  .foot{text-align:center;margin-top:18px;font-size:.8rem}
+  .foot a{color:var(--muted)}
+</style>
+</head>
+<body>
+  <main class="card">
+    <div class="brand"><span class="brand-mark"><i></i></span><b>Niche <em>Finder</em></b></div>
+
+    <!-- SIGN IN -->
+    <section id="view-signin">
+      <h1>Welcome back</h1>
+      <p class="sub">Sign in to your venture workspace.</p>
+      <form id="form-signin" autocomplete="on" novalidate>
+        <label for="si-email">Email</label>
+        <div class="field"><input id="si-email" type="email" autocomplete="email" required></div>
+        <label for="si-pass">Password</label>
+        <div class="field">
+          <input id="si-pass" type="password" autocomplete="current-password" required>
+          <button type="button" class="eye" data-eye="si-pass" aria-label="Show password">👁</button>
+        </div>
+        <div class="row"><span></span><a href="#" id="to-forgot">Forgot password?</a></div>
+        <button type="submit" class="primary" id="si-btn">Sign in</button>
+      </form>
+      <div class="switch">New here? <a href="#" id="to-signup">Create an account</a></div>
+    </section>
+
+    <!-- SIGN UP -->
+    <section id="view-signup" class="hide">
+      <h1>Create your account</h1>
+      <p class="sub">Start with 100 free welcome ACUs.</p>
+      <form id="form-signup" autocomplete="on" novalidate>
+        <label for="su-email">Email</label>
+        <div class="field"><input id="su-email" type="email" autocomplete="email" required></div>
+        <label for="su-pass">Password</label>
+        <div class="field">
+          <input id="su-pass" type="password" autocomplete="new-password" minlength="8" required>
+          <button type="button" class="eye" data-eye="su-pass" aria-label="Show password">👁</button>
+        </div>
+        <button type="submit" class="primary" id="su-btn">Create account</button>
+      </form>
+      <div class="switch">Already have an account? <a href="#" id="to-signin">Sign in</a></div>
+    </section>
+
+    <!-- FORGOT -->
+    <section id="view-forgot" class="hide">
+      <h1>Reset your password</h1>
+      <p class="sub">We'll send a reset link to your email.</p>
+      <form id="form-forgot" autocomplete="on" novalidate>
+        <label for="fg-email">Email</label>
+        <div class="field"><input id="fg-email" type="email" autocomplete="email" required></div>
+        <button type="submit" class="primary" id="fg-btn">Send reset link</button>
+      </form>
+      <div class="switch"><a href="#" id="to-signin-2">← Back to sign in</a></div>
+    </section>
+
+    <div class="msg" id="msg" role="status" aria-live="polite"></div>
+    <div class="foot"><a href="index.html">← Back to nichefinderhq.com</a></div>
+  </main>
+
+  <script src="nf-config.js"></script>
+  <script src="nf-auth.js"></script>
+  <script>
+  (function () {
+    'use strict';
+    var base = (window.NF_GATEWAY_URL || '').replace(/\/$/, '');
+    var msg = document.getElementById('msg');
+    var params = new URLSearchParams(location.search);
+    var next = params.get('next') || 'dashboard.html';
+
+    // Already signed in? Go straight through.
+    if (window.NF_AUTH && NF_AUTH.isLoggedIn()) { location.replace(next); return; }
+
+    function show(id) {
+      ['signin', 'signup', 'forgot'].forEach(function (v) {
+        document.getElementById('view-' + v).classList.toggle('hide', v !== id);
+      });
+      setMsg('', '');
+    }
+    function setMsg(text, kind) { msg.textContent = text || ''; msg.className = 'msg' + (kind ? ' ' + kind : ''); }
+    function busy(btn, on, label) { btn.disabled = on; btn.textContent = on ? (label || 'Please wait…') : btn.dataset.label; }
+
+    // password eye toggles
+    document.querySelectorAll('[data-eye]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var inp = document.getElementById(b.getAttribute('data-eye'));
+        var showing = inp.type === 'text';
+        inp.type = showing ? 'password' : 'text';
+        b.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+        b.style.color = showing ? '' : 'var(--gold)';
+      });
+    });
+
+    // view switches
+    document.getElementById('to-signup').onclick = function (e) { e.preventDefault(); show('signup'); };
+    document.getElementById('to-signin').onclick = function (e) { e.preventDefault(); show('signin'); };
+    document.getElementById('to-signin-2').onclick = function (e) { e.preventDefault(); show('signin'); };
+    document.getElementById('to-forgot').onclick = function (e) { e.preventDefault(); show('forgot'); };
+
+    function post(path, body) {
+      if (!base) return Promise.reject(new Error('This site is not connected to a backend yet.'));
+      return fetch(base + path, {
+        method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body)
+      }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, status: r.status, data: d }; }); });
+    }
+    function errText(res) { return (res.data && (res.data.message || res.data.error)) || ('Something went wrong (' + res.status + ').'); }
+
+    ['si-btn', 'su-btn', 'fg-btn'].forEach(function (id) { var b = document.getElementById(id); b.dataset.label = b.textContent; });
+
+    // SIGN IN
+    document.getElementById('form-signin').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var btn = document.getElementById('si-btn'); busy(btn, true, 'Signing in…'); setMsg('', '');
+      post('/v1/auth/login', {
+        email: document.getElementById('si-email').value.trim(),
+        password: document.getElementById('si-pass').value
+      }).then(function (res) {
+        if (!res.ok) { setMsg(errText(res), 'err'); busy(btn, false); return; }
+        NF_AUTH.set(res.data); location.href = next;
+      }).catch(function (err) { setMsg(err.message, 'err'); busy(btn, false); });
+    });
+
+    // SIGN UP (bot-gated proof of work)
+    document.getElementById('form-signup').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var btn = document.getElementById('su-btn'); busy(btn, true, 'Verifying you’re human…'); setMsg('', '');
+      var email = document.getElementById('su-email').value.trim();
+      var password = document.getElementById('su-pass').value;
+      if (password.length < 8) { setMsg('Password must be at least 8 characters.', 'err'); busy(btn, false); return; }
+      NF_humanProof().then(function (proof) {
+        if (!proof) { setMsg('Could not complete human verification. Please retry.', 'err'); busy(btn, false); return; }
+        busy(btn, true, 'Creating account…');
+        return post('/v1/auth/signup', { email: email, password: password, challenge: proof.challenge, nonce: proof.nonce })
+          .then(function (res) {
+            if (!res.ok) { setMsg(errText(res), 'err'); busy(btn, false); return; }
+            NF_AUTH.set(res.data); location.href = next;
+          });
+      }).catch(function (err) { setMsg(err.message, 'err'); busy(btn, false); });
+    });
+
+    // FORGOT (bot-gated proof of work)
+    document.getElementById('form-forgot').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var btn = document.getElementById('fg-btn'); busy(btn, true, 'Verifying you’re human…'); setMsg('', '');
+      var email = document.getElementById('fg-email').value.trim();
+      NF_humanProof().then(function (proof) {
+        if (!proof) { setMsg('Could not complete human verification. Please retry.', 'err'); busy(btn, false); return; }
+        busy(btn, true, 'Sending…');
+        return post('/v1/auth/forgot', { email: email, challenge: proof.challenge, nonce: proof.nonce })
+          .then(function (res) {
+            busy(btn, false);
+            setMsg('If an account exists for ' + email + ', a reset link is on its way. Check your inbox.', 'ok');
+          });
+      }).catch(function (err) { setMsg(err.message, 'err'); busy(btn, false); });
+    });
+  })();
+  </script>
+</body>
+</html>

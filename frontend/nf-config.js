@@ -52,3 +52,24 @@ window.NF_verifyHuman = function () {
     });
   }).catch(function () { return { human: false }; });
 };
+
+/* Like NF_verifyHuman, but returns the solved { challenge, nonce } WITHOUT
+   redeeming it at /v1/human/verify — so it can be attached to a signup/forgot
+   request and verified server-side (each challenge is single-use). Returns null
+   if no gateway is configured or the browser lacks WebCrypto. */
+window.NF_humanProof = function () {
+  var base = (window.NF_GATEWAY_URL || '').replace(/\/$/, '');
+  if (!base || typeof fetch !== 'function' || !(window.crypto && crypto.subtle)) return Promise.resolve(null);
+  return fetch(base + '/v1/human/challenge').then(function (r) { return r.json(); }).then(function (ch) {
+    var enc = new TextEncoder();
+    function lz(buf){ var b=0; for(var i=0;i<buf.length;i++){ var v=buf[i]; if(v===0){b+=8;continue;} b+=Math.clz32(v)-24; break;} return b; }
+    function solve(n){
+      return crypto.subtle.digest('SHA-256', enc.encode(ch.challenge + n)).then(function(d){
+        if (lz(new Uint8Array(d)) >= ch.difficulty) return String(n);
+        if (n > 5000000) throw new Error('challenge timeout');
+        return solve(n + 1);
+      });
+    }
+    return solve(0).then(function (nonce) { return { challenge: ch.challenge, nonce: nonce }; });
+  }).catch(function () { return null; });
+};
