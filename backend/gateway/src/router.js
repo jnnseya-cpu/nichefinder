@@ -81,12 +81,18 @@ export async function route(req) {
     } catch (err) {
       const gwErr = err instanceof GatewayError ? err : new GatewayError(err.message, { provider: name });
       attempts.push({ provider: name, error: gwErr.code, message: gwErr.message });
+      console.error(`[router] provider ${name} failed: code=${gwErr.code} status=${gwErr.status ?? '?'} :: ${gwErr.message}`);
       const isLast = name === chain[chain.length - 1];
-      if (!gwErr.retryable || isLast) {
+      if (isLast) {
         gwErr.attempts = attempts;
         throw gwErr;
       }
-      // retryable and more providers remain — fail over to the next one
+      // More providers remain — fail over to the next one regardless of whether
+      // this failure was retryable. The whole point of the fallback chain is
+      // resilience: a provider-specific 4xx (unsupported param, model rejection,
+      // bad/absent key, even a false-positive refusal) must not sink the request
+      // when a healthy provider is next in line. Client-input errors are caught
+      // by validate() before this loop, so every failure here is provider-side.
     }
   }
 }
