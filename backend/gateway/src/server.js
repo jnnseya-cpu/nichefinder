@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { config } from './config.js';
 import { GatewayError } from './errors.js';
 import { route, availableProviders, meterAcu } from './router.js';
-import { getWallet, getLedger, charge, credit, PACKAGES } from './wallet.js';
+import { getWallet, getLedger, charge, credit, grant, PACKAGES } from './wallet.js';
 import { createCheckout, handleWebhook, paymentsConfigured } from './payments.js';
 import { issueChallenge, verifyChallenge } from './human.js';
 
@@ -282,12 +282,22 @@ const server = http.createServer(async (req, res) => {
       } catch {
         throw new GatewayError('Body must be valid JSON.', { status: 400, code: 'invalid_json' });
       }
+      // An admin grant is a /credit call carrying an explicit ACU "amount"
+      // (no packageId): it MINTS usable ACUs, so it ALWAYS requires the admin
+      // key — regardless of billing mode — and can never be client-initiated.
+      const isCredit = url.pathname.endsWith('credit');
+      const isGrant = isCredit && body.amount != null && body.packageId == null;
+      const adminOk = req.headers['x-admin-key'] === process.env.ADMIN_API_KEY;
+      if (isGrant && !adminOk) {
+        throw new GatewayError('Admin grants require a valid admin key.', { status: 403, code: 'admin_required' });
+      }
       // Production wallet law: when real money is on (or REQUIRE_WALLET=1),
-      // client-initiated credits are DISABLED — ACUs enter only via the Stripe
-      // settlement webhook or an admin key. Charges require a capability-grade
-      // user id (high-entropy, never displayed), so balances can't be guessed at.
+      // client-initiated package credits are DISABLED — ACUs enter only via the
+      // Stripe settlement webhook or an admin key. Charges/grants require a
+      // capability-grade user id (high-entropy, never displayed), so balances
+      // can't be guessed at.
       if (billingEnforced()) {
-        if (url.pathname.endsWith('credit') && req.headers['x-admin-key'] !== process.env.ADMIN_API_KEY) {
+        if (isCredit && !isGrant && !adminOk) {
           throw new GatewayError('Direct crediting is disabled in production — ACUs are credited by payment settlement only.', {
             status: 403, code: 'credit_disabled',
           });
@@ -295,7 +305,8 @@ const server = http.createServer(async (req, res) => {
         requireCapabilityId(body.user);
       }
       body.idempotencyKey = body.idempotencyKey || req.headers['idempotency-key'];
-      const result = url.pathname.endsWith('charge') ? charge(body) : credit(body);
+      const result = url.pathname.endsWith('charge') ? charge(body)
+        : isGrant ? grant(body) : credit(body);
       return json(res, 200, result);
     } catch (err) { return handleError(res, err); }
   }

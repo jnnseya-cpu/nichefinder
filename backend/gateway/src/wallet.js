@@ -166,6 +166,28 @@ export function charge({ user, amount, label, idempotencyKey, action, bracketFac
   });
 }
 
+// Admin comp: credit an arbitrary amount of USABLE (paid-pool) ACUs to a user.
+// Gated by the admin key at the route — never client-initiable. Recorded as a
+// distinct ADMIN_GRANT entry so comped value stays auditable and separable
+// from real purchases. Paid pool (not free) because only paid ACUs fund AI.
+export function grant({ user, amount, reason, idempotencyKey }) {
+  const wallet = requireUser(user);
+  const acus = Math.floor(Number(amount));
+  if (!Number.isFinite(acus) || acus <= 0) {
+    throw new GatewayError('"amount" must be a positive integer of ACUs.', { status: 400, code: 'invalid_amount' });
+  }
+  return idempotent(idempotencyKey, () => {
+    wallet.paid += acus;
+    ledger(wallet, `ADMIN_GRANT · ${String(reason || 'Comped ACU').slice(0, 100)}`, acus, {
+      type: 'credit_grant',
+      pool: 'paid',
+      bracketFactor: 1,
+    });
+    persist();
+    return { granted: acus, wallet: view(wallet) };
+  });
+}
+
 export function credit({ user, packageId, idempotencyKey }) {
   const wallet = requireUser(user);
   const pkg = PACKAGES[packageId];

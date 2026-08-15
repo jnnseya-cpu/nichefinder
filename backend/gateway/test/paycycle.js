@@ -117,6 +117,13 @@ check('client credit refused (403 credit_disabled)', res.status === 403 && (awai
 res = await post('/v1/wallet/credit', { user: POOR, packageId: 'starter_5' }, { 'x-admin-key': 'adm_paycycle' });
 check('admin-keyed credit still works (support/refund path)', res.status === 200 && (await res.json()).credited === 500);
 
+console.log('— step 8b: admin arbitrary-amount grant (custom comp) —');
+res = await post('/v1/wallet/credit', { user: POOR, amount: 250, reason: 'launch comp' });
+check('grant without admin key refused (403 admin_required)', res.status === 403 && (await res.json()).error === 'admin_required');
+res = await post('/v1/wallet/credit', { user: POOR, amount: 250, reason: 'launch comp' }, { 'x-admin-key': 'adm_paycycle' });
+body = await res.json();
+check('admin grant credits 250 usable (paid) ACU', res.status === 200 && body.granted === 250 && body.wallet.paid === 750, JSON.stringify(body));
+
 console.log('— step 9: money data is encrypted on disk —');
 await new Promise((r) => setTimeout(r, 400));
 check('wallet store on disk is an AES-256-GCM envelope', fs.readFileSync(process.env.WALLET_STORE, 'utf8').startsWith('NFE1:'));
