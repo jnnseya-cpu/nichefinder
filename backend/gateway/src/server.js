@@ -162,6 +162,11 @@ const server = http.createServer(async (req, res) => {
 
   if (req.method === 'OPTIONS') return json(res, 204, {});
 
+  // HEAD is a bodyless GET: uptime monitors and health-checkers use it. Node's
+  // HTTP server strips the body from HEAD responses automatically, so routing
+  // HEAD through the GET handlers yields correct headers-only replies.
+  const method = req.method === 'HEAD' ? 'GET' : req.method;
+
   const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress || 'unknown';
   if (sentinelBanned(ip)) return json(res, 403, { error: 'sentinel_block', message: 'This address is temporarily blocked by the platform security agent.' });
   if (sentinelScreen(ip, url, '')) return json(res, 403, { error: 'sentinel_block', message: 'Request refused by the platform security agent.' });
@@ -169,9 +174,9 @@ const server = http.createServer(async (req, res) => {
     return json(res, 429, { error: 'rate_limited', message: 'Too many requests — try again in a minute.' });
   }
 
-  if (req.method === 'GET' && !url.pathname.startsWith('/v1/')) return serveStatic(req, res, url);
+  if (method === 'GET' && !url.pathname.startsWith('/v1/')) return serveStatic(req, res, url);
 
-  if (req.method === 'GET' && url.pathname === '/v1/health') {
+  if (method === 'GET' && url.pathname === '/v1/health') {
     return json(res, 200, {
       status: 'ok',
       mock: config.mock,
@@ -216,7 +221,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // ---- in-house human verification (no third-party vendor) ----
-  if (req.method === 'GET' && url.pathname === '/v1/human/challenge') {
+  if (method === 'GET' && url.pathname === '/v1/human/challenge') {
     return json(res, 200, issueChallenge(ip));
   }
   if (req.method === 'POST' && url.pathname === '/v1/human/verify') {
@@ -228,7 +233,7 @@ const server = http.createServer(async (req, res) => {
     } catch (err) { return handleError(res, err); }
   }
 
-  if (req.method === 'GET' && url.pathname === '/v1/models') {
+  if (method === 'GET' && url.pathname === '/v1/models') {
     return json(res, 200, {
       providers: Object.fromEntries(
         Object.entries(config.providers).map(([name, p]) => [name, { model: p.model, configured: Boolean(process.env[p.apiKeyEnv]) }]),
@@ -251,7 +256,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // ---- P0 wallet: server-side ACU system of record ----
-  if (req.method === 'GET' && url.pathname === '/v1/wallet') {
+  if (method === 'GET' && url.pathname === '/v1/wallet') {
     try {
       return json(res, 200, getWallet(url.searchParams.get('user')));
     } catch (err) { return handleError(res, err); }
@@ -259,13 +264,13 @@ const server = http.createServer(async (req, res) => {
 
   // /transactions is the spec-facing alias (§10.2 GET /wallet/transactions);
   // /ledger remains for existing clients. Same enriched entries either way.
-  if (req.method === 'GET' && (url.pathname === '/v1/wallet/ledger' || url.pathname === '/v1/wallet/transactions')) {
+  if (method === 'GET' && (url.pathname === '/v1/wallet/ledger' || url.pathname === '/v1/wallet/transactions')) {
     try {
       return json(res, 200, { ledger: getLedger(url.searchParams.get('user'), url.searchParams.get('limit')) });
     } catch (err) { return handleError(res, err); }
   }
 
-  if (req.method === 'GET' && url.pathname === '/v1/wallet/packages') {
+  if (method === 'GET' && url.pathname === '/v1/wallet/packages') {
     return json(res, 200, { packages: PACKAGES });
   }
 
