@@ -9,6 +9,7 @@ import { getWallet, getLedger, charge, credit, grant, PACKAGES } from './wallet.
 import { createCheckout, handleWebhook, paymentsConfigured } from './payments.js';
 import { issueChallenge, verifyChallenge } from './human.js';
 import { signup, login, logout, sessionFor, requestReset, resetPassword, listUsers, resolveUserId } from './auth.js';
+import { sendMail, mailConfigured } from './mailer.js';
 
 const MAX_BODY_BYTES = 2 * 1024 * 1024;
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -164,12 +165,28 @@ function bearer(req) {
   return m ? m[1].trim() : null;
 }
 
-// Password-reset delivery. No third-party email vendor: when SMTP is wired to
-// the operator's own mailserver (P1) this sends the link; until then it is
-// written to the server log so the operator can retrieve it during testing.
-// The link is NEVER returned in the HTTP response (that would leak the token).
+// Password-reset delivery. Sends via the operator's own mail host (SMTP_*) when
+// configured; otherwise logs the link so it's recoverable during testing. Fire
+// and forget — never blocks the HTTP response, and the link is NEVER returned in
+// the response body (that would leak the single-use token).
 function deliverReset(email, link) {
-  console.log(`[auth] password reset requested for ${email} — reset link: ${link}`);
+  if (!mailConfigured()) {
+    console.log(`[auth] password reset for ${email} — (SMTP not configured) reset link: ${link}`);
+    return;
+  }
+  sendMail({
+    to: email,
+    subject: 'Reset your Niche Finder password',
+    html: `<div style="font-family:system-ui,Segoe UI,Arial,sans-serif;max-width:520px;margin:0 auto;color:#0b1220">
+      <h2 style="font-weight:600">Reset your password</h2>
+      <p>We received a request to reset the password for your Niche Finder account.</p>
+      <p><a href="${link}" style="display:inline-block;background:#E8A61A;color:#241a02;font-weight:700;text-decoration:none;padding:12px 20px;border-radius:8px">Choose a new password</a></p>
+      <p style="color:#5a6472;font-size:13px">This link expires in 1 hour. If you didn't request it, you can safely ignore this email — your password won't change.</p>
+      <p style="color:#98a1b0;font-size:12px">Or paste this link into your browser:<br>${link}</p>
+    </div>`,
+    text: `Reset your Niche Finder password:\n${link}\n\nThis link expires in 1 hour. If you didn't request it, ignore this email.`,
+  }).then(() => console.log(`[auth] reset email sent to ${email}`))
+    .catch((e) => console.error(`[auth] reset email FAILED for ${email}: ${e.message} — reset link: ${link}`));
 }
 
 const server = http.createServer(async (req, res) => {
@@ -240,11 +257,20 @@ const server = http.createServer(async (req, res) => {
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
         throw new GatewayError('A valid email is required.', { status: 400, code: 'invalid_email' });
       }
+      const name = String(body.name || '').slice(0, 120);
+      const message = String(body.message || '').slice(0, 2000);
       fs.mkdirSync(path.dirname(LEADS_PATH), { recursive: true });
-      fs.appendFileSync(LEADS_PATH, JSON.stringify({
-        email, name: String(body.name || '').slice(0, 120), message: String(body.message || '').slice(0, 2000),
-        ip, ts: Date.now(),
-      }) + '\n');
+      fs.appendFileSync(LEADS_PATH, JSON.stringify({ email, name, message, ip, ts: Date.now() }) + '\n');
+      // Notify the operator inbox (CONTACT_INBOX, defaults to the SMTP mailbox) so
+      // contact/waitlist submissions land in email, not just the leads log.
+      if (mailConfigured()) {
+        const inbox = process.env.CONTACT_INBOX || process.env.SMTP_USER;
+        sendMail({
+          to: inbox,
+          subject: `New Niche Finder enquiry from ${name || email}`,
+          text: `From: ${name || '(no name)'} <${email}>\n\n${message || '(no message)'}\n\n— sent ${new Date().toUTCString()}`,
+        }).catch((e) => console.error(`[leads] notify email failed: ${e.message}`));
+      }
       return json(res, 200, { received: true });
     } catch (err) { return handleError(res, err); }
   }

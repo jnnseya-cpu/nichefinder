@@ -64,11 +64,22 @@ ADMIN_API_KEY=REPLACE_WITH_RANDOM
 # account signing up with ADMIN_EMAIL is also granted the admin role.
 ADMIN_EMAIL=you@yourdomain.com
 ADMIN_PASSWORD=REPLACE_WITH_A_STRONG_PASSWORD
+# email (operator's own mail host — e.g. Hostinger; no new vendor). Powers
+# password-reset emails and contact-form notifications. Implicit TLS on 465.
+SMTP_HOST=smtp.hostinger.com
+SMTP_PORT=465
+SMTP_USER=contact@nichefinderhq.com
+SMTP_PASS=REPLACE_WITH_MAILBOX_PASSWORD
+SMTP_FROM=Niche Finder <contact@nichefinderhq.com>
+# where contact-form submissions are emailed (defaults to SMTP_USER)
+CONTACT_INBOX=contact@nichefinderhq.com
 # persistent stores (survive restarts)
 WALLET_STORE=/opt/nichefinder/backend/gateway/data/wallets.json
 AUTH_STORE=/opt/nichefinder/backend/gateway/data/auth.json
 LEADS_STORE=/opt/nichefinder/backend/gateway/data/leads.jsonl
 ```
+The admin login has no mailbox, so `ADMIN_PASSWORD` in this file is the admin
+password and its recovery path: change it and restart to reset the admin login.
 ```bash
 sudo chmod 600 /etc/nichefinder.env   # readable only by root
 sudo mkdir -p /opt/nichefinder/backend/gateway/data

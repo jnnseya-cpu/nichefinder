@@ -172,8 +172,11 @@ export function resolveUserId(idOrEmail) {
   throw new GatewayError('No user found for that id or email.', { status: 404, code: 'user_not_found' });
 }
 
-// Seed (or upgrade) the admin account from the environment on boot, so the
-// operator can sign in immediately without a chicken-and-egg first admin.
+// Seed (or reconcile) the admin account from the environment on boot. The admin
+// login has no mailbox, so ADMIN_PASSWORD in the (chmod 600) env file is the
+// source of truth and the recovery path: create the account if missing, keep it
+// admin, and rotate its password to match env whenever they differ (edit env +
+// restart = password reset). Only the derived hash is ever stored.
 export function seedAdmin() {
   const em = normEmail(process.env.ADMIN_EMAIL);
   const pw = process.env.ADMIN_PASSWORD;
@@ -183,10 +186,17 @@ export function seedAdmin() {
     const salt = crypto.randomBytes(16).toString('hex');
     store.users[em] = { email: em, userId: newUserId(), salt, hash: hashPassword(pw, salt), role: 'admin', createdAt: Date.now(), reset: null };
     persist();
-  } else if (existing.role !== 'admin') {
-    existing.role = 'admin';
-    persist();
+    return;
   }
+  let changed = false;
+  if (existing.role !== 'admin') { existing.role = 'admin'; changed = true; }
+  if (!timingEqualHex(hashPassword(pw, existing.salt), existing.hash)) {
+    existing.salt = crypto.randomBytes(16).toString('hex');
+    existing.hash = hashPassword(pw, existing.salt);
+    for (const [h, s] of Object.entries(store.sessions)) if (s.email === em) delete store.sessions[h];
+    changed = true;
+  }
+  if (changed) persist();
 }
 
 seedAdmin();

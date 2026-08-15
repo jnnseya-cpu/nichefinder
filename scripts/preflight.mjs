@@ -13,7 +13,7 @@ for (const f of ['Dockerfile', 'DEPLOY-VPS.md', 'LAUNCH.md', 'SATURDAY-GOLIVE.md
   'frontend/nf-config.js', 'frontend/index.html', 'shared/nf-economy.js',
   'frontend/account.html', 'frontend/reset.html', 'frontend/admin-console.html', 'frontend/nf-auth.js',
   'backend/gateway/src/server.js', 'backend/gateway/src/payments.js',
-  'backend/gateway/src/human.js', 'backend/gateway/src/auth.js']) {
+  'backend/gateway/src/human.js', 'backend/gateway/src/auth.js', 'backend/gateway/src/mailer.js']) {
   line(existsSync(f), `present: ${f}`);
 }
 
