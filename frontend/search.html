@@ -766,12 +766,31 @@
                 required: ['t', 'p', 'tm'],
                 additionalProperties: false
               }
+            },
+            brief: {
+              type: 'object',
+              description: 'Deep operating brief for THIS specific niche. Every field must be concrete to this exact opportunity, market, and location — never generic, never reusable for another niche.',
+              properties: {
+                rationale: { type: 'string', description: 'Breakthrough rationale: why this is (or is not) a breakthrough — novelty, unmet demand, timing, defensibility, all specific to this niche' },
+                situation: { type: 'string', description: 'Current market situation / status-quo pain, in 1-2 sentences' },
+                insight: { type: 'string', description: 'The single non-obvious insight that unlocks the opportunity' },
+                riskAlert: { type: 'string', description: 'The dominant execution risk to watch and why' },
+                recommendation: { type: 'string', description: 'One-sentence go / conditional-go / no-go recommendation with its reason' },
+                confidence: { type: 'string', enum: ['HIGH CERTAINTY', 'MODERATE CERTAINTY', 'EXPLORATORY'], description: 'Confidence label for the recommendation, calibrated to the strength of evidence' },
+                optimalRoute: { type: 'string', description: 'The optimal go-to-market wedge / first move for this venture' },
+                pivot: { type: 'string', description: 'A credible pivot alternative if the primary route underperforms' },
+                riskOfInaction: { type: 'string', description: 'What happens, or who wins, if the operator waits' },
+                commercialValue: { type: 'string', description: 'Commercial value: margin quality, recurring revenue, scalability — grounded in the financials above' },
+                nextAction: { type: 'string', description: 'The single most important next action for the operator' }
+              },
+              required: ['rationale', 'situation', 'insight', 'riskAlert', 'recommendation', 'confidence', 'optimalRoute', 'pivot', 'riskOfInaction', 'commercialValue', 'nextAction'],
+              additionalProperties: false
             }
           },
           required: ['title', 'tagline', 'summary', 'confidence', 'marketReadiness', 'competitiveGap', 'prospectOfSuccess',
                      'breakthroughPotential', 'marketSizePotential', 'profitabilityPotential',
                      'addressableMarketUsd', 'breakEvenMonths', 'grossMarginPct', 'startupCapitalUsd',
-                     'revenueY1', 'revenueY2', 'revenueY3', 'costsY1', 'costsY2', 'costsY3', 'risks', 'roadmap'],
+                     'revenueY1', 'revenueY2', 'revenueY3', 'costsY1', 'costsY2', 'costsY3', 'risks', 'roadmap', 'brief'],
           additionalProperties: false
         }
       }
@@ -795,7 +814,7 @@
       signal: controller.signal,
       body: JSON.stringify({
         system: 'You are the Opportunity Discovery Agent of Niche Finder, a venture intelligence OS. Act as a world-class venture analyst. Before answering, reason deeply about the local economy, demand evidence, realistic pricing, capacity constraints, and cost structures — every number you output must be defensible and internally consistent (revenue ramps must respect capacity, costs must reconcile with the gross margin, break-even must follow from the cashflow). Never output round guesses.',
-        messages: [{ role: 'user', content: 'Generate exactly 3 distinct, hyper-specific niche venture opportunities for these constraints. Every financial figure must be derived from explicit reasoning about this specific market:\n' + JSON.stringify(cfg, null, 2) }],
+        messages: [{ role: 'user', content: 'Generate exactly 3 distinct, hyper-specific niche venture opportunities for these constraints. Every financial figure must be derived from explicit reasoning about this specific market. For each niche also produce a complete operating brief (rationale, situation, insight, risk alert, recommendation, confidence, optimal route, pivot, risk of inaction, commercial value, next action) — every sentence must be concrete to that exact opportunity and location, consistent with its scores and financials, and never generic or interchangeable with another niche:\n' + JSON.stringify(cfg, null, 2) }],
         jsonSchema: NICHE_SCHEMA,
         // 'high' is deep, multi-step reasoning (Anthropic's quality tier). The
         // extreme tiers (xhigh/max) can generate for 5-10 minutes — too long for
@@ -842,7 +861,8 @@
             cashflow: [n.revenueY1 - n.costsY1, n.revenueY2 - n.costsY2, n.revenueY3 - n.costsY3]
           },
           risks: n.risks,
-          roadmap: n.roadmap
+          roadmap: n.roadmap,
+          brief: n.brief
         };
       });
     });
@@ -895,6 +915,10 @@
     if (m.risks) proj.risks = m.risks;
     if (m.roadmap) proj.roadmap = m.roadmap;
     if (m.fin) proj.fin = m.fin;
+    // Real, niche-specific operating brief + breakthrough score from the AI —
+    // so the unlocked view never falls back to the demo template in project.html.
+    if (m.brief) proj.brief = m.brief;
+    if (m.scores && m.scores.bps != null) proj.bps = Math.round(m.scores.bps) / 10; // 0-100 → 0-10 scale
     proj.bracketFactor = NF.bracket(+budget.value).factor; // Build Hub prices inherit the capital bracket
     localStorage.setItem('nf_active_project', JSON.stringify(proj));
     location.href = 'project.html';
