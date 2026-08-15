@@ -7,6 +7,7 @@ import { GatewayError } from './errors.js';
 import { route, availableProviders, meterAcu } from './router.js';
 import { getWallet, getLedger, charge, credit, grant, summary, deleteWallet, PACKAGES } from './wallet.js';
 import { createCheckout, handleWebhook, paymentsConfigured } from './payments.js';
+import { createKodaIntent, handleKodaWebhook, kodaConfigured } from './koda.js';
 import { issueChallenge, verifyChallenge } from './human.js';
 import { signup, login, logout, sessionFor, requestReset, resetPassword, listUsers, resolveUserId, emailForUserId, setRole, setDisabled, userByEmail, updateProfile, setMedia, changePassword, deleteAccount } from './auth.js';
 import { sendMail, mailConfigured } from './mailer.js';
@@ -246,6 +247,7 @@ const server = http.createServer(async (req, res) => {
       mock: config.mock,
       providers: availableProviders(),
       payments: paymentsConfigured(),
+      koda: kodaConfigured(),
       fallbackChain: config.fallbackChain,
       maintenance: maintenanceOn,
     });
@@ -264,6 +266,22 @@ const server = http.createServer(async (req, res) => {
     try {
       const raw = await readBody(req);
       return json(res, 200, handleWebhook(raw, req.headers['stripe-signature']));
+    } catch (err) { return handleError(res, err); }
+  }
+
+  // ---- payments: KODA mobile-money door (hosted intent + settlement webhook) ----
+  if (req.method === 'POST' && url.pathname === '/v1/payments/koda-intent') {
+    try {
+      const body = JSON.parse((await readBody(req)) || '{}');
+      const origin = process.env.PUBLIC_ORIGIN || `${req.headers['x-forwarded-proto'] || 'http'}://${req.headers.host}`;
+      return json(res, 200, await createKodaIntent({ user: body.user, packageId: body.packageId, origin }));
+    } catch (err) { return handleError(res, err); }
+  }
+
+  if (req.method === 'POST' && url.pathname === '/v1/payments/koda-webhook') {
+    try {
+      const raw = await readBody(req);
+      return json(res, 200, handleKodaWebhook(raw, req.headers['x-koda-signature']));
     } catch (err) { return handleError(res, err); }
   }
 

@@ -198,19 +198,37 @@
         '<div style="font-size:.78rem;color:#8B93A5;margin-top:4px">' + p.desc + '</div>' +
       '</button>';
     }).join('');
+    // Payment method: Card (Stripe) or Mobile money (KODA). Only shown when a
+    // gateway is present; offline demo credits locally with no method choice.
+    var payMethod = 'stripe';
+    var methodToggle = gatewayBase() ?
+      '<div style="display:flex;gap:8px;margin-top:16px" data-methods>' +
+        '<button data-method="stripe" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(232,166,26,.5);background:rgba(232,166,26,.08);color:#E8ECF4;cursor:pointer;font-size:.85rem">Card</button>' +
+        '<button data-method="koda" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);color:#E8ECF4;cursor:pointer;font-size:.85rem">Mobile money</button>' +
+      '</div>' : '';
     overlay.innerHTML =
       '<div style="max-width:520px;width:100%;background:#0E1626;border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:26px">' +
         '<div style="display:flex;justify-content:space-between;align-items:start;gap:12px">' +
           '<div><div style="font-family:ui-monospace,monospace;font-size:.62rem;letter-spacing:.22em;color:#E8A61A">ACU TOP-UP · £1 = 100 ACU</div>' +
           '<h3 style="margin:6px 0 0;font-size:1.25rem;color:#E8ECF4">Power your venture outputs</h3></div>' +
           '<button data-close style="background:none;border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#8B93A5;padding:4px 10px;cursor:pointer">✕</button>' +
-        '</div>' + note +
-        '<div style="display:grid;gap:10px;margin-top:18px">' + cards + '</div>' +
+        '</div>' + note + methodToggle +
+        '<div style="display:grid;gap:10px;margin-top:12px">' + cards + '</div>' +
         '<p data-buyerr style="color:#C4604F;font-size:.82rem;margin:12px 0 0"></p>' +
-        '<p style="font-size:.7rem;color:#8B93A5;margin:10px 0 0">' + (gatewayBase() ? 'Secure payment via Stripe — you\'ll be redirected to complete your purchase. ACUs are credited to your account once payment succeeds.' : 'Offline demo — selecting a package credits your local wallet instantly.') + '</p>' +
+        '<p style="font-size:.7rem;color:#8B93A5;margin:10px 0 0">' + (gatewayBase() ? 'Secure payment — choose Card (Stripe) or Mobile money (KODA), then select a package. You\'ll be redirected to complete payment; ACUs are credited once payment is confirmed.' : 'Offline demo — selecting a package credits your local wallet instantly.') + '</p>' +
       '</div>';
     overlay.addEventListener('click', function (e) {
       if (e.target === overlay || e.target.closest('[data-close]')) { closeTopup(); return; }
+      var mb = e.target.closest('[data-method]');
+      if (mb) {
+        payMethod = mb.getAttribute('data-method');
+        overlay.querySelectorAll('[data-method]').forEach(function (x) {
+          var on = x.getAttribute('data-method') === payMethod;
+          x.style.borderColor = on ? 'rgba(232,166,26,.5)' : 'rgba(255,255,255,.1)';
+          x.style.background = on ? 'rgba(232,166,26,.08)' : 'rgba(255,255,255,.03)';
+        });
+        return;
+      }
       var btn = e.target.closest('[data-pkg]');
       if (!btn) return;
       var pkg = PACKAGES.filter(function (p) { return p.id === btn.getAttribute('data-pkg'); })[0];
@@ -223,13 +241,14 @@
       var errEl = overlay.querySelector('[data-buyerr]');
       if (base && typeof fetch === 'function') {
         btn.style.opacity = '.6'; if (errEl) errEl.textContent = '';
-        fetch(base + '/v1/payments/checkout', {
+        var endpoint = payMethod === 'koda' ? '/v1/payments/koda-intent' : '/v1/payments/checkout';
+        fetch(base + endpoint, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ user: window.NF_WALLET_USER || 'op_anonymous', packageId: pkg.id })
         }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
           .then(function (res) {
-            if (res.ok && res.d && res.d.url) { location.href = res.d.url; return; } // → Stripe
+            if (res.ok && res.d && res.d.url) { location.href = res.d.url; return; } // → Stripe / KODA hosted checkout
             btn.style.opacity = '';
             if (errEl) errEl.textContent = (res.d && (res.d.message || res.d.error)) || 'Payments are unavailable right now. Please try again later.';
           })
