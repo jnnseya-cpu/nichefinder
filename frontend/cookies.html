@@ -32,9 +32,10 @@
     <div class="page-body">
       <section>
         <h2><span class="n">01</span>What we use today</h2>
-        <p>The current prototype sets <strong>no advertising or third-party tracking cookies</strong>. It uses your browser's <strong>localStorage</strong> — a similar technology — to run the product itself:</p>
+        <p>Niche Finder sets <strong>no advertising or third-party tracking cookies</strong>. It uses your browser's <strong>localStorage</strong> — a similar technology — and a sign-in token to run the product itself:</p>
         <table class="simple">
           <tr><th>Key</th><th>Purpose</th><th>Class</th></tr>
+          <tr><td>nf_session · nf_account</td><td>Your signed-in session token and account profile</td><td>Strictly necessary</td></tr>
           <tr><td>nf_wallet / nf_acu_balance</td><td>Your ACU balances (paid + free welcome)</td><td>Strictly necessary</td></tr>
           <tr><td>nf_ledger</td><td>ACU transaction history</td><td>Strictly necessary</td></tr>
           <tr><td>nf_saved · nf_history · nf_reports</td><td>Saved niches, search runs, generated assets</td><td>Strictly necessary</td></tr>
@@ -43,12 +44,12 @@
         </table>
       </section>
       <section>
-        <h2><span class="n">02</span>At production launch</h2>
-        <p>The production release will add: <strong>session cookies</strong> for sign-in (strictly necessary), and — only with your consent — <strong>analytics cookies</strong> to understand aggregate product usage. A consent banner will let you accept or decline non-essential cookies before any are set, and change your choice at any time.</p>
+        <h2><span class="n">02</span>Sign-in and analytics</h2>
+        <p>Signed-in sessions are kept using a <strong>strictly-necessary</strong> token stored in your browser. We may add — only with your consent — <strong>analytics cookies</strong> to understand aggregate product usage; a consent banner lets you accept or decline non-essential cookies before any are set, and change your choice at any time.</p>
       </section>
       <section>
         <h2><span class="n">03</span>Managing storage</h2>
-        <p>You can clear localStorage and cookies through your browser settings at any time. Note that in the prototype this erases your wallet, saved niches, and generated documents, since nothing is stored server-side yet.</p>
+        <p>You can clear localStorage and cookies through your browser settings at any time. Clearing them removes locally-cached copies and preferences and signs you out. Your account, ACU wallet, and generated documents are stored on our servers and are restored when you sign in again.</p>
       </section>
       <div class="note">Questions: <a href="mailto:privacy@nichefinderhq.com">privacy@nichefinderhq.com</a>. See also our <a href="privacy.html">Privacy Policy</a>.</div>
     </div>
