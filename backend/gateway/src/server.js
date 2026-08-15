@@ -646,6 +646,10 @@ const server = http.createServer(async (req, res) => {
 
   if (req.method === 'POST' && url.pathname === '/v1/generate') {
     try {
+      // If the browser gives up (its request timeout) before the model returns,
+      // don't bill the wallet for a result the user never received.
+      let clientGone = false;
+      res.on('close', () => { if (!res.writableEnded) clientGone = true; });
       if (maintenanceOn) {
         return json(res, 503, { error: 'maintenance', message: 'Niche Finder is briefly paused for maintenance. Please try again shortly.' });
       }
@@ -682,6 +686,10 @@ const server = http.createServer(async (req, res) => {
       console.log(`[generate] start effort=${body.effort || 'default'} schema=${body.jsonSchema ? 'yes' : 'no'} billed=${!!debit}`);
       const result = await route(body);
       console.log(`[generate] ok provider=${result.provider} latencyMs=${Date.now() - started} acu=${result.acu ?? 0} textLen=${(result.text || '').length}`);
+      if (clientGone) {
+        console.log('[generate] client disconnected before result — skipping charge (no delivery, no bill)');
+        return; // socket already closed; do not bill undelivered work
+      }
       if (debit) {
         const metered = Math.max(config.acu.minimumCharge, Math.min(result.acu || 0, getWallet(debit.user).paid));
         const charged = charge({

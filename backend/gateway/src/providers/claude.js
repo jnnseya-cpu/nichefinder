@@ -4,7 +4,16 @@ import { GatewayError } from '../errors.js';
 
 let client;
 function getClient() {
-  if (!client) client = new Anthropic({ apiKey: apiKeyFor('claude') });
+  if (!client) {
+    client = new Anthropic({
+      apiKey: apiKeyFor('claude'),
+      // Bound the wait: if the deep call runs long, time out and let the router
+      // fail over to the next (faster) provider rather than hanging the request.
+      // A timeout surfaces as APIConnectionError → retryable → failover.
+      timeout: Number(process.env.CLAUDE_TIMEOUT_MS || 200000),
+      maxRetries: 1,
+    });
+  }
   return client;
 }
 

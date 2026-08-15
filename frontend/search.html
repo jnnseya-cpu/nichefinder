@@ -784,10 +784,11 @@
 
   function fetchNiches(cfg){
     var controller = new AbortController();
-    // Deep, hidden-niche discovery runs maximum-effort reasoning server-side and
+    // Deep, hidden-niche discovery runs high-effort reasoning server-side and
     // can legitimately take a couple of minutes. A short abort would kill every
-    // genuine deep search, so allow real thinking time.
-    var timer = setTimeout(function(){ controller.abort(); }, 180000);
+    // genuine deep search, so allow real thinking time (covers a slow provider
+    // plus a fail-over to the next one).
+    var timer = setTimeout(function(){ controller.abort(); }, 210000);
     return fetch(GATEWAY + '/v1/generate', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -796,7 +797,10 @@
         system: 'You are the Opportunity Discovery Agent of Niche Finder, a venture intelligence OS. Act as a world-class venture analyst. Before answering, reason deeply about the local economy, demand evidence, realistic pricing, capacity constraints, and cost structures — every number you output must be defensible and internally consistent (revenue ramps must respect capacity, costs must reconcile with the gross margin, break-even must follow from the cashflow). Never output round guesses.',
         messages: [{ role: 'user', content: 'Generate exactly 3 distinct, hyper-specific niche venture opportunities for these constraints. Every financial figure must be derived from explicit reasoning about this specific market:\n' + JSON.stringify(cfg, null, 2) }],
         jsonSchema: NICHE_SCHEMA,
-        effort: 'xhigh',
+        // 'high' is deep, multi-step reasoning (Anthropic's quality tier). The
+        // extreme tiers (xhigh/max) can generate for 5-10 minutes — too long for
+        // a live search — so we use high here and keep the token budget bounded.
+        effort: 'high',
         // Wallet capability id: the server meters and debits this wallet. Without
         // it, billing rejects the request with 403 before any provider is called.
         user: window.NF_WALLET_USER,
