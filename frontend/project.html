@@ -472,6 +472,7 @@
   Object.keys(DEFAULT).forEach(function(k){ if (project[k] == null) project[k] = DEFAULT[k]; });
   // persist the merged project so asset.html renders documents from identical data
   try { localStorage.setItem('nf_active_project', JSON.stringify(project)); } catch (e) {}
+  var P = project; // alias used by the document-generation helpers (projectContext etc.)
 
   /* ---------- state: status + ACU balance persist ---------- */
   var STAGES = ['shortlisted','unlocked','validated','financial_ready','pitch_ready','investor_ready'];
