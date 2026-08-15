@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Niche Finder — Account settings</title>
+<meta name="theme-color" content="#070B14">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<meta name="robots" content="noindex">
+<style>
+  :root{--ink:#070B14;--ink-2:#0A1120;--panel:#0E1626;--panel-2:#121C30;--line:rgba(232,166,26,.18);--line-soft:rgba(139,147,165,.16);--text:#EAE5D9;--muted:#8B93A5;--gold:#E8A61A;--gold-bright:#FFC53D;--teal:#3FA79B;--red:#C4604F;--serif:"Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif;--sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;--mono:"SF Mono","Cascadia Code","JetBrains Mono",Consolas,monospace;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--ink);color:var(--text);font-family:var(--sans);min-height:100vh;line-height:1.5;font-size:15px}
+  a{color:var(--gold);text-decoration:none}
+  .wrap{max-width:760px;margin:0 auto;padding:22px clamp(14px,3vw,28px) 60px}
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+  .brand{display:flex;align-items:center;gap:9px}
+  .brand-mark{width:26px;height:26px;border:1px solid var(--gold);border-radius:50%;display:grid;place-items:center}
+  .brand-mark i{width:7px;height:7px;border-radius:50%;background:var(--gold);display:block}
+  .brand b{font-family:var(--serif);font-size:1.02rem;font-weight:500}.brand em{font-style:normal;color:var(--gold)}
+  h1{font-family:var(--serif);font-weight:500;font-size:1.35rem;margin-bottom:2px}
+  .card{background:linear-gradient(180deg,var(--panel-2),var(--panel));border:1px solid var(--line);border-radius:14px;padding:0;overflow:hidden;margin-bottom:20px}
+  .card .body{padding:clamp(16px,3vw,26px)}
+  .card h2{font-family:var(--serif);font-weight:500;font-size:1.1rem;margin-bottom:3px}
+  .sub{color:var(--muted);font-size:.85rem;margin-bottom:14px}
+  /* cover + avatar */
+  .cover{position:relative;height:150px;background:linear-gradient(120deg,#16233f,#0d1526);background-size:cover;background-position:center}
+  .cover .editbtn{position:absolute;right:12px;bottom:12px}
+  .avatar-row{display:flex;align-items:flex-end;gap:16px;margin-top:-46px;padding:0 clamp(16px,3vw,26px)}
+  .avatar{width:92px;height:92px;border-radius:50%;border:3px solid var(--panel);background:#1b2740 center/cover no-repeat;display:grid;place-items:center;position:relative;flex:none;overflow:hidden}
+  .avatar .ph{font-family:var(--serif);font-size:1.9rem;color:var(--gold-bright)}
+  .avatar .cam{position:absolute;inset:0;background:rgba(0,0,0,.45);display:none;place-items:center;cursor:pointer;font-size:1.2rem}
+  .avatar:hover .cam{display:grid}
+  .who h1{font-size:1.15rem}
+  .who .em{color:var(--muted);font-size:.85rem}
+  label{display:block;font-size:.72rem;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:12px 0 5px}
+  .field{position:relative}
+  input,textarea{width:100%;background:var(--ink-2);border:1px solid var(--line-soft);border-radius:9px;color:var(--text);font-size:.95rem;padding:10px 12px;font-family:inherit}
+  textarea{resize:vertical;min-height:74px}
+  input:focus,textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(232,166,26,.13)}
+  .field .eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:0;color:var(--muted);cursor:pointer;padding:8px;line-height:0}
+  .grid2{display:grid;gap:12px}@media(min-width:560px){.grid2{grid-template-columns:1fr 1fr}}
+  .btn{background:linear-gradient(180deg,var(--gold-bright),var(--gold));color:#241a02;font-weight:700;border:0;border-radius:9px;padding:10px 18px;cursor:pointer;font-size:.92rem}
+  .btn:disabled{opacity:.55;cursor:default}
+  .btn.ghost{background:none;border:1px solid var(--line);color:var(--muted);font-weight:500;font-size:.82rem;padding:7px 12px}
+  .btn.ghost:hover{color:var(--text);border-color:var(--gold)}
+  .btn.danger{background:none;border:1px solid rgba(196,96,79,.6);color:#e9a597;font-weight:600}
+  .btn.danger:hover{background:rgba(196,96,79,.1)}
+  .msg{margin-top:12px;padding:10px 12px;border-radius:9px;font-size:.85rem;display:none}
+  .msg.err{display:block;background:rgba(196,96,79,.12);border:1px solid rgba(196,96,79,.4);color:#f0b6ab}
+  .msg.ok{display:block;background:rgba(63,167,155,.12);border:1px solid rgba(63,167,155,.4);color:#a7ded6}
+  .danger-card{border-color:rgba(196,96,79,.35)}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}
+  .foot{text-align:center;color:var(--muted);font-size:.82rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a class="brand" href="dashboard.html"><span class="brand-mark"><i></i></span><b>Niche <em>Finder</em></b></a>
+    <a href="dashboard.html" class="btn ghost">← Command Center</a>
+  </div>
+  <h1>Account settings</h1>
+  <p class="sub">Manage your profile, security, and account.</p>
+
+  <!-- PROFILE -->
+  <div class="card">
+    <div class="cover" id="cover">
+      <button class="btn ghost editbtn" id="cover-btn">Change cover</button>
+    </div>
+    <div class="avatar-row">
+      <div class="avatar" id="avatar"><span class="ph" id="avatar-ph">·</span><span class="cam" id="avatar-cam">📷</span></div>
+      <div class="who"><h1 id="who-name">—</h1><div class="em" id="who-email"></div></div>
+    </div>
+    <div class="body">
+      <form id="profile-form" novalidate>
+        <div class="grid2">
+          <div><label for="name">Account holder name</label><input id="name" type="text" maxlength="80" placeholder="Your full name"></div>
+          <div><label for="company">Company / venture</label><input id="company" type="text" maxlength="80" placeholder="Optional"></div>
+        </div>
+        <div class="grid2">
+          <div><label for="country">Country</label><input id="country" type="text" maxlength="60" placeholder="Optional"></div>
+          <div><label for="email-ro">Email</label><input id="email-ro" type="email" disabled></div>
+        </div>
+        <label for="bio">About</label>
+        <textarea id="bio" maxlength="400" placeholder="A short bio (optional)"></textarea>
+        <div class="row"><button type="submit" class="btn" id="save-btn">Save profile</button></div>
+        <div class="msg" id="profile-msg"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- PASSWORD -->
+  <div class="card"><div class="body">
+    <h2>Change password</h2>
+    <p class="sub">Use a strong password you don't use elsewhere.</p>
+    <form id="password-form" novalidate>
+      <label for="cur">Current password</label>
+      <div class="field"><input id="cur" type="password" autocomplete="current-password"><button type="button" class="eye" data-eye="cur">👁</button></div>
+      <label for="new">New password</label>
+      <div class="field"><input id="new" type="password" autocomplete="new-password" minlength="8"><button type="button" class="eye" data-eye="new">👁</button></div>
+      <div class="row"><button type="submit" class="btn" id="pw-btn">Update password</button></div>
+      <div class="msg" id="password-msg"></div>
+    </form>
+  </div></div>
+
+  <!-- DANGER -->
+  <div class="card danger-card"><div class="body">
+    <h2>Delete account</h2>
+    <p class="sub">Permanently deletes your account, profile, and wallet. This cannot be undone.</p>
+    <button class="btn danger" id="del-open">Delete my account</button>
+    <form id="delete-form" class="hide" style="margin-top:14px">
+      <label for="del-pass">Confirm your password to delete</label>
+      <div class="field"><input id="del-pass" type="password" autocomplete="current-password"><button type="button" class="eye" data-eye="del-pass">👁</button></div>
+      <div class="row">
+        <button type="submit" class="btn danger" id="del-btn">Permanently delete</button>
+        <button type="button" class="btn ghost" id="del-cancel">Cancel</button>
+      </div>
+      <div class="msg" id="delete-msg"></div>
+    </form>
+  </div></div>
+
+  <p class="foot"><a href="dashboard.html">← Back to Command Center</a></p>
+</div>
+
+<!-- hidden file inputs -->
+<input type="file" id="avatar-file" accept="image/png,image/jpeg,image/webp,image/gif" class="hide" style="display:none">
+<input type="file" id="cover-file" accept="image/png,image/jpeg,image/webp,image/gif" class="hide" style="display:none">
+
+<script src="nf-config.js"></script>
+<script src="nf-auth.js"></script>
+<script>
+(function () {
+  'use strict';
+  var base = (window.NF_GATEWAY_URL || '').replace(/\/$/, '');
+  if (!window.NF_AUTH || !NF_AUTH.isLoggedIn()) { location.replace('account.html?next=settings.html'); return; }
+  var el = function (id) { return document.getElementById(id); };
+  function setMsg(node, t, k) { node.textContent = t || ''; node.className = 'msg' + (k ? ' ' + k : ''); }
+  function mediaUrl(f) { return base + '/v1/media?f=' + encodeURIComponent(f); }
+
+  document.querySelectorAll('[data-eye]').forEach(function (b) {
+    b.addEventListener('click', function () { var i = el(b.getAttribute('data-eye')); i.type = i.type === 'text' ? 'password' : 'text'; b.style.color = i.type === 'text' ? 'var(--gold)' : ''; });
+  });
+
+  function render(u) {
+    el('who-name').textContent = u.name || 'Your account';
+    el('who-email').textContent = u.email;
+    el('email-ro').value = u.email;
+    el('name').value = u.name || '';
+    el('company').value = u.company || '';
+    el('country').value = u.country || '';
+    el('bio').value = u.bio || '';
+    if (u.avatar) { el('avatar').style.backgroundImage = 'url("' + mediaUrl(u.avatar) + '")'; el('avatar-ph').style.display = 'none'; }
+    else { el('avatar-ph').textContent = (u.name || u.email || '?').trim().charAt(0).toUpperCase(); el('avatar-ph').style.display = ''; }
+    if (u.cover) el('cover').style.backgroundImage = 'url("' + mediaUrl(u.cover) + '")';
+    NF_AUTH.updateAccount(u);
+  }
+
+  // load current profile
+  fetch(base + '/v1/auth/me', { headers: NF_AUTH.authHeader() })
+    .then(function (r) { if (r.status === 401) { location.replace('account.html?next=settings.html'); throw new Error('401'); } return r.json(); })
+    .then(function (d) { if (d.user) render(d.user); }).catch(function () {});
+
+  // profile save
+  el('profile-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var btn = el('save-btn'); btn.disabled = true; btn.textContent = 'Saving…'; setMsg(el('profile-msg'), '', '');
+    fetch(base + '/v1/auth/profile', { method: 'POST', headers: Object.assign({ 'content-type': 'application/json' }, NF_AUTH.authHeader()),
+      body: JSON.stringify({ name: el('name').value, company: el('company').value, country: el('country').value, bio: el('bio').value }) })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (res) {
+        btn.disabled = false; btn.textContent = 'Save profile';
+        if (!res.ok) { setMsg(el('profile-msg'), (res.d && (res.d.message || res.d.error)) || 'Failed.', 'err'); return; }
+        render(res.d.user); setMsg(el('profile-msg'), 'Profile saved.', 'ok');
+      }).catch(function () { btn.disabled = false; btn.textContent = 'Save profile'; setMsg(el('profile-msg'), 'Network error.', 'err'); });
+  });
+
+  // image upload (avatar + cover)
+  function wireUpload(kind, fileInput, trigger) {
+    trigger.addEventListener('click', function () { fileInput.click(); });
+    fileInput.addEventListener('change', function () {
+      var f = fileInput.files[0]; if (!f) return;
+      if (f.size > (kind === 'cover' ? 1000000 : 500000)) { setMsg(el('profile-msg'), 'Image too large (max ' + (kind === 'cover' ? '1MB' : '500KB') + ').', 'err'); return; }
+      var reader = new FileReader();
+      reader.onload = function () {
+        setMsg(el('profile-msg'), 'Uploading ' + kind + '…', 'ok');
+        fetch(base + '/v1/auth/avatar', { method: 'POST', headers: Object.assign({ 'content-type': 'application/json' }, NF_AUTH.authHeader()),
+          body: JSON.stringify({ kind: kind, dataUrl: reader.result }) })
+          .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+          .then(function (res) {
+            if (!res.ok) { setMsg(el('profile-msg'), (res.d && (res.d.message || res.d.error)) || 'Upload failed.', 'err'); return; }
+            render(res.d.user); setMsg(el('profile-msg'), (kind === 'cover' ? 'Cover' : 'Profile picture') + ' updated.', 'ok');
+          }).catch(function () { setMsg(el('profile-msg'), 'Upload failed.', 'err'); });
+      };
+      reader.readAsDataURL(f);
+      fileInput.value = '';
+    });
+  }
+  wireUpload('avatar', el('avatar-file'), el('avatar-cam'));
+  wireUpload('cover', el('cover-file'), el('cover-btn'));
+
+  // change password
+  el('password-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var btn = el('pw-btn'); btn.disabled = true; btn.textContent = 'Updating…'; setMsg(el('password-msg'), '', '');
+    fetch(base + '/v1/auth/password', { method: 'POST', headers: Object.assign({ 'content-type': 'application/json' }, NF_AUTH.authHeader()),
+      body: JSON.stringify({ currentPassword: el('cur').value, newPassword: el('new').value }) })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (res) {
+        btn.disabled = false; btn.textContent = 'Update password';
+        if (!res.ok) { setMsg(el('password-msg'), (res.d && (res.d.message || res.d.error)) || 'Failed.', 'err'); return; }
+        el('cur').value = ''; el('new').value = ''; setMsg(el('password-msg'), 'Password updated.', 'ok');
+      }).catch(function () { btn.disabled = false; btn.textContent = 'Update password'; setMsg(el('password-msg'), 'Network error.', 'err'); });
+  });
+
+  // delete account
+  el('del-open').addEventListener('click', function () { el('delete-form').classList.remove('hide'); el('del-open').classList.add('hide'); });
+  el('del-cancel').addEventListener('click', function () { el('delete-form').classList.add('hide'); el('del-open').classList.remove('hide'); setMsg(el('delete-msg'), '', ''); });
+  el('delete-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!confirm('This permanently deletes your account and wallet. Continue?')) return;
+    var btn = el('del-btn'); btn.disabled = true; btn.textContent = 'Deleting…'; setMsg(el('delete-msg'), '', '');
+    fetch(base + '/v1/auth/delete', { method: 'POST', headers: Object.assign({ 'content-type': 'application/json' }, NF_AUTH.authHeader()),
+      body: JSON.stringify({ currentPassword: el('del-pass').value }) })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (res) {
+        if (!res.ok) { btn.disabled = false; btn.textContent = 'Permanently delete'; setMsg(el('delete-msg'), (res.d && (res.d.message || res.d.error)) || 'Failed.', 'err'); return; }
+        NF_AUTH.clear(); alert('Your account has been deleted.'); location.href = 'index.html';
+      }).catch(function () { btn.disabled = false; btn.textContent = 'Permanently delete'; setMsg(el('delete-msg'), 'Network error.', 'err'); });
+  });
+})();
+</script>
+</body>
+</html>

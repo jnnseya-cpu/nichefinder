@@ -5,15 +5,20 @@ import { fileURLToPath } from 'node:url';
 import { config } from './config.js';
 import { GatewayError } from './errors.js';
 import { route, availableProviders, meterAcu } from './router.js';
-import { getWallet, getLedger, charge, credit, grant, summary, PACKAGES } from './wallet.js';
+import { getWallet, getLedger, charge, credit, grant, summary, deleteWallet, PACKAGES } from './wallet.js';
 import { createCheckout, handleWebhook, paymentsConfigured } from './payments.js';
 import { issueChallenge, verifyChallenge } from './human.js';
-import { signup, login, logout, sessionFor, requestReset, resetPassword, listUsers, resolveUserId, emailForUserId, setRole, setDisabled } from './auth.js';
+import { signup, login, logout, sessionFor, requestReset, resetPassword, listUsers, resolveUserId, emailForUserId, setRole, setDisabled, userByEmail, updateProfile, setMedia, changePassword, deleteAccount } from './auth.js';
 import { sendMail, mailConfigured } from './mailer.js';
 
 const MAX_BODY_BYTES = 2 * 1024 * 1024;
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 const LEADS_PATH = process.env.LEADS_STORE || path.join(process.cwd(), 'data', 'leads.jsonl');
+// Profile pictures + covers live on disk (not sensitive like money) and are
+// served by /v1/media. Kept out of the encrypted store to keep it small.
+const AVATAR_DIR = process.env.AVATAR_STORE || path.join(process.cwd(), 'data', 'avatars');
+const IMG_MIME_EXT = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif' };
+const EXT_MIME = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif' };
 
 // Maintenance mode: an operator toggle (admin console) that pauses AI generation
 // site-wide. Persisted as a flag file so it survives restarts.
@@ -335,7 +340,69 @@ const server = http.createServer(async (req, res) => {
   if (method === 'GET' && url.pathname === '/v1/auth/me') {
     const s = sessionFor(bearer(req));
     if (!s) return json(res, 401, { error: 'unauthorized' });
-    return json(res, 200, { user: { email: s.email, userId: s.userId, role: s.role } });
+    return json(res, 200, { user: userByEmail(s.email) || { email: s.email, userId: s.userId, role: s.role } });
+  }
+
+  // Serve a stored profile picture / cover. Filename is basename-sanitised and
+  // must resolve inside the avatars dir (no traversal).
+  if (method === 'GET' && url.pathname === '/v1/media') {
+    const f = path.basename(url.searchParams.get('f') || '');
+    const abs = path.join(AVATAR_DIR, f);
+    if (!f || !abs.startsWith(AVATAR_DIR + path.sep)) return json(res, 404, { error: 'not_found' });
+    try {
+      const buf = fs.readFileSync(abs);
+      res.writeHead(200, { 'content-type': EXT_MIME[path.extname(f).slice(1).toLowerCase()] || 'application/octet-stream', 'cache-control': 'public, max-age=60' });
+      return res.end(buf);
+    } catch { return json(res, 404, { error: 'not_found' }); }
+  }
+
+  // ---- account self-service: profile, avatar/cover, password, delete ----
+  if (req.method === 'POST' && url.pathname === '/v1/auth/profile') {
+    try {
+      const s = sessionFor(bearer(req));
+      if (!s) return json(res, 401, { error: 'unauthorized' });
+      const body = JSON.parse((await readBody(req)) || '{}');
+      return json(res, 200, { user: updateProfile(s.email, body) });
+    } catch (err) { return handleError(res, err); }
+  }
+
+  if (req.method === 'POST' && url.pathname === '/v1/auth/avatar') {
+    try {
+      const s = sessionFor(bearer(req));
+      if (!s) return json(res, 401, { error: 'unauthorized' });
+      const body = JSON.parse((await readBody(req)) || '{}');
+      const kind = body.kind === 'cover' ? 'cover' : 'avatar';
+      const m = /^data:(image\/\w+);base64,(.+)$/s.exec(body.dataUrl || '');
+      if (!m || !IMG_MIME_EXT[m[1]]) throw new GatewayError('Upload a PNG, JPEG, WebP or GIF image.', { status: 400, code: 'bad_image' });
+      const buf = Buffer.from(m[2], 'base64');
+      const cap = kind === 'cover' ? 1_000_000 : 500_000;
+      if (buf.length > cap) throw new GatewayError(`Image too large (max ${cap / 1000}KB).`, { status: 400, code: 'image_too_large' });
+      fs.mkdirSync(AVATAR_DIR, { recursive: true });
+      const file = `${s.userId}_${kind}.${IMG_MIME_EXT[m[1]]}`;
+      fs.writeFileSync(path.join(AVATAR_DIR, file), buf);
+      const user = setMedia(s.email, kind, file);
+      return json(res, 200, { url: `/v1/media?f=${encodeURIComponent(file)}`, user });
+    } catch (err) { return handleError(res, err); }
+  }
+
+  if (req.method === 'POST' && url.pathname === '/v1/auth/password') {
+    try {
+      const s = sessionFor(bearer(req));
+      if (!s) return json(res, 401, { error: 'unauthorized' });
+      const body = JSON.parse((await readBody(req)) || '{}');
+      return json(res, 200, changePassword(s.email, body.currentPassword, body.newPassword));
+    } catch (err) { return handleError(res, err); }
+  }
+
+  if (req.method === 'POST' && url.pathname === '/v1/auth/delete') {
+    try {
+      const s = sessionFor(bearer(req));
+      if (!s) return json(res, 401, { error: 'unauthorized' });
+      const body = JSON.parse((await readBody(req)) || '{}');
+      const r = deleteAccount(s.email, body.currentPassword);
+      try { deleteWallet(r.userId); } catch { /* wallet may not exist */ }
+      return json(res, 200, { ok: true });
+    } catch (err) { return handleError(res, err); }
   }
 
   if (req.method === 'POST' && url.pathname === '/v1/auth/forgot') {

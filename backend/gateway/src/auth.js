@@ -11,7 +11,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { GatewayError } from './errors.js';
-import { encryptStore, decryptStore, getWallet } from './wallet.js';
+import { encryptStore, decryptStore, peekWallet, deleteWallet } from './wallet.js';
 
 const STORE_PATH = process.env.AUTH_STORE || path.join(process.cwd(), 'data', 'auth.json');
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
@@ -56,7 +56,16 @@ const tokenHash = (t) => crypto.createHash('sha256').update(String(t)).digest('h
 const newToken = () => crypto.randomBytes(32).toString('hex');
 // Capability-grade wallet id matching the gateway's ^op_[a-z0-9]{10,}$ contract.
 const newUserId = () => 'op_' + Array.from(crypto.randomBytes(16), (b) => (b % 36).toString(36)).join('');
-const publicUser = (u) => ({ email: u.email, userId: u.userId, role: u.role, createdAt: u.createdAt, disabled: !!u.disabled });
+const publicUser = (u) => ({
+  email: u.email, userId: u.userId, role: u.role, createdAt: u.createdAt, disabled: !!u.disabled,
+  name: (u.profile && u.profile.name) || '',
+  company: (u.profile && u.profile.company) || '',
+  country: (u.profile && u.profile.country) || '',
+  bio: (u.profile && u.profile.bio) || '',
+  avatar: (u.profile && u.profile.avatar) || '',
+  cover: (u.profile && u.profile.cover) || '',
+});
+const clip = (s, n) => String(s == null ? '' : s).slice(0, n);
 
 function timingEqualHex(a, b) {
   const ba = Buffer.from(String(a), 'hex');
@@ -151,14 +160,14 @@ export function resetPassword({ email, token, password }) {
   return { ok: true };
 }
 
-// Admin view: every account with its live ACU balance (reading a wallet mints
-// the welcome wallet if absent — harmless and expected).
+// Admin view: every account with its live ACU balance. Admins are operators,
+// not customers — they carry no consumer wallet (wallet = null → shown as "—").
+// Uses peekWallet so listing never mints a welcome wallet as a side effect.
 export function listUsers() {
   return Object.values(store.users)
     .sort((a, b) => b.createdAt - a.createdAt)
     .map((u) => {
-      let wallet = { paid: 0, free: 0, total: 0 };
-      try { wallet = getWallet(u.userId); } catch { /* leave zeros */ }
+      const wallet = u.role === 'admin' ? null : (peekWallet(u.userId) || { paid: 0, free: 0, total: 0 });
       return { ...publicUser(u), wallet };
     });
 }
@@ -187,6 +196,7 @@ export function setRole(email, role) {
   if (!u) throw new GatewayError('No such user.', { status: 404, code: 'user_not_found' });
   u.role = role;
   for (const s of Object.values(store.sessions)) if (s.email === u.email) s.role = role;
+  if (role === 'admin') { try { deleteWallet(u.userId); } catch { /* none */ } } // operators hold no consumer ACUs
   persist();
   return publicUser(u);
 }
@@ -202,6 +212,67 @@ export function setDisabled(email, disabled) {
   return publicUser(u);
 }
 
+export function userByEmail(email) {
+  const u = store.users[normEmail(email)];
+  return u ? publicUser(u) : null;
+}
+
+// Self-service profile: account-holder name + optional details.
+export function updateProfile(email, fields) {
+  const u = store.users[normEmail(email)];
+  if (!u) throw new GatewayError('No such user.', { status: 404, code: 'user_not_found' });
+  u.profile = u.profile || {};
+  if (fields.name !== undefined) u.profile.name = clip(fields.name, 80);
+  if (fields.company !== undefined) u.profile.company = clip(fields.company, 80);
+  if (fields.country !== undefined) u.profile.country = clip(fields.country, 60);
+  if (fields.bio !== undefined) u.profile.bio = clip(fields.bio, 400);
+  persist();
+  return publicUser(u);
+}
+
+// Store the filename of an uploaded profile picture / cover (bytes live on disk;
+// the gateway handles the file IO and passes us the resulting filename).
+export function setMedia(email, kind, filename) {
+  if (!['avatar', 'cover'].includes(kind)) throw new GatewayError('Invalid media kind.', { status: 400, code: 'invalid_kind' });
+  const u = store.users[normEmail(email)];
+  if (!u) throw new GatewayError('No such user.', { status: 404, code: 'user_not_found' });
+  u.profile = u.profile || {};
+  u.profile[kind] = filename;
+  persist();
+  return publicUser(u);
+}
+
+// Change password: requires the current one; rotates the salt. Existing sessions
+// stay valid — the user isn't logged out of their own device.
+export function changePassword(email, currentPassword, newPassword) {
+  const u = store.users[normEmail(email)];
+  if (!u) throw new GatewayError('No such user.', { status: 404, code: 'user_not_found' });
+  if (!timingEqualHex(hashPassword(currentPassword || '', u.salt), u.hash)) {
+    throw new GatewayError('Current password is incorrect.', { status: 403, code: 'bad_current_password' });
+  }
+  validatePassword(newPassword);
+  u.salt = crypto.randomBytes(16).toString('hex');
+  u.hash = hashPassword(newPassword, u.salt);
+  persist();
+  return { ok: true };
+}
+
+// Permanently delete an account: requires the current password. Returns the
+// userId so the caller can also drop the wallet. Sessions are all revoked.
+export function deleteAccount(email, currentPassword) {
+  const em = normEmail(email);
+  const u = store.users[em];
+  if (!u) throw new GatewayError('No such user.', { status: 404, code: 'user_not_found' });
+  if (!timingEqualHex(hashPassword(currentPassword || '', u.salt), u.hash)) {
+    throw new GatewayError('Password is incorrect.', { status: 403, code: 'bad_current_password' });
+  }
+  const userId = u.userId;
+  delete store.users[em];
+  for (const [h, s] of Object.entries(store.sessions)) if (s.email === em) delete store.sessions[h];
+  persist();
+  return { ok: true, userId };
+}
+
 // Seed (or reconcile) the admin account from the environment on boot. The admin
 // login has no mailbox, so ADMIN_PASSWORD in the (chmod 600) env file is the
 // source of truth and the recovery path: create the account if missing, keep it
@@ -214,12 +285,15 @@ export function seedAdmin() {
   const existing = store.users[em];
   if (!existing) {
     const salt = crypto.randomBytes(16).toString('hex');
-    store.users[em] = { email: em, userId: newUserId(), salt, hash: hashPassword(pw, salt), role: 'admin', createdAt: Date.now(), reset: null };
+    const admin = { email: em, userId: newUserId(), salt, hash: hashPassword(pw, salt), role: 'admin', createdAt: Date.now(), reset: null };
+    store.users[em] = admin;
+    try { deleteWallet(admin.userId); } catch { /* none */ }
     persist();
     return;
   }
   let changed = false;
   if (existing.role !== 'admin') { existing.role = 'admin'; changed = true; }
+  try { deleteWallet(existing.userId); } catch { /* operators hold no consumer ACUs */ }
   if (!timingEqualHex(hashPassword(pw, existing.salt), existing.hash)) {
     existing.salt = crypto.randomBytes(16).toString('hex');
     existing.hash = hashPassword(pw, existing.salt);

@@ -140,8 +140,8 @@
       <span class="v" id="syncVer">V36 · JUST NOW</span>
     </div>
     <div class="cmd-row">
-      <h1>Command Center: <span style="color:var(--gold-bright)">Operator</span></h1>
-      <button class="btn" id="editProfile">Edit Operator Profile</button>
+      <h1>Command Center: <span style="color:var(--gold-bright)" data-auth-name>Operator</span></h1>
+      <a class="btn" href="settings.html">Edit Operator Profile</a>
       <button class="btn" id="refresh">Refresh</button>
       <a class="btn gold" href="search.html">Start OS Search</a>
     </div>
@@ -419,10 +419,6 @@
       function(){ showToast(link); }
     );
   });
-  document.getElementById('editProfile').addEventListener('click', function(){
-    showToast('Operator profile editing ships with accounts — coming next.');
-  });
-
   // stable per-user invite code
   var code = localStorage.getItem('nf_invite');
   if (!code){

@@ -279,17 +279,17 @@
     var body = el('users-body');
     if (!rows.length) { body.innerHTML = '<tr><td colspan="6"><div class="empty">No users.</div></td></tr>'; return; }
     body.innerHTML = rows.map(function (u) {
+      var w = u.wallet; // null for admins (operators hold no consumer ACUs)
+      var acts = (w ? btn('grant', u.userId, 'Grant') + btn('deduct', u.userId, 'Deduct') + btn('ledger', u.userId, 'Ledger') : '') +
+        btn('role', u.email, u.role === 'admin' ? 'Revoke admin' : 'Make admin') +
+        '<button class="mini warn" data-act="disable" data-email="' + esc(u.email) + '" data-on="' + (u.disabled ? '0' : '1') + '">' + (u.disabled ? 'Enable' : 'Disable') + '</button>';
       return '<tr>' +
         '<td>' + esc(u.email) + (u.disabled ? ' <span class="pill off">disabled</span>' : '') + '<div class="uid">' + u.userId + '</div></td>' +
         '<td><span class="pill ' + (u.role === 'admin' ? 'admin' : '') + '">' + u.role + '</span></td>' +
-        '<td class="bal">' + fmt(u.wallet.paid) + '</td>' +
-        '<td class="bal">' + fmt(u.wallet.free) + '</td>' +
+        '<td class="bal">' + (w ? fmt(w.paid) : '—') + '</td>' +
+        '<td class="bal">' + (w ? fmt(w.free) : '—') + '</td>' +
         '<td>' + when(u.createdAt) + '</td>' +
-        '<td><div class="rowacts">' +
-          btn('grant', u.userId, 'Grant') + btn('deduct', u.userId, 'Deduct') + btn('ledger', u.userId, 'Ledger') +
-          btn('role', u.email, u.role === 'admin' ? 'Revoke admin' : 'Make admin') +
-          '<button class="mini warn" data-act="disable" data-email="' + esc(u.email) + '" data-on="' + (u.disabled ? '0' : '1') + '">' + (u.disabled ? 'Enable' : 'Disable') + '</button>' +
-        '</div></td></tr>';
+        '<td><div class="rowacts">' + acts + '</div></td></tr>';
     }).join('');
     body.querySelectorAll('[data-act]').forEach(function (b) { b.addEventListener('click', onUserAction); });
   }

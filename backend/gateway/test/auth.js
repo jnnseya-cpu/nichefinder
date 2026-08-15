@@ -15,8 +15,10 @@ process.env.AUTH_STORE = '/tmp/auth-test-auth.json';
 process.env.LEADS_STORE = '/tmp/auth-test-leads.jsonl';
 process.env.SENTINEL_LOG = '/tmp/auth-test-sentinel.jsonl';
 process.env.MAINT_FLAG = '/tmp/auth-test-maint.flag';
+process.env.AVATAR_STORE = '/tmp/auth-test-avatars';
 process.env.ADMIN_EMAIL = 'boss@nf.test'; // no ADMIN_PASSWORD → seeded via signup below
 for (const f of [process.env.WALLET_STORE, process.env.AUTH_STORE, process.env.LEADS_STORE, process.env.SENTINEL_LOG, process.env.MAINT_FLAG]) { try { fs.unlinkSync(f); } catch {} }
+try { fs.rmSync(process.env.AVATAR_STORE, { recursive: true, force: true }); } catch {}
 
 const BASE = `http://127.0.0.1:${process.env.PORT}`;
 let failures = 0;
@@ -164,6 +166,48 @@ res = await post('/v1/auth/login', { email: 'jane@example.com', password: 'hunte
 check('old password no longer works after reset (401)', res.status === 401);
 res = await post('/v1/auth/login', { email: 'jane@example.com', password: 'brandnewpass9' });
 check('new password works', res.status === 200 && !!(await res.json()).token);
+
+console.log('— profile: name + avatar —');
+res = await post('/v1/auth/login', { email: 'jane@example.com', password: 'brandnewpass9' });
+const janeTok = (await res.json()).token;
+res = await post('/v1/auth/profile', { name: 'Jane Doe', company: 'Acme', country: 'UK', bio: 'builder' }, { authorization: 'Bearer ' + janeTok });
+check('profile update saves name', res.status === 200 && (await res.json()).user.name === 'Jane Doe');
+res = await getJson('/v1/auth/me', { authorization: 'Bearer ' + janeTok });
+check('me returns profile name + details', (await res.json()).user.company === 'Acme');
+const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+res = await post('/v1/auth/avatar', { kind: 'avatar', dataUrl: PNG }, { authorization: 'Bearer ' + janeTok });
+let av = await res.json();
+check('avatar upload stored + returns url', res.status === 200 && /\/v1\/media\?f=/.test(av.url) && !!av.user.avatar, JSON.stringify(av));
+res = await getJson(av.url);
+check('avatar served back over /v1/media', res.status === 200 && (res.headers.get('content-type') || '').indexOf('image/png') === 0);
+res = await post('/v1/auth/avatar', { kind: 'avatar', dataUrl: 'data:text/plain;base64,aGk=' }, { authorization: 'Bearer ' + janeTok });
+check('non-image upload refused (400)', res.status === 400);
+
+console.log('— change password —');
+res = await post('/v1/auth/password', { currentPassword: 'wrong', newPassword: 'evenNEWer9' }, { authorization: 'Bearer ' + janeTok });
+check('wrong current password refused (403)', res.status === 403 && (await res.json()).error === 'bad_current_password');
+res = await post('/v1/auth/password', { currentPassword: 'brandnewpass9', newPassword: 'evenNEWer9' }, { authorization: 'Bearer ' + janeTok });
+check('password change succeeds', res.status === 200);
+res = await post('/v1/auth/login', { email: 'jane@example.com', password: 'evenNEWer9' });
+check('login with changed password works', res.status === 200 && !!(await res.json()).token);
+
+console.log('— admin holds no consumer wallet —');
+res = await getJson('/v1/admin/users', { authorization: 'Bearer ' + boss.token });
+let allUsers = (await res.json()).users;
+let adminRow = allUsers.find((u) => u.email === 'boss@nf.test');
+let userRow = allUsers.find((u) => u.email === 'jane@example.com');
+check('admin row has null wallet (no ACUs)', adminRow && adminRow.wallet === null, JSON.stringify(adminRow && adminRow.wallet));
+check('normal user still has a wallet', userRow && userRow.wallet && typeof userRow.wallet.paid === 'number');
+
+console.log('— delete account —');
+res = await post('/v1/auth/signup', { email: 'temp@example.com', password: 'temppass123', ...(await humanProof()) });
+const tempTok = (await res.json()).token;
+res = await post('/v1/auth/delete', { currentPassword: 'nope' }, { authorization: 'Bearer ' + tempTok });
+check('delete with wrong password refused (403)', res.status === 403);
+res = await post('/v1/auth/delete', { currentPassword: 'temppass123' }, { authorization: 'Bearer ' + tempTok });
+check('delete account succeeds', res.status === 200 && (await res.json()).ok === true);
+res = await post('/v1/auth/login', { email: 'temp@example.com', password: 'temppass123' });
+check('deleted account cannot log in (401)', res.status === 401);
 
 console.log('— store encrypted at rest —');
 await new Promise((r) => setTimeout(r, 100));

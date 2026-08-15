@@ -132,6 +132,21 @@ export function getWallet(userId) {
   return view(requireUser(userId));
 }
 
+// Remove a wallet entirely (account deletion). Money records are the user's own
+// data; deletion is explicit and password-confirmed at the auth layer.
+export function deleteWallet(userId) {
+  if (store.wallets[userId]) { delete store.wallets[userId]; persist(); return true; }
+  return false;
+}
+
+// Read a wallet WITHOUT creating one (unlike getWallet, which mints the welcome
+// wallet on first touch). Returns null if the user has no wallet yet — used so
+// the admin console can list operators without minting welcome ACUs for them.
+export function peekWallet(userId) {
+  const w = store.wallets[userId];
+  return w ? view(w) : null;
+}
+
 // Platform-wide aggregates for the admin console: balances, real revenue, and
 // the purchase list. Revenue is parsed from the £ in each credit_purchase
 // ledger label (grants/welcome ACUs are correctly excluded — they aren't sales).
