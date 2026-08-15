@@ -5,15 +5,28 @@ import { fileURLToPath } from 'node:url';
 import { config } from './config.js';
 import { GatewayError } from './errors.js';
 import { route, availableProviders, meterAcu } from './router.js';
-import { getWallet, getLedger, charge, credit, grant, PACKAGES } from './wallet.js';
+import { getWallet, getLedger, charge, credit, grant, summary, PACKAGES } from './wallet.js';
 import { createCheckout, handleWebhook, paymentsConfigured } from './payments.js';
 import { issueChallenge, verifyChallenge } from './human.js';
-import { signup, login, logout, sessionFor, requestReset, resetPassword, listUsers, resolveUserId } from './auth.js';
+import { signup, login, logout, sessionFor, requestReset, resetPassword, listUsers, resolveUserId, emailForUserId, setRole, setDisabled } from './auth.js';
 import { sendMail, mailConfigured } from './mailer.js';
 
 const MAX_BODY_BYTES = 2 * 1024 * 1024;
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 const LEADS_PATH = process.env.LEADS_STORE || path.join(process.cwd(), 'data', 'leads.jsonl');
+
+// Maintenance mode: an operator toggle (admin console) that pauses AI generation
+// site-wide. Persisted as a flag file so it survives restarts.
+const MAINT_FLAG = process.env.MAINT_FLAG || path.join(process.cwd(), 'data', 'maintenance.flag');
+let maintenanceOn = false;
+try { maintenanceOn = fs.existsSync(MAINT_FLAG); } catch { /* default off */ }
+function setMaintenance(on) {
+  maintenanceOn = !!on;
+  try {
+    if (on) { fs.mkdirSync(path.dirname(MAINT_FLAG), { recursive: true }); fs.writeFileSync(MAINT_FLAG, '1'); }
+    else fs.rmSync(MAINT_FLAG, { force: true });
+  } catch { /* best-effort; in-memory flag still applies */ }
+}
 
 /* Per-IP rate limit: cheap, in-memory, resets each minute. Protects the
    public deployment from scripted abuse (human-only access law). */
@@ -224,11 +237,12 @@ const server = http.createServer(async (req, res) => {
 
   if (method === 'GET' && url.pathname === '/v1/health') {
     return json(res, 200, {
-      status: 'ok',
+      status: maintenanceOn ? 'maintenance' : 'ok',
       mock: config.mock,
       providers: availableProviders(),
       payments: paymentsConfigured(),
       fallbackChain: config.fallbackChain,
+      maintenance: maintenanceOn,
     });
   }
 
@@ -351,14 +365,137 @@ const server = http.createServer(async (req, res) => {
     return json(res, 200, { users: listUsers() });
   }
 
+  // Admin session guard: returns the session if it's an admin, else null.
+  const adminOf = () => { const s = sessionFor(bearer(req)); return s && s.role === 'admin' ? s : null; };
+  const readJsonl = (file, cap = 200) => {
+    try {
+      const raw = fs.readFileSync(file, 'utf8').trim();
+      if (!raw) return [];
+      return raw.split('\n').map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean).reverse().slice(0, cap);
+    } catch { return []; }
+  };
+
   if (req.method === 'POST' && url.pathname === '/v1/admin/grant') {
     try {
-      const s = sessionFor(bearer(req));
-      if (!s || s.role !== 'admin') return json(res, 403, { error: 'admin_required' });
+      const s = adminOf();
+      if (!s) return json(res, 403, { error: 'admin_required' });
       const body = JSON.parse((await readBody(req)) || '{}');
       const userId = resolveUserId(body.userId || body.email);
       const result = grant({ user: userId, amount: body.amount, reason: body.reason || `Admin grant by ${s.email}`, idempotencyKey: body.idempotencyKey });
       return json(res, 200, { ...result, userId });
+    } catch (err) { return handleError(res, err); }
+  }
+
+  if (req.method === 'POST' && url.pathname === '/v1/admin/deduct') {
+    try {
+      const s = adminOf();
+      if (!s) return json(res, 403, { error: 'admin_required' });
+      const body = JSON.parse((await readBody(req)) || '{}');
+      const userId = resolveUserId(body.userId || body.email);
+      const result = charge({ user: userId, amount: body.amount, label: body.reason || `Admin deduction by ${s.email}`, action: 'admin_deduct' });
+      return json(res, 200, { ...result, userId });
+    } catch (err) { return handleError(res, err); }
+  }
+
+  if (method === 'GET' && url.pathname === '/v1/admin/ledger') {
+    try {
+      if (!adminOf()) return json(res, 403, { error: 'admin_required' });
+      const userId = resolveUserId(url.searchParams.get('user'));
+      return json(res, 200, { userId, email: emailForUserId(userId), ledger: getLedger(userId, url.searchParams.get('limit') || 100) });
+    } catch (err) { return handleError(res, err); }
+  }
+
+  if (req.method === 'POST' && url.pathname === '/v1/admin/role') {
+    try {
+      const s = adminOf();
+      if (!s) return json(res, 403, { error: 'admin_required' });
+      const body = JSON.parse((await readBody(req)) || '{}');
+      return json(res, 200, setRole(body.email, body.role));
+    } catch (err) { return handleError(res, err); }
+  }
+
+  if (req.method === 'POST' && url.pathname === '/v1/admin/disable') {
+    try {
+      const s = adminOf();
+      if (!s) return json(res, 403, { error: 'admin_required' });
+      const body = JSON.parse((await readBody(req)) || '{}');
+      const sameEmail = String(body.email || '').trim().toLowerCase() === String(s.email).toLowerCase();
+      if (sameEmail && body.disabled !== false) {
+        throw new GatewayError('You cannot disable your own admin account.', { status: 400, code: 'self_disable' });
+      }
+      return json(res, 200, setDisabled(body.email, body.disabled !== false));
+    } catch (err) { return handleError(res, err); }
+  }
+
+  if (method === 'GET' && url.pathname === '/v1/admin/overview') {
+    if (!adminOf()) return json(res, 403, { error: 'admin_required' });
+    const sum = summary();
+    const users = listUsers();
+    return json(res, 200, {
+      users: users.length,
+      admins: users.filter((u) => u.role === 'admin').length,
+      disabled: users.filter((u) => u.disabled).length,
+      revenueGBP: sum.revenueGBP,
+      acusSold: sum.acusSold,
+      grantsTotal: sum.grantsTotal,
+      purchases: sum.purchases.length,
+      paidOutstanding: sum.paidTotal,
+      leads: readJsonl(LEADS_PATH, 100000).length,
+      payments: paymentsConfigured(),
+      mailConfigured: mailConfigured(),
+      providers: availableProviders(),
+      fallbackChain: config.fallbackChain,
+      mock: config.mock,
+      maintenance: maintenanceOn,
+    });
+  }
+
+  if (method === 'GET' && url.pathname === '/v1/admin/revenue') {
+    if (!adminOf()) return json(res, 403, { error: 'admin_required' });
+    const sum = summary();
+    const byPackage = {};
+    for (const p of sum.purchases) {
+      const name = (/·\s*([^(]+?)\s*\(/.exec(p.label) || [])[1] || 'Purchase';
+      byPackage[name] = byPackage[name] || { name, count: 0, gbp: 0, acus: 0 };
+      byPackage[name].count += 1; byPackage[name].gbp += p.gbp; byPackage[name].acus += p.acus;
+    }
+    return json(res, 200, {
+      revenueGBP: sum.revenueGBP,
+      acusSold: sum.acusSold,
+      grantsTotal: sum.grantsTotal,
+      count: sum.purchases.length,
+      byPackage: Object.values(byPackage).sort((a, b) => b.gbp - a.gbp),
+      purchases: sum.purchases.map((p) => ({ ...p, email: emailForUserId(p.userId) || p.userId })),
+    });
+  }
+
+  if (method === 'GET' && url.pathname === '/v1/admin/leads') {
+    if (!adminOf()) return json(res, 403, { error: 'admin_required' });
+    return json(res, 200, { leads: readJsonl(LEADS_PATH) });
+  }
+
+  if (method === 'GET' && url.pathname === '/v1/admin/security') {
+    if (!adminOf()) return json(res, 403, { error: 'admin_required' });
+    const now = Date.now();
+    const bans = [];
+    for (const [banIp, st] of strikes) if (st.until > now) bans.push({ ip: banIp, until: st.until, strikes: st.n });
+    return json(res, 200, {
+      log: readJsonl(SENTINEL_LOG),
+      bans,
+      providers: availableProviders(),
+      fallbackChain: config.fallbackChain,
+      payments: paymentsConfigured(),
+      mock: config.mock,
+      maintenance: maintenanceOn,
+    });
+  }
+
+  if (req.method === 'POST' && url.pathname === '/v1/admin/maintenance') {
+    try {
+      if (!adminOf()) return json(res, 403, { error: 'admin_required' });
+      const body = JSON.parse((await readBody(req)) || '{}');
+      setMaintenance(!!body.on);
+      return json(res, 200, { maintenance: maintenanceOn });
     } catch (err) { return handleError(res, err); }
   }
 
@@ -442,6 +579,9 @@ const server = http.createServer(async (req, res) => {
 
   if (req.method === 'POST' && url.pathname === '/v1/generate') {
     try {
+      if (maintenanceOn) {
+        return json(res, 503, { error: 'maintenance', message: 'Niche Finder is briefly paused for maintenance. Please try again shortly.' });
+      }
       const raw = await readBody(req);
       let body;
       try {

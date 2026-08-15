@@ -132,6 +132,34 @@ export function getWallet(userId) {
   return view(requireUser(userId));
 }
 
+// Platform-wide aggregates for the admin console: balances, real revenue, and
+// the purchase list. Revenue is parsed from the £ in each credit_purchase
+// ledger label (grants/welcome ACUs are correctly excluded — they aren't sales).
+export function summary() {
+  let paidTotal = 0, freeTotal = 0, acusSold = 0, revenueGBP = 0, grantsTotal = 0;
+  const purchases = [];
+  for (const [userId, w] of Object.entries(store.wallets)) {
+    paidTotal += w.paid; freeTotal += w.free;
+    for (const e of w.ledger) {
+      if (e.type === 'credit_purchase') {
+        const m = /£(\d+(?:\.\d+)?)/.exec(e.t || '');
+        const gbp = m ? Number(m[1]) : 0;
+        revenueGBP += gbp; acusSold += e.amt;
+        purchases.push({ userId, gbp, acus: e.amt, ts: e.ts, label: e.t });
+      } else if (e.type === 'credit_grant') {
+        grantsTotal += e.amt;
+      }
+    }
+  }
+  purchases.sort((a, b) => b.ts - a.ts);
+  return {
+    walletCount: Object.keys(store.wallets).length,
+    paidTotal, freeTotal, acusSold,
+    revenueGBP: Math.round(revenueGBP * 100) / 100,
+    grantsTotal, purchases: purchases.slice(0, 200),
+  };
+}
+
 export function getLedger(userId, limit = 50) {
   return requireUser(userId).ledger.slice(0, Math.min(Number(limit) || 50, LEDGER_CAP));
 }

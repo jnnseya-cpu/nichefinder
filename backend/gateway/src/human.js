@@ -21,9 +21,9 @@ function leadingZeroBits(hexDigest) {
   return bits;
 }
 
-/* Issue a challenge bound to the caller's IP. difficulty ~18 bits ≈ a few
-   hundred ms of browser work; raise for hotter endpoints. */
-export function issueChallenge(ip, difficulty = 18) {
+/* Issue a challenge bound to the caller's IP. difficulty ~16 bits ≈ a few
+   hundred ms of synchronous browser work; raise for hotter endpoints. */
+export function issueChallenge(ip, difficulty = 16) {
   const salt = crypto.randomBytes(12).toString('hex');
   const exp = Date.now() + TTL_MS;
   const payload = `${salt}~${ip}~${difficulty}~${exp}`;

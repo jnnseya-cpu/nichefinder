@@ -56,7 +56,7 @@ const tokenHash = (t) => crypto.createHash('sha256').update(String(t)).digest('h
 const newToken = () => crypto.randomBytes(32).toString('hex');
 // Capability-grade wallet id matching the gateway's ^op_[a-z0-9]{10,}$ contract.
 const newUserId = () => 'op_' + Array.from(crypto.randomBytes(16), (b) => (b % 36).toString(36)).join('');
-const publicUser = (u) => ({ email: u.email, userId: u.userId, role: u.role, createdAt: u.createdAt });
+const publicUser = (u) => ({ email: u.email, userId: u.userId, role: u.role, createdAt: u.createdAt, disabled: !!u.disabled });
 
 function timingEqualHex(a, b) {
   const ba = Buffer.from(String(a), 'hex');
@@ -104,6 +104,7 @@ export function login({ email, password }) {
   const fail = new GatewayError('Incorrect email or password.', { status: 401, code: 'bad_credentials' });
   if (!u) { hashPassword(password || '', '0'.repeat(32)); throw fail; } // equalise timing for unknown emails
   if (!timingEqualHex(hashPassword(password, u.salt), u.hash)) throw fail;
+  if (u.disabled) throw new GatewayError('This account has been disabled. Contact support.', { status: 403, code: 'account_disabled' });
   const token = createSession(u);
   return { token, user: publicUser(u) };
 }
@@ -170,6 +171,35 @@ export function resolveUserId(idOrEmail) {
   const u = store.users[normEmail(s)];
   if (u) return u.userId;
   throw new GatewayError('No user found for that id or email.', { status: 404, code: 'user_not_found' });
+}
+
+// Reverse lookup for the admin console (userId -> account email), so purchases
+// and ledgers can be shown against a human-readable identity.
+export function emailForUserId(userId) {
+  for (const u of Object.values(store.users)) if (u.userId === userId) return u.email;
+  return null;
+}
+
+// Admin: change a user's role. Live sessions get the new role immediately.
+export function setRole(email, role) {
+  if (!['admin', 'user'].includes(role)) throw new GatewayError('Role must be "admin" or "user".', { status: 400, code: 'invalid_role' });
+  const u = store.users[normEmail(email)];
+  if (!u) throw new GatewayError('No such user.', { status: 404, code: 'user_not_found' });
+  u.role = role;
+  for (const s of Object.values(store.sessions)) if (s.email === u.email) s.role = role;
+  persist();
+  return publicUser(u);
+}
+
+// Admin: disable/enable an account. Disabling ends all its sessions and blocks
+// login; the wallet/balance is untouched (money is never destroyed).
+export function setDisabled(email, disabled) {
+  const u = store.users[normEmail(email)];
+  if (!u) throw new GatewayError('No such user.', { status: 404, code: 'user_not_found' });
+  u.disabled = !!disabled;
+  if (u.disabled) for (const [h, s] of Object.entries(store.sessions)) if (s.email === u.email) delete store.sessions[h];
+  persist();
+  return publicUser(u);
 }
 
 // Seed (or reconcile) the admin account from the environment on boot. The admin
