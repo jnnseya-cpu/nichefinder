@@ -9,7 +9,7 @@ const line = (pass, msg) => { console.log(`${pass ? '✓' : '✗'} ${msg}`); if 
 
 console.log('\nNICHE FINDER — Saturday pre-flight\n');
 
-for (const f of ['Dockerfile', 'render.yaml', 'LAUNCH.md', 'SATURDAY-GOLIVE.md',
+for (const f of ['Dockerfile', 'DEPLOY-VPS.md', 'LAUNCH.md', 'SATURDAY-GOLIVE.md',
   'frontend/nf-config.js', 'frontend/index.html', 'shared/nf-economy.js',
   'backend/gateway/src/server.js', 'backend/gateway/src/payments.js',
   'backend/gateway/src/human.js']) {
