@@ -321,6 +321,13 @@
     logLedger: logLedger,
     band: band,
     decision: decision,
-    openTopup: openTopup
+    openTopup: openTopup,
+    // Adopt the server's authoritative balance (e.g. after a server-side document
+    // charge) and notify listeners so every balance readout refreshes.
+    syncWallet: function (w) {
+      if (!w || typeof w.paid !== 'number') return;
+      saveWallet({ paid: w.paid, free: typeof w.free === 'number' ? w.free : loadWallet().free });
+      try { document.dispatchEvent(new CustomEvent('nf:wallet')); } catch (e) {}
+    }
   };
 })();

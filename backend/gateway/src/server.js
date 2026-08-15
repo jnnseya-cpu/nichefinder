@@ -298,6 +298,67 @@ const server = http.createServer(async (req, res) => {
     } catch (err) { return handleError(res, err); }
   }
 
+  // ---- documents: fixed-price, deep AI generation of an investor-grade asset ----
+  // Unlike /v1/generate (metered by tokens), a document is charged the canonical
+  // catalogue price (shared/nf-economy.js), adjusted for capital bracket and
+  // Investor Mode. Price is resolved server-side so the client can never set it.
+  if (req.method === 'POST' && url.pathname === '/v1/document') {
+    try {
+      if (maintenanceOn) {
+        return json(res, 503, { error: 'maintenance', message: 'Niche Finder is briefly paused for maintenance. Please try again shortly.' });
+      }
+      let clientGone = false;
+      res.on('close', () => { if (!res.writableEnded) clientGone = true; });
+      const raw = await readBody(req);
+      let body;
+      try { body = JSON.parse(raw || '{}'); } catch { throw new GatewayError('Body must be valid JSON.', { status: 400, code: 'invalid_json' }); }
+      const inj = screenInstructions(raw);
+      if (inj) { strike(ip, 'prompt_injection', inj); throw new GatewayError('Instruction blocked by the platform security agent.', { status: 400, code: 'non_human_instruction' }); }
+
+      const ECO = globalThis.NF_ECONOMY;
+      const PRICE_KEY = { validation: 'validation', forecast: 'forecast', pnl: 'pnl', riskmap: 'riskmap', bizplan: 'bizplan', pitch: 'pitch', export: 'excel_model' };
+      const key = PRICE_KEY[body.docType];
+      if (!key || !ECO.COSTS[key]) throw new GatewayError(`Unknown document type "${body.docType}".`, { status: 400, code: 'unknown_document' });
+      const price = Math.round(ECO.COSTS[key] * ECO.bracketFor(body.capitalGBP).factor * (body.investorMode === true ? ECO.COSTS.investor_multiplier : 1));
+
+      let debit = null;
+      if (billingEnforced()) {
+        requireCapabilityId(body.user);
+        const w = getWallet(body.user);
+        if (w.paid < price) {
+          throw new GatewayError(`Insufficient paid ACU for this document: needs ${price}, balance ${w.paid}.`, { status: 402, code: 'insufficient_acu', platformCode: 4001 });
+        }
+        debit = { user: body.user, price };
+      }
+      // Fixed price → bound provider spend so a huge prompt can't outrun it.
+      const genBody = { ...body, maxTokens: Math.min(Number(body.maxTokens) || 22000, 28000) };
+      const started = Date.now();
+      console.log(`[document] start type=${body.docType} price=${price} effort=${body.effort || 'high'} billed=${!!debit}`);
+      const result = await route(genBody);
+      let content;
+      try { content = JSON.parse(result.text); } catch {
+        throw new GatewayError('The document engine returned malformed content — you were not charged. Please try again.', { status: 502, code: 'bad_document' });
+      }
+      console.log(`[document] ok type=${body.docType} provider=${result.provider} latencyMs=${Date.now() - started} sections=${(content.sections || []).length}`);
+      if (clientGone) {
+        console.log('[document] client disconnected before result — skipping charge (no delivery, no bill)');
+        return;
+      }
+      if (debit) {
+        const charged = charge({
+          user: debit.user, amount: debit.price, label: `document · ${body.docType}`,
+          action: 'generation', bracketFactor: result.bracketFactor || 1,
+          idempotencyKey: body.idempotencyKey || `doc_${body.docType}_${started}_${debit.user.slice(-8)}`,
+        });
+        return json(res, 200, { docType: body.docType, content, charged: charged.charged, wallet: charged.wallet, provider: result.provider, latencyMs: Date.now() - started });
+      }
+      return json(res, 200, { docType: body.docType, content, provider: result.provider, latencyMs: Date.now() - started });
+    } catch (err) {
+      console.error(`[document] failed: code=${err?.code || '?'} status=${err?.status ?? '?'} :: ${err?.message || err}`);
+      return handleError(res, err);
+    }
+  }
+
   // ---- leads: waitlist / contact capture (human-paced only; honeypot server-side too) ----
   if (req.method === 'POST' && url.pathname === '/v1/leads') {
     try {

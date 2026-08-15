@@ -982,6 +982,71 @@
 
   function stripTags(s){ return String(s).replace(/<[^>]*>/g, ''); }
 
+  /* ================= real AI-generated content (takes precedence) =================
+     project.html stores deep, niche-specific AI output at nf_doc_<projectId>_<type>.
+     When present, it replaces the templated renderer with the actual content. */
+  var aiDoc = null;
+  try { var _st = JSON.parse(localStorage.getItem('nf_doc_' + ((P && P.id) || '') + '_' + type) || 'null'); if (_st && _st.content && _st.content.sections) aiDoc = _st.content; } catch (e) {}
+
+  function aiBlocks(s){
+    var h = '';
+    if (s.body) h += String(s.body).split(/\n\n+/).map(function(p){ return '<p>' + esc(p).replace(/\n/g, '<br>') + '</p>'; }).join('');
+    if (s.stats && s.stats.length){
+      h += '<div class="statgrid">' + s.stats.map(function(x, i){ return stat(esc(x.value), esc(x.label), x.note ? esc(x.note) : '', [C.teal, C.brand, C.blue, C.violet, C.coral][i % 5]); }).join('') + '</div>';
+    }
+    if (s.callout) h += '<div class="callout"><div class="big">' + esc(s.callout) + '</div></div>';
+    if (s.bullets && s.bullets.length){
+      h += '<ul style="margin-top:14px;padding-left:0;list-style:none">' + s.bullets.map(function(b){ return '<li style="position:relative;padding-left:20px;margin:0 0 9px;color:var(--doc-muted);font-size:.9rem"><span style="position:absolute;left:0;top:.5em;width:9px;height:2px;background:var(--brand)"></span>' + esc(b) + '</li>'; }).join('') + '</ul>';
+    }
+    if (s.table && s.table.columns && s.table.columns.length){
+      if (s.table.title) h += '<h3 style="font-family:var(--serif);font-weight:400;font-size:1.05rem;margin-top:22px">' + esc(s.table.title) + '</h3>';
+      h += '<table class="doc-t"><tr>' + s.table.columns.map(function(c){ return '<th>' + esc(c) + '</th>'; }).join('') + '</tr>' +
+        (s.table.rows || []).map(function(row){ return '<tr>' + (row || []).map(function(cell, ci){ return '<td' + (ci === 0 ? ' style="text-align:left;font-family:var(--sans)"' : '') + '>' + esc(cell) + '</td>'; }).join('') + '</tr>'; }).join('') + '</table>';
+    }
+    return h;
+  }
+
+  function renderAIDoc(){
+    var secs = (aiDoc.sections || []).map(function(s, i){ return sec(String(i + 1).padStart(2, '0'), esc(s.heading), aiBlocks(s)); }).join('');
+    var verdict = aiDoc.verdict
+      ? '<div class="callout" style="--pct:' + P.score + '"><div class="verdict-badge" style="--pct:' + P.score + '"><span>' + P.score + '</span><small>/100</small></div><div class="big">' + esc(aiDoc.verdict) + '</div></div>'
+      : '';
+    root.innerHTML = '<article class="doc"><div class="doc-band"><div class="doc-brandline"><i></i>NICHE FINDER · VENTURE INTELLIGENCE OS</div>' +
+      '<h1>' + esc(aiDoc.title || (P.title + ' — ' + T.n)) + '</h1>' +
+      '<div class="sub">' + esc(aiDoc.subtitle || T.sub) + '</div>' +
+      '<div class="meta"><span>DOCUMENT <b>' + esc(T.tag) + '</b></span><span>GENERATED <b>' + esc(today) + '</b></span><span>CONFIDENCE <b>' + P.score + '/100</b></span><span>' + esc(P.meta) + '</span></div>' +
+      '</div><div class="doc-body">' + verdict + secs + DISCLAIMER + '</div></article>';
+  }
+
+  function renderAIPitch(){
+    var themeId = localStorage.getItem('nf_deck_theme') || 'midnight';
+    var TH = DECK_THEMES.find(function(t){ return t.id === themeId; }) || DECK_THEMES[0];
+    var sstyle = 'background:' + TH.bg + ';color:' + TH.tx + ';border-color:' + TH.border;
+    var picker = '<div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px 22px;margin-bottom:24px">' +
+      '<div style="font-family:var(--mono);font-size:.62rem;letter-spacing:.2em;color:var(--gold);text-transform:uppercase">Deck Template — choose from 10 designs</div>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">' +
+      DECK_THEMES.map(function(t){ var on = t.id === TH.id; return '<button class="theme-pick" data-theme="' + t.id + '" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:8px 13px;border-radius:6px;font-family:var(--sans);font-size:.74rem;font-weight:600;background:' + (on ? 'rgba(232,166,26,.14)' : 'none') + ';border:1px solid ' + (on ? 'var(--gold)' : 'var(--line-soft)') + ';color:var(--text)"><span style="width:20px;height:14px;border-radius:3px;background:' + t.bg + ';border:1px solid rgba(255,255,255,.2);display:inline-block"></span><span style="width:8px;height:8px;border-radius:50%;background:' + t.ac + ';display:inline-block"></span>' + t.n + '</button>'; }).join('') + '</div></div>';
+    var n = Math.min((aiDoc.sections || []).length, 12);
+    var slides = (aiDoc.sections || []).slice(0, 12).map(function(s, i){
+      var body = '';
+      if (s.stats && s.stats.length){ body += '<div class="bignum">' + s.stats.slice(0, 4).map(function(x){ return '<div><div class="v">' + esc(x.value) + '</div><div class="k">' + esc(x.label) + '</div></div>'; }).join('') + '</div>'; }
+      if (s.bullets && s.bullets.length){ body += '<ul>' + s.bullets.slice(0, 6).map(function(b){ return '<li>' + esc(b) + '</li>'; }).join('') + '</ul>'; }
+      else if (!s.stats || !s.stats.length){ body += '<ul>' + String(s.body || '').split(/\n\n+/).slice(0, 4).map(function(p){ return '<li>' + esc(p) + '</li>'; }).join('') + '</ul>'; }
+      var head = i === 0 ? (aiDoc.title || P.title) : (s.callout || s.heading);
+      return '<section class="slide' + (i === 0 ? ' title-slide' : '') + '" style="' + sstyle + '"><span class="sl-tag" style="color:' + TH.ac + '">' + esc((s.heading || '').toUpperCase()) + '</span>' +
+        '<h2 class="' + (i === 0 ? 'huge' : '') + '" style="font-family:' + TH.font + ';color:' + TH.tx + '">' + esc(head) + '</h2>' +
+        '<div class="sl-body" style="--sl-tx:' + TH.tx + ';--sl-mut:' + TH.mut + ';--sl-ac:' + TH.ac + ';--sl-ac2:' + TH.ac2 + '">' + body + '</div>' +
+        '<span class="sl-brand" style="color:' + TH.ac + '">NICHE FINDER · VENTURE OS</span><span class="sl-num" style="color:' + TH.mut + '">' + String(i + 1).padStart(2, '0') + ' / ' + n + '</span></section>';
+    }).join('');
+    root.innerHTML = picker + '<div class="deck">' + slides + '</div>';
+    document.querySelectorAll('.theme-pick').forEach(function(b){ b.addEventListener('click', function(){ localStorage.setItem('nf_deck_theme', b.dataset.theme); renderAIPitch(); scrollTo({ top: 0 }); }); });
+  }
+
+  if (aiDoc){
+    if (type === 'pitch') render.pitch = renderAIPitch;
+    else if (type !== 'export') render[type] = renderAIDoc;
+  }
+
   render[type]();
   addEventListener('resize', function(){ render[type](); });
 })();

@@ -679,26 +679,119 @@
     });
   }
 
-  function runAction(a, btn){
+  /* ---------- real AI document generation ----------
+     Each document is a deep, niche-specific AI generation, charged the fixed
+     catalogue price server-side (/v1/document). The rich content is stored and
+     rendered by asset.html. */
+  function txtOnly(s){ var d = document.createElement('div'); d.innerHTML = String(s || ''); return d.textContent || ''; }
+  var DOC_SCHEMA = {
+    type: 'object',
+    properties: {
+      title: { type: 'string', description: 'Specific document title naming this venture' },
+      subtitle: { type: 'string', description: 'One-line standfirst summarising the document' },
+      verdict: { type: 'string', description: 'A punchy 2-3 sentence headline verdict/thesis opening the document' },
+      sections: {
+        type: 'array',
+        description: '7 to 9 substantive, detailed sections — never generic, always specific and quantified to this venture.',
+        items: {
+          type: 'object',
+          properties: {
+            heading: { type: 'string' },
+            body: { type: 'string', description: '2 to 4 rich paragraphs of specific, quantified, punchy analysis for THIS venture and market. Separate paragraphs with \\n\\n. No filler.' },
+            stats: { type: 'array', description: '0-6 headline metric cards for this section (empty if not relevant)', items: { type: 'object', properties: { value: { type: 'string', description: 'Formatted figure, e.g. $1.2M, 68%, 14 mo' }, label: { type: 'string' }, note: { type: 'string', description: 'One-line context' } }, required: ['value', 'label', 'note'], additionalProperties: false } },
+            bullets: { type: 'array', description: '0-8 punchy concrete bullet points (empty if not relevant)', items: { type: 'string' } },
+            callout: { type: 'string', description: 'One bold key insight to highlight, or "" if none' },
+            table: { type: 'object', description: 'Optional data table (empty columns/rows if none)', properties: { title: { type: 'string' }, columns: { type: 'array', items: { type: 'string' } }, rows: { type: 'array', items: { type: 'array', items: { type: 'string' } } } }, required: ['title', 'columns', 'rows'], additionalProperties: false }
+          },
+          required: ['heading', 'body', 'stats', 'bullets', 'callout', 'table'],
+          additionalProperties: false
+        }
+      }
+    },
+    required: ['title', 'subtitle', 'verdict', 'sections'],
+    additionalProperties: false
+  };
+  var PROTECT = ' Where relevant, advise how the operator protects the idea and builds a durable moat — first-mover speed, IP (trademarks, patents, registered designs), trade secrets, exclusive supply/distribution deals, brand, data and network effects — covering BOTH local and international exposure, including how to withstand a well-funded copycat.';
+  var DOC_SPECS = {
+    validation: 'Produce an investor-grade MARKET VALIDATION REPORT: the verdict; demand evidence with concrete signals; TAM/SAM/SOM sizing with real numbers and how they were derived; customer segments and willingness to pay; a competitive scan naming realistic competitor archetypes, their models and weaknesses, and the whitespace; and a validation checklist (what is proven vs the exact experiments still to run).' + PROTECT,
+    forecast: 'Produce a 3-YEAR FINANCIAL FORECAST: revenue build-up logic, unit economics (price, cost, contribution, payback), cost structure, path to break-even, working-capital and cash needs, funding required, and 2-3 downside/upside sensitivities. Use tables. Keep every figure consistent with the anchored financials.',
+    pnl: 'Produce a 3-YEAR PROFIT & LOSS analysis: revenue, COGS and gross margin, each operating cost line, EBITDA and net position year by year; explain the drivers and where operating leverage kicks in. Include a clean P&L table and margin commentary, consistent with the anchored financials.',
+    riskmap: 'Produce a RISK HEATMAP: the most material regulatory, market, operational, financial, execution and competitive risks for this venture and country. For each: likelihood, impact, early-warning signals, and a concrete mitigation. Include a ranked table. Give special attention to copycat/idea-theft risk.' + PROTECT,
+    bizplan: 'Produce an investor-ready BUSINESS PLAN: executive summary; the problem; the solution and how it works; business model and unit economics; market opportunity and sizing; go-to-market and growth engine; competition, moat and DEFENSIBILITY; operations and key processes; team and hiring plan; financial highlights; funding ask and use of funds; and milestones. Every section concrete and quantified.' + PROTECT,
+    pitch: 'Produce a 12-slide INVESTOR PITCH DECK — each section is exactly one slide in order: Title/vision, Problem, Solution, Why Now, Market Size, Product, Business Model, Go-to-Market, Competition & Moat (incl. how the idea is protected), Traction & Milestones, Financials & Ask, Team/Close. Slide bodies must be punchy: 3-5 short bullets and/or 1-3 big numbers per slide (use the stats field for numbers), never paragraphs.',
+    export: 'Produce a one-page EXPORT PACK OVERVIEW an operator can hand to an investor alongside the full asset set: a crisp summary of the opportunity, the headline numbers, the ask, and what each document contains. Punchy and confident.'
+  };
+  function projectContext(){
+    return {
+      venture: P.title, positioning: P.meta, confidenceScore: P.score,
+      subScores: P.sub || {}, market: P.market || {}, financials: P.fin || {},
+      thesis: txtOnly(P.thesis || ''), operatingBrief: P.brief || null,
+      risks: P.risks || [], roadmap: P.roadmap || [],
+      maxInvestmentUsd: P.investmentUsd || null, investorMode: invMode
+    };
+  }
+
+  function generateDocument(a, btn, isRegen){
     var cost = actionCost(a);
     var label = a.t + (invMode ? ' · Investor Mode' : '');
-    // paid ACUs only — welcome ACUs cannot fund generation; NF opens top-up if short
     if (NF.wallet().paid < cost) { NF.openTopup(cost, label, render); return; }
-    btn.classList.add('working');
-    var costEl = btn.querySelector('.cost');
-    if (costEl) costEl.textContent = 'GENERATING…';
-    else btn.textContent = 'GENERATING…';
-    setTimeout(function(){
+    var base = (window.NF_GATEWAY_URL || '').replace(/\/$/, '');
+    var costEl = btn && btn.querySelector ? btn.querySelector('.cost') : null;
+    function setBtn(t){ if (costEl) costEl.textContent = t; else if (btn) btn.textContent = t; }
+    function restore(t){ if (btn) btn.classList.remove('working'); setBtn(t); }
+    if (btn) btn.classList.add('working');
+    setBtn('GENERATING…');
+
+    if (!base){ // offline demo (no gateway): keep the flow working without AI
       if (!NF.charge(cost, label, null)) { render(); return; }
-      state.doneActions.push(a.id);
-      if (a.advances && STAGES.indexOf(a.advances) > STAGES.indexOf(state.status)) state.status = a.advances;
-      logReport(a.id, a.t);
-      logMemory(label + ' generated (' + cost + ' ACU). Status → ' + state.status + '.');
-      saveAll();
-      showToast('<b>' + a.t + '</b> generated · ' + cost + ' ACU consumed · <a href="asset.html?type=' + a.id + '" style="color:var(--gold-bright)">Open document ↗</a>');
-      toast.style.pointerEvents = 'auto';
-    }, reduced ? 100 : 1600);
+      finishDoc(a, cost, null, isRegen); return;
+    }
+
+    var sys = 'You are the Document Studio of Niche Finder, a venture-intelligence operating system. ' + DOC_SPECS[a.id] +
+      ' Audience: a demanding founder and professional investors. Be EXTREMELY detailed, specific, quantified and punchy — no generic filler, no hedging, no repetition. Every claim must be concrete to THIS exact venture, market and location. Make it visual with section stats, bullets, callouts and tables. Keep all figures internally consistent with the anchored financials provided.';
+    var usr = 'Produce the ' + a.t + ' for this venture, using every relevant detail. Full project context as JSON:\n' + JSON.stringify(projectContext(), null, 2);
+
+    fetch(base + '/v1/document', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        user: window.NF_WALLET_USER, docType: a.id, system: sys,
+        messages: [{ role: 'user', content: usr }], jsonSchema: DOC_SCHEMA, effort: 'high',
+        investorMode: invMode, capitalGBP: P.investmentUsd ? Math.round(P.investmentUsd * 0.79) : 0,
+        idempotencyKey: 'doc_' + P.id + '_' + a.id + '_' + Date.now()
+      })
+    }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, status: r.status, d: d }; }); })
+    .then(function(res){
+      if (!res.ok){
+        if (res.status === 402){ restore(cost + ' ACU'); NF.openTopup(cost, label, render); return; }
+        restore(cost + ' ACU');
+        showToast('<b>Generation failed.</b> ' + esc((res.d && (res.d.message || res.d.error)) || 'Please try again in a moment.'));
+        return;
+      }
+      var ver = 1;
+      try { var prev = JSON.parse(localStorage.getItem('nf_doc_' + P.id + '_' + a.id) || 'null'); if (prev && prev.version) ver = prev.version; } catch(e){}
+      if (isRegen) ver = ver + 1;
+      try { localStorage.setItem('nf_doc_' + P.id + '_' + a.id, JSON.stringify({ content: res.d.content, ts: Date.now(), version: ver })); } catch(e){}
+      if (res.d.wallet) NF.syncWallet(res.d.wallet);
+      finishDoc(a, res.d.charged || cost, res.d.content, isRegen);
+    }).catch(function(){
+      restore(cost + ' ACU');
+      showToast('<b>Network error.</b> The document could not be generated — you were not charged. Please try again.');
+    });
   }
+
+  function finishDoc(a, charged, content, isRegen){
+    if (state.doneActions.indexOf(a.id) < 0) state.doneActions.push(a.id);
+    if (a.advances && STAGES.indexOf(a.advances) > STAGES.indexOf(state.status)) state.status = a.advances;
+    logReport(a.id, a.t);
+    logMemory(a.t + (isRegen ? ' regenerated' : ' generated') + ' (' + charged + ' ACU)' + (content ? ' · ' + (content.sections || []).length + ' sections' : '') + '. Status → ' + state.status + '.');
+    saveAll();
+    render();
+    try { renderHub(); } catch(e){}
+    showToast('<b>' + a.t + '</b> ' + (isRegen ? 'regenerated' : 'generated') + ' · ' + charged + ' ACU · <a href="asset.html?type=' + a.id + '" style="color:var(--gold-bright)">Open document ↗</a>');
+    toast.style.pointerEvents = 'auto';
+  }
+
+  function runAction(a, btn){ generateDocument(a, btn, false); }
 
   if (bFactor > 1){
     var rn = document.getElementById('railNote');
@@ -777,23 +870,14 @@
         var fmtTag = document.createElement('span');
         fmtTag.className = 'hub-btn'; fmtTag.style.pointerEvents = 'none'; fmtTag.textContent = 'HTML';
         var regen = document.createElement('button');
-        var regenCost = Math.ceil(actionCost(a) / 2);
-        regen.className = 'hub-btn'; regen.textContent = 'Regenerate · Version 2.0 · ' + regenCost + ' ACU';
-        regen.addEventListener('click', function(){
-          if (!NF.charge(regenCost, 'Regenerate ' + a.t + ' V2', null)) { render(); return; }
-          logMemory(a.t + ' regenerated as Version 2.0.');
-          saveAll(); renderHub();
-          showToast('<b>' + a.t + '</b> · Version 2.0 generated');
-        });
+        regen.className = 'hub-btn'; regen.textContent = 'Regenerate (fresh AI) · ' + actionCost(a) + ' ACU';
+        regen.addEventListener('click', function(){ generateDocument(a, regen, true); });
         btns.appendChild(view); btns.appendChild(fmtTag); btns.appendChild(regen);
       } else {
         var exec = document.createElement('button');
         exec.className = 'hub-btn primary';
         exec.textContent = 'Generate ' + a.t;
-        exec.addEventListener('click', function(){
-          runAction(a, exec);
-          setTimeout(renderHub, 1800);
-        });
+        exec.addEventListener('click', function(){ runAction(a, exec); });
         btns.appendChild(exec);
       }
       grid.appendChild(card);
