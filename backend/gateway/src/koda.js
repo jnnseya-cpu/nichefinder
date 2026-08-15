@@ -68,17 +68,23 @@ export async function createKodaIntent({ user, packageId, origin }) {
       }),
     });
   } catch (err) {
+    console.error(`[koda] intent request could not reach ${BASE}/intents :: ${err.message}`);
     throw new GatewayError(`Could not reach KODA: ${err.message}`, { status: 502, code: 'koda_unreachable' });
   }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
+    console.error(`[koda] intent rejected: status=${res.status} body=${JSON.stringify(data).slice(0, 400)}`);
     throw new GatewayError(`KODA rejected the intent: ${data.error?.message || data.message || res.status}`, {
       status: 502,
       code: 'koda_error',
     });
   }
   const url = data.checkout_url || data.checkoutUrl;
-  if (!url) throw new GatewayError('KODA did not return a checkout URL.', { status: 502, code: 'koda_error' });
+  if (!url) {
+    console.error(`[koda] intent accepted (status=${res.status}) but no checkout_url in response; keys=${Object.keys(data).join(',')} body=${JSON.stringify(data).slice(0, 400)}`);
+    throw new GatewayError('KODA did not return a checkout URL.', { status: 502, code: 'koda_error' });
+  }
+  console.log(`[koda] intent created: ${data.intent_id || data.id} amount=${amount} ${CURRENCY}`);
   return { url, intentId: data.intent_id || data.id, currency: CURRENCY, amount };
 }
 

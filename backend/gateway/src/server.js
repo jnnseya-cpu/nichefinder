@@ -276,7 +276,10 @@ const server = http.createServer(async (req, res) => {
       const body = JSON.parse((await readBody(req)) || '{}');
       const origin = process.env.PUBLIC_ORIGIN || `${req.headers['x-forwarded-proto'] || 'http'}://${req.headers.host}`;
       return json(res, 200, await createKodaIntent({ user: body.user, packageId: body.packageId, origin }));
-    } catch (err) { return handleError(res, err); }
+    } catch (err) {
+      console.error(`[koda-intent] failed: code=${err?.code || '?'} status=${err?.status ?? '?'} :: ${err?.message || err}`);
+      return handleError(res, err);
+    }
   }
 
   if (req.method === 'POST' && url.pathname === '/v1/payments/koda-webhook') {
