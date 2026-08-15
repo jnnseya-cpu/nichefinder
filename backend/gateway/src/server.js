@@ -9,6 +9,7 @@ import { getWallet, getLedger, charge, credit, grant, summary, deleteWallet, PAC
 import { createCheckout, handleWebhook, paymentsConfigured } from './payments.js';
 import { createKodaIntent, handleKodaWebhook, kodaConfigured } from './koda.js';
 import { summaryFor as referralSummary } from './referrals.js';
+import { saveDoc, getDoc, listDocs } from './docstore.js';
 import { issueChallenge, verifyChallenge } from './human.js';
 import { signup, login, logout, sessionFor, requestReset, resetPassword, listUsers, resolveUserId, emailForUserId, setRole, setDisabled, userByEmail, updateProfile, setMedia, changePassword, deleteAccount } from './auth.js';
 import { sendMail, mailConfigured } from './mailer.js';
@@ -298,6 +299,24 @@ const server = http.createServer(async (req, res) => {
     } catch (err) { return handleError(res, err); }
   }
 
+  // ---- documents: durable retrieval (survives cache clears / new devices) ----
+  if (method === 'GET' && url.pathname === '/v1/documents') {
+    try {
+      const user = url.searchParams.get('user');
+      requireCapabilityId(user);
+      return json(res, 200, { documents: listDocs({ user, project: url.searchParams.get('project') }) });
+    } catch (err) { return handleError(res, err); }
+  }
+  if (method === 'GET' && url.pathname === '/v1/document') {
+    try {
+      const user = url.searchParams.get('user');
+      requireCapabilityId(user);
+      const doc = getDoc({ user, project: url.searchParams.get('project'), type: url.searchParams.get('type') });
+      if (!doc) return json(res, 404, { error: 'not_found' });
+      return json(res, 200, doc);
+    } catch (err) { return handleError(res, err); }
+  }
+
   // ---- documents: fixed-price, deep AI generation of an investor-grade asset ----
   // Unlike /v1/generate (metered by tokens), a document is charged the canonical
   // catalogue price (shared/nf-economy.js), adjusted for capital bracket and
@@ -345,6 +364,12 @@ const server = http.createServer(async (req, res) => {
       if (clientGone) {
         console.log('[document] client disconnected before result — skipping charge (no delivery, no bill)');
         return;
+      }
+      // Persist the generated document server-side so it survives cache clears /
+      // private windows and follows the account across devices.
+      if (body.user && body.project) {
+        try { saveDoc({ user: body.user, project: body.project, type: body.docType, content, version: body.version || 1, title: content.title || '' }); }
+        catch (e) { console.error('[document] persist failed:', e.message); }
       }
       if (debit) {
         const charged = charge({

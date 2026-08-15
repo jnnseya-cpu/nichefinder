@@ -18,7 +18,9 @@ process.env.WALLET_STORE = '/tmp/paycycle-wallets.json';
 process.env.WALLET_STORE_KEY = 'cd'.repeat(32);
 process.env.ADMIN_API_KEY = 'adm_paycycle';
 process.env.LEADS_STORE = '/tmp/paycycle-leads.jsonl';
+process.env.DOCS_STORE = '/tmp/paycycle-docs.json';
 try { fs.unlinkSync(process.env.WALLET_STORE); } catch {}
+try { fs.unlinkSync(process.env.DOCS_STORE); } catch {}
 
 const BASE = `http://127.0.0.1:${process.env.PORT}`;
 let failures = 0;
@@ -105,12 +107,19 @@ const DOC_SCHEMA = { type: 'object', properties: {
   sections: { type: 'array', items: { type: 'object', properties: { heading: { type: 'string' }, body: { type: 'string' } }, required: ['heading', 'body'], additionalProperties: false } },
 }, required: ['title', 'sections'], additionalProperties: false };
 const beforeDoc = (await (await fetch(`${BASE}/v1/wallet?user=${USER}`)).json()).paid;
-res = await post('/v1/document', { user: USER, docType: 'validation', system: 'Generate a market validation report.', messages: [{ role: 'user', content: 'Detailed report for DR Congo.' }], jsonSchema: DOC_SCHEMA, capitalGBP: 10000 });
+res = await post('/v1/document', { user: USER, docType: 'validation', project: 'proj-alpha', system: 'Generate a market validation report.', messages: [{ role: 'user', content: 'Detailed report for DR Congo.' }], jsonSchema: DOC_SCHEMA, capitalGBP: 10000 });
 body = await res.json();
 check('document generated with structured content', res.status === 200 && body.content && typeof body.content.title === 'string', JSON.stringify(body).slice(0, 160));
 check('document charged the fixed catalogue price (250 ACU)', body.charged === 250, `charged=${body.charged}`);
 const afterDoc = (await (await fetch(`${BASE}/v1/wallet?user=${USER}`)).json()).paid;
 check('wallet debited by exactly the fixed price', beforeDoc - afterDoc === 250, `${beforeDoc}->${afterDoc}`);
+// durability: the generated document is retrievable server-side (survives cache clears)
+res = await fetch(`${BASE}/v1/document?user=${USER}&project=proj-alpha&type=validation`);
+body = await res.json();
+check('generated document persists and re-fetches', res.status === 200 && body.content && typeof body.content.title === 'string', JSON.stringify(body).slice(0, 120));
+res = await fetch(`${BASE}/v1/documents?user=${USER}&project=proj-alpha`);
+body = await res.json();
+check('project document list includes it', res.status === 200 && Array.isArray(body.documents) && body.documents.some((d) => d.type === 'validation'), JSON.stringify(body).slice(0, 120));
 res = await post('/v1/document', { user: USER, docType: 'nonsense', system: 'x', messages: [{ role: 'user', content: 'x' }], jsonSchema: DOC_SCHEMA });
 check('unknown document type refused (400)', res.status === 400);
 

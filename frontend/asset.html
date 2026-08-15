@@ -218,6 +218,7 @@
 <script src="nf-auth.js"></script>
 <script src="../shared/nf-economy.js"></script>
 <script src="nf-wallet.js"></script>
+<script src="nf-xlsx.js"></script>
 <script>
 (function(){
   'use strict';
@@ -916,8 +917,8 @@
     root.innerHTML = docShell(
       sec('01', 'Your Export Pack', '<p>Every asset generated for <b>' + esc(P.title) + '</b>, packaged for sharing with co-founders, advisors, and investors. Use <b>Export PDF</b> in the top bar on any document for a print-quality copy.</p>' +
         '<div class="dl-grid">' +
-        dl('Financial Model', 'Full 36-month model: monthly revenue, cost lines, cashflow, and cumulative cash.', 'CSV · EXCEL-READY', 'dlModel', 'financial-model.csv') +
-        dl('P&L Summary', 'Three-year profit & loss with cost decomposition and margins.', 'CSV · EXCEL-READY', 'dlPl', 'pnl-summary.csv') +
+        dl('Financial Model', 'Excel workbook — Assumptions, full 36-month P&L (revenue, COGS, opex lines, EBITDA, cashflow), and annual summary across three tabs.', 'EXCEL · .XLSX', 'dlModel', 'financial-model.xlsx') +
+        dl('P&L Summary', 'Excel workbook — three-year profit & loss with gross and EBITDA margins.', 'EXCEL · .XLSX', 'dlPl', 'pnl-summary.xlsx') +
         dl('Project Data Pack', 'Complete structured data: scores, market sizing, assumptions, risks, roadmap.', 'JSON', 'dlJson', 'project-data.json') +
         '</div>' +
         '<div class="dl-grid" style="margin-top:14px">' +
@@ -947,57 +948,48 @@
     }
 
     document.getElementById('dlModel').addEventListener('click', function(){
-      var q = function(s){ return '"' + String(s).replace(/"/g, '""') + '"'; };
-      var L = [];
-      L.push(q('NICHE FINDER — 36-MONTH FINANCIAL MODEL'));
-      L.push(q(P.title));
-      L.push(q(P.meta));
-      L.push('Generated,' + q(today));
-      L.push('');
-      L.push('KEY ASSUMPTIONS');
-      L.push('Gross margin,' + Math.round(GM * 100) + '%');
-      L.push('Startup capital (USD),' + CAPEX);
-      L.push('Revenue per unit (USD),' + UNIT_PRICE);
-      L.push('Break-even month,' + BREAKEVEN_M);
-      L.push('Year-3 revenue (USD),' + P.fin.revenue[2]);
-      L.push('Year-3 EBITDA margin,' + Math.round(EBITDA[2] / P.fin.revenue[2] * 100) + '%');
-      L.push('');
-      L.push('MONTHLY MODEL (USD)');
-      L.push('Month,Revenue,COGS,Gross Profit,Staffing,Logistics,Marketing,Admin,Total OpEx,EBITDA,Net Cash,Cumulative Cash');
+      var assumptions = [
+        ['Niche Finder — 36-Month Financial Model'], [P.title], [P.meta], ['Generated', today], [],
+        ['Assumption', 'Value'],
+        ['Gross margin', Math.round(GM * 100) + '%'],
+        ['Startup capital (USD)', CAPEX],
+        ['Revenue per unit (USD)', UNIT_PRICE],
+        ['Break-even month', BREAKEVEN_M],
+        ['Year-3 revenue (USD)', P.fin.revenue[2]],
+        ['Year-3 EBITDA margin', Math.round(EBITDA[2] / P.fin.revenue[2] * 100) + '%']
+      ];
+      var monthly = [['Month', 'Revenue', 'COGS', 'Gross Profit', 'Staffing', 'Logistics', 'Marketing', 'Admin', 'Total OpEx', 'EBITDA', 'Net Cash', 'Cumulative Cash']];
       for (var m = 0; m < 36; m++){
-        var y = Math.floor(m / 12), rev = REV_M[m];
-        var cogs = COSTS[y].cogs / 12, staff = COSTS[y].staffing / 12, logi = COSTS[y].logistics / 12, mkt = COSTS[y].marketing / 12, adm = COSTS[y].admin / 12;
-        var gp = rev - cogs, opex = staff + logi + mkt + adm, ebitda = gp - opex, net = rev - (cogs + opex);
-        L.push([m + 1, rev.toFixed(0), cogs.toFixed(0), gp.toFixed(0), staff.toFixed(0), logi.toFixed(0), mkt.toFixed(0), adm.toFixed(0), opex.toFixed(0), ebitda.toFixed(0), net.toFixed(0), CUM[m].toFixed(0)].join(','));
+        var y = Math.floor(m / 12), rev = Math.round(REV_M[m]);
+        var cogs = Math.round(COSTS[y].cogs / 12), staff = Math.round(COSTS[y].staffing / 12), logi = Math.round(COSTS[y].logistics / 12), mkt = Math.round(COSTS[y].marketing / 12), adm = Math.round(COSTS[y].admin / 12);
+        var opex = staff + logi + mkt + adm, gp = rev - cogs, ebitda = gp - opex, net = rev - (cogs + opex);
+        monthly.push([m + 1, rev, cogs, gp, staff, logi, mkt, adm, opex, ebitda, net, Math.round(CUM[m])]);
       }
-      L.push('');
-      L.push('ANNUAL SUMMARY (USD)');
-      L.push('Year,Revenue,Total Costs,EBITDA,EBITDA Margin');
-      for (var yy = 0; yy < 3; yy++){ L.push(['Year ' + (yy + 1), P.fin.revenue[yy], P.fin.costs[yy], EBITDA[yy], Math.round(EBITDA[yy] / P.fin.revenue[yy] * 100) + '%'].join(',')); }
-      download('financial-model.csv', 'text/csv', L.join('\n'));
+      var annual = [['Year', 'Revenue', 'Total Costs', 'EBITDA', 'EBITDA Margin']];
+      for (var yy = 0; yy < 3; yy++){ annual.push(['Year ' + (yy + 1), P.fin.revenue[yy], P.fin.costs[yy], EBITDA[yy], Math.round(EBITDA[yy] / P.fin.revenue[yy] * 100) + '%']); }
+      var sheets = [{ name: 'Assumptions', rows: assumptions }, { name: 'Monthly Model', rows: monthly }, { name: 'Annual Summary', rows: annual }];
+      if (window.NF_XLSX) NF_XLSX.download('financial-model.xlsx', sheets);
+      else download('financial-model.csv', 'text/csv', sheets.map(function(s){ return s.rows.map(function(r){ return r.join(','); }).join('\n'); }).join('\n\n'));
     });
     document.getElementById('dlPl').addEventListener('click', function(){
-      var q = function(s){ return '"' + String(s).replace(/"/g, '""') + '"'; };
       var gp = P.fin.revenue.map(function(r, i){ return r - COSTS[i].cogs; });
       var pct = function(n, i){ return Math.round(n / P.fin.revenue[i] * 100) + '%'; };
-      var rows = [];
-      rows.push(q('NICHE FINDER — 3-YEAR PROFIT & LOSS'));
-      rows.push(q(P.title));
-      rows.push(q(P.meta));
-      rows.push('Generated,' + q(today));
-      rows.push('');
-      rows.push('Line (USD),Year 1,Year 2,Year 3');
-      rows.push(['Revenue'].concat(P.fin.revenue).join(','));
-      rows.push(['Cost of goods sold'].concat(COSTS.map(function(c){ return -c.cogs; })).join(','));
-      rows.push(['Gross Profit'].concat(gp).join(','));
-      rows.push(['Gross Margin'].concat(gp.map(function(g, i){ return pct(g, i); })).join(','));
-      rows.push(['Staffing'].concat(COSTS.map(function(c){ return -c.staffing; })).join(','));
-      rows.push(['Logistics & maintenance'].concat(COSTS.map(function(c){ return -c.logistics; })).join(','));
-      rows.push(['Sales & marketing'].concat(COSTS.map(function(c){ return -c.marketing; })).join(','));
-      rows.push(['Admin & compliance'].concat(COSTS.map(function(c){ return -c.admin; })).join(','));
-      rows.push(['EBITDA'].concat(EBITDA).join(','));
-      rows.push(['EBITDA Margin'].concat(EBITDA.map(function(e, i){ return pct(e, i); })).join(','));
-      download('pnl-summary.csv', 'text/csv', rows.join('\n'));
+      var rows = [
+        ['Niche Finder — 3-Year Profit & Loss'], [P.title], [P.meta], ['Generated', today], [],
+        ['Line (USD)', 'Year 1', 'Year 2', 'Year 3'],
+        ['Revenue', P.fin.revenue[0], P.fin.revenue[1], P.fin.revenue[2]],
+        ['Cost of goods sold', -COSTS[0].cogs, -COSTS[1].cogs, -COSTS[2].cogs],
+        ['Gross Profit', gp[0], gp[1], gp[2]],
+        ['Gross Margin', pct(gp[0], 0), pct(gp[1], 1), pct(gp[2], 2)],
+        ['Staffing', -COSTS[0].staffing, -COSTS[1].staffing, -COSTS[2].staffing],
+        ['Logistics & maintenance', -COSTS[0].logistics, -COSTS[1].logistics, -COSTS[2].logistics],
+        ['Sales & marketing', -COSTS[0].marketing, -COSTS[1].marketing, -COSTS[2].marketing],
+        ['Admin & compliance', -COSTS[0].admin, -COSTS[1].admin, -COSTS[2].admin],
+        ['EBITDA', EBITDA[0], EBITDA[1], EBITDA[2]],
+        ['EBITDA Margin', pct(EBITDA[0], 0), pct(EBITDA[1], 1), pct(EBITDA[2], 2)]
+      ];
+      if (window.NF_XLSX) NF_XLSX.download('pnl-summary.xlsx', [{ name: 'Profit & Loss', rows: rows }]);
+      else download('pnl-summary.csv', 'text/csv', rows.map(function(r){ return r.join(','); }).join('\n'));
     });
     document.getElementById('dlJson').addEventListener('click', function(){
       download('project-data.json', 'application/json', JSON.stringify({
@@ -1075,12 +1067,32 @@
     document.querySelectorAll('.theme-pick').forEach(function(b){ b.addEventListener('click', function(){ localStorage.setItem('nf_deck_theme', b.dataset.theme); renderAIPitch(); scrollTo({ top: 0 }); }); });
   }
 
-  if (aiDoc){
-    if (type === 'pitch') render.pitch = renderAIPitch;
-    else if (type !== 'export') render[type] = renderAIDoc;
+  function applyAndRender(){
+    if (aiDoc){
+      if (type === 'pitch') render.pitch = renderAIPitch;
+      else if (type !== 'export') render[type] = renderAIDoc;
+    }
+    render[type]();
   }
 
-  render[type]();
+  // If the AI content isn't in this browser (cache cleared / new device / private
+  // window), restore it from the account's server-side document store.
+  var base = (window.NF_GATEWAY_URL || '').replace(/\/$/, '');
+  if (aiDoc || type === 'export' || !base || !window.NF_WALLET_USER) {
+    applyAndRender();
+  } else {
+    root.innerHTML = '<div style="padding:80px 0;text-align:center;color:var(--muted);font-family:var(--mono);font-size:.8rem;letter-spacing:.1em">RESTORING DOCUMENT…</div>';
+    fetch(base + '/v1/document?user=' + encodeURIComponent(window.NF_WALLET_USER) + '&project=' + encodeURIComponent((P && P.id) || '') + '&type=' + encodeURIComponent(type))
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(d){
+        if (d && d.content && d.content.sections) {
+          aiDoc = d.content;
+          try { localStorage.setItem('nf_doc_' + ((P && P.id) || '') + '_' + type, JSON.stringify({ content: aiDoc, ts: d.ts || Date.now(), version: d.version || 1 })); } catch (e) {}
+        }
+      })
+      .catch(function(){})
+      .then(function(){ applyAndRender(); });
+  }
   addEventListener('resize', function(){ render[type](); });
 })();
 </script>

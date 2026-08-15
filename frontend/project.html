@@ -757,7 +757,7 @@
     fetch(base + '/v1/document', {
       method: 'POST', headers: { 'content-type': 'application/json' }, signal: controller.signal,
       body: JSON.stringify({
-        user: window.NF_WALLET_USER, docType: a.id, system: sys,
+        user: window.NF_WALLET_USER, docType: a.id, project: P.id, system: sys,
         messages: [{ role: 'user', content: usr }], jsonSchema: DOC_SCHEMA, effort: 'high',
         investorMode: invMode, capitalGBP: P.investmentUsd ? Math.round(P.investmentUsd * 0.79) : 0,
         idempotencyKey: 'doc_' + P.id + '_' + a.id + '_' + Date.now()
@@ -816,6 +816,21 @@
   });
 
   render();
+
+  // Restore documents already generated on this account+project — so a cleared
+  // cache or a new device still shows "View report" instead of asking to pay again.
+  (function restoreServerDocs(){
+    var base = (window.NF_GATEWAY_URL || '').replace(/\/$/, ''), user = window.NF_WALLET_USER;
+    if (!base || !user || typeof fetch !== 'function') return;
+    fetch(base + '/v1/documents?user=' + encodeURIComponent(user) + '&project=' + encodeURIComponent(project.id))
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(d){
+        if (!d || !d.documents || !d.documents.length) return;
+        var changed = false;
+        d.documents.forEach(function(doc){ if (state.doneActions.indexOf(doc.type) < 0) { state.doneActions.push(doc.type); changed = true; } });
+        if (changed){ saveAll(); render(); try { renderHub(); } catch(e){} }
+      }).catch(function(){});
+  })();
 
   /* ---------- Operating Brief ---------- */
   var B = project.brief || {};
