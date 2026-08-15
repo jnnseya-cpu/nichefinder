@@ -98,9 +98,15 @@ const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': '
 function serveStatic(req, res, url) {
   let p = decodeURIComponent(url.pathname);
   if (p === '/' || p === '') p = '/frontend/index.html';
-  if (p === '/robots.txt' || p === '/sitemap.xml') p = '/frontend' + p; // SEO files at the domain root
+  // Clean public URLs: a visitor lands on "/" and the pages use relative links
+  // (search.html, nf-config.js, robots.txt). Map any bare top-level request into
+  // /frontend so those links resolve — /shared stays addressable as authored.
+  if (!p.startsWith('/frontend/') && !p.startsWith('/shared/')) p = '/frontend' + p;
   const abs = path.normalize(path.join(REPO_ROOT, p));
-  if (!abs.startsWith(REPO_ROOT) || (!p.startsWith('/frontend/') && !p.startsWith('/shared/'))) {
+  // Strict boundary: only files genuinely under frontend/ or shared/ are served.
+  const FRONT = path.join(REPO_ROOT, 'frontend');
+  const SHARED = path.join(REPO_ROOT, 'shared');
+  if (!(abs.startsWith(FRONT + path.sep) || abs.startsWith(SHARED + path.sep))) {
     return json(res, 404, { error: 'not_found' });
   }
   // Operator cockpits stay off the public deploy until real admin auth lands.
