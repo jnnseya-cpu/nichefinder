@@ -206,33 +206,37 @@
           '<button data-close style="background:none;border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#8B93A5;padding:4px 10px;cursor:pointer">✕</button>' +
         '</div>' + note +
         '<div style="display:grid;gap:10px;margin-top:18px">' + cards + '</div>' +
-        '<p style="font-size:.7rem;color:#8B93A5;margin:14px 0 0">Prototype checkout — selecting a package credits your wallet instantly. Every action shows its ACU cost before you confirm.</p>' +
+        '<p data-buyerr style="color:#C4604F;font-size:.82rem;margin:12px 0 0"></p>' +
+        '<p style="font-size:.7rem;color:#8B93A5;margin:10px 0 0">' + (gatewayBase() ? 'Secure payment via Stripe — you\'ll be redirected to complete your purchase. ACUs are credited to your account once payment succeeds.' : 'Offline demo — selecting a package credits your local wallet instantly.') + '</p>' +
       '</div>';
     overlay.addEventListener('click', function (e) {
       if (e.target === overlay || e.target.closest('[data-close]')) { closeTopup(); return; }
       var btn = e.target.closest('[data-pkg]');
       if (!btn) return;
       var pkg = PACKAGES.filter(function (p) { return p.id === btn.getAttribute('data-pkg'); })[0];
-      /* Real money first: when a gateway with Stripe is deployed, purchases go
-         through hosted Checkout and ACUs are credited by the settlement
-         webhook — never by the client. Demo crediting only when payments are
-         absent (no gateway, or gateway reports payment_not_configured). */
+      /* Real money only. When a gateway is present, purchases go through Stripe
+         Checkout and ACUs are credited by the settlement webhook — NEVER by the
+         client. No fake local crediting in production (that created phantom
+         balances the server didn't recognise). Local demo credit happens only
+         in the fully offline demo (no gateway configured). */
       var base = (window.NF_GATEWAY_URL || '').replace(/\/$/, '');
+      var errEl = overlay.querySelector('[data-buyerr]');
       if (base && typeof fetch === 'function') {
-        btn.style.opacity = '.6';
+        btn.style.opacity = '.6'; if (errEl) errEl.textContent = '';
         fetch(base + '/v1/payments/checkout', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ user: window.NF_WALLET_USER || 'op_anonymous', packageId: pkg.id })
         }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
           .then(function (res) {
-            if (res.ok && res.d && res.d.url) { location.href = res.d.url; return; }
-            credit(pkg); closeTopup(); if (onAfter) onAfter(); // payments not configured → demo credit
+            if (res.ok && res.d && res.d.url) { location.href = res.d.url; return; } // → Stripe
+            btn.style.opacity = '';
+            if (errEl) errEl.textContent = (res.d && (res.d.message || res.d.error)) || 'Payments are unavailable right now. Please try again later.';
           })
-          .catch(function () { credit(pkg); closeTopup(); if (onAfter) onAfter(); });
+          .catch(function () { btn.style.opacity = ''; if (errEl) errEl.textContent = 'Network error starting checkout. Please try again.'; });
         return;
       }
-      credit(pkg);
+      credit(pkg); // offline demo only
       closeTopup();
       if (onAfter) onAfter();
     });
@@ -268,7 +272,7 @@
     try {
       fetch(base + '/v1/wallet?user=' + encodeURIComponent(window.NF_WALLET_USER || 'op_anonymous'))
         .then(function (r) { return r.ok ? r.json() : null; })
-        .then(function (w) { if (w && typeof w.paid === 'number') saveWallet({ paid: w.paid, free: w.free }); })
+        .then(function (w) { if (w && typeof w.paid === 'number') { saveWallet({ paid: w.paid, free: w.free }); try { document.dispatchEvent(new CustomEvent('nf:wallet')); } catch (e) {} } })
         .catch(function () {});
     } catch (e) {}
   }

@@ -317,10 +317,15 @@
   }
 
   var walletEl = document.getElementById('wallet');
-  walletEl.innerHTML = NF.total().toLocaleString('en-US') + ' <small>ACU</small>';
-  walletEl.title = w.paid.toLocaleString('en-US') + ' paid · ' + w.free.toLocaleString('en-US') + ' free (read-only)';
-  var walletDetail = document.querySelector('#wallet + .d');
-  if (walletDetail) walletDetail.textContent = w.paid.toLocaleString('en-US') + ' paid · ' + w.free.toLocaleString('en-US') + ' free (read-only)';
+  function paintWallet(){
+    var cur = NF.wallet();
+    walletEl.innerHTML = (cur.paid + cur.free).toLocaleString('en-US') + ' <small>ACU</small>';
+    walletEl.title = cur.paid.toLocaleString('en-US') + ' paid · ' + cur.free.toLocaleString('en-US') + ' free (read-only)';
+    var wd = document.querySelector('#wallet + .d');
+    if (wd) wd.textContent = cur.paid.toLocaleString('en-US') + ' paid · ' + cur.free.toLocaleString('en-US') + ' free (read-only)';
+  }
+  paintWallet();
+  document.addEventListener('nf:wallet', paintWallet); // reflect real server balance after hydrate
   document.getElementById('statAssets').textContent = reports.length;
   document.getElementById('statSaved').textContent = saved.length + unlocked;
   document.getElementById('statUnlocked').textContent = unlocked + ' unlocked';

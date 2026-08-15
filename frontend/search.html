@@ -869,6 +869,7 @@
     return ok;
   }
   renderBalance();
+  document.addEventListener('nf:wallet', renderBalance); // reflect real server balance after hydrate
 
   function unlockProject(m){
     if (!charge(unlockCostNow(), 'Deep-Dive unlock')) return;
@@ -1023,8 +1024,16 @@
 
     fetchNiches(canvasConfig())
       .then(function(niches){ renderNiches(niches, true); })
-      .catch(function(){
-        // gateway unreachable or returned an error — fall back to demo data
+      .catch(function(err){
+        thinking.classList.remove('on'); gen.disabled = false; gen.textContent = 'Generate Niche Report';
+        // With a real backend configured, never show canned demo results — that
+        // masks failures. Insufficient paid ACU → prompt to top up; anything
+        // else → honest error. Demo data only in the fully offline demo.
+        if (window.NF_GATEWAY_URL) {
+          if (err && /\b402\b/.test(String(err.message))) { NF.openTopup(searchCost, 'Niche discovery'); }
+          else { nichesEl.innerHTML = '<p style="color:#C4604F;padding:24px 4px">Discovery is temporarily unavailable — please try again in a moment.</p>'; }
+          return;
+        }
         setTimeout(function(){ renderNiches(MOCKS, false); }, reduced ? 60 : 1200);
       });
   });
