@@ -947,23 +947,56 @@
     }
 
     document.getElementById('dlModel').addEventListener('click', function(){
-      var rows = ['Month,Revenue (USD),Operating Costs (USD),Net Cash (USD),Cumulative Cash (USD)'];
+      var q = function(s){ return '"' + String(s).replace(/"/g, '""') + '"'; };
+      var L = [];
+      L.push(q('NICHE FINDER — 36-MONTH FINANCIAL MODEL'));
+      L.push(q(P.title));
+      L.push(q(P.meta));
+      L.push('Generated,' + q(today));
+      L.push('');
+      L.push('KEY ASSUMPTIONS');
+      L.push('Gross margin,' + Math.round(GM * 100) + '%');
+      L.push('Startup capital (USD),' + CAPEX);
+      L.push('Revenue per unit (USD),' + UNIT_PRICE);
+      L.push('Break-even month,' + BREAKEVEN_M);
+      L.push('Year-3 revenue (USD),' + P.fin.revenue[2]);
+      L.push('Year-3 EBITDA margin,' + Math.round(EBITDA[2] / P.fin.revenue[2] * 100) + '%');
+      L.push('');
+      L.push('MONTHLY MODEL (USD)');
+      L.push('Month,Revenue,COGS,Gross Profit,Staffing,Logistics,Marketing,Admin,Total OpEx,EBITDA,Net Cash,Cumulative Cash');
       for (var m = 0; m < 36; m++){
-        var y = Math.floor(m / 12), cost = P.fin.costs[y] / 12;
-        rows.push([m + 1, REV_M[m].toFixed(0), cost.toFixed(0), (REV_M[m] - cost).toFixed(0), CUM[m].toFixed(0)].join(','));
+        var y = Math.floor(m / 12), rev = REV_M[m];
+        var cogs = COSTS[y].cogs / 12, staff = COSTS[y].staffing / 12, logi = COSTS[y].logistics / 12, mkt = COSTS[y].marketing / 12, adm = COSTS[y].admin / 12;
+        var gp = rev - cogs, opex = staff + logi + mkt + adm, ebitda = gp - opex, net = rev - (cogs + opex);
+        L.push([m + 1, rev.toFixed(0), cogs.toFixed(0), gp.toFixed(0), staff.toFixed(0), logi.toFixed(0), mkt.toFixed(0), adm.toFixed(0), opex.toFixed(0), ebitda.toFixed(0), net.toFixed(0), CUM[m].toFixed(0)].join(','));
       }
-      download('financial-model.csv', 'text/csv', rows.join('\n'));
+      L.push('');
+      L.push('ANNUAL SUMMARY (USD)');
+      L.push('Year,Revenue,Total Costs,EBITDA,EBITDA Margin');
+      for (var yy = 0; yy < 3; yy++){ L.push(['Year ' + (yy + 1), P.fin.revenue[yy], P.fin.costs[yy], EBITDA[yy], Math.round(EBITDA[yy] / P.fin.revenue[yy] * 100) + '%'].join(',')); }
+      download('financial-model.csv', 'text/csv', L.join('\n'));
     });
     document.getElementById('dlPl').addEventListener('click', function(){
-      var rows = ['Line,Year 1,Year 2,Year 3'];
+      var q = function(s){ return '"' + String(s).replace(/"/g, '""') + '"'; };
+      var gp = P.fin.revenue.map(function(r, i){ return r - COSTS[i].cogs; });
+      var pct = function(n, i){ return Math.round(n / P.fin.revenue[i] * 100) + '%'; };
+      var rows = [];
+      rows.push(q('NICHE FINDER — 3-YEAR PROFIT & LOSS'));
+      rows.push(q(P.title));
+      rows.push(q(P.meta));
+      rows.push('Generated,' + q(today));
+      rows.push('');
+      rows.push('Line (USD),Year 1,Year 2,Year 3');
       rows.push(['Revenue'].concat(P.fin.revenue).join(','));
-      rows.push(['COGS'].concat(COSTS.map(function(c){ return -c.cogs; })).join(','));
-      rows.push(['Gross Profit'].concat(P.fin.revenue.map(function(r, i){ return r - COSTS[i].cogs; })).join(','));
+      rows.push(['Cost of goods sold'].concat(COSTS.map(function(c){ return -c.cogs; })).join(','));
+      rows.push(['Gross Profit'].concat(gp).join(','));
+      rows.push(['Gross Margin'].concat(gp.map(function(g, i){ return pct(g, i); })).join(','));
       rows.push(['Staffing'].concat(COSTS.map(function(c){ return -c.staffing; })).join(','));
-      rows.push(['Logistics'].concat(COSTS.map(function(c){ return -c.logistics; })).join(','));
-      rows.push(['Marketing'].concat(COSTS.map(function(c){ return -c.marketing; })).join(','));
-      rows.push(['Admin'].concat(COSTS.map(function(c){ return -c.admin; })).join(','));
+      rows.push(['Logistics & maintenance'].concat(COSTS.map(function(c){ return -c.logistics; })).join(','));
+      rows.push(['Sales & marketing'].concat(COSTS.map(function(c){ return -c.marketing; })).join(','));
+      rows.push(['Admin & compliance'].concat(COSTS.map(function(c){ return -c.admin; })).join(','));
       rows.push(['EBITDA'].concat(EBITDA).join(','));
+      rows.push(['EBITDA Margin'].concat(EBITDA.map(function(e, i){ return pct(e, i); })).join(','));
       download('pnl-summary.csv', 'text/csv', rows.join('\n'));
     });
     document.getElementById('dlJson').addEventListener('click', function(){
