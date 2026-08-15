@@ -12,8 +12,11 @@ process.env.PORT = '18890';
 process.env.WALLET_STORE = '/tmp/auth-test-wallets.json';
 process.env.WALLET_STORE_KEY = 'ab'.repeat(32);
 process.env.AUTH_STORE = '/tmp/auth-test-auth.json';
+process.env.LEADS_STORE = '/tmp/auth-test-leads.jsonl';
+process.env.SENTINEL_LOG = '/tmp/auth-test-sentinel.jsonl';
+process.env.MAINT_FLAG = '/tmp/auth-test-maint.flag';
 process.env.ADMIN_EMAIL = 'boss@nf.test'; // no ADMIN_PASSWORD → seeded via signup below
-for (const f of [process.env.WALLET_STORE, process.env.AUTH_STORE]) { try { fs.unlinkSync(f); } catch {} }
+for (const f of [process.env.WALLET_STORE, process.env.AUTH_STORE, process.env.LEADS_STORE, process.env.SENTINEL_LOG, process.env.MAINT_FLAG]) { try { fs.unlinkSync(f); } catch {} }
 
 const BASE = `http://127.0.0.1:${process.env.PORT}`;
 let failures = 0;
@@ -90,6 +93,59 @@ check('admin grants 750 usable ACU to jane', res.status === 200 && granted.grant
 
 res = await getJson('/v1/wallet?user=' + jane.user.userId);
 check('jane’s wallet reflects the grant (750 paid)', (await res.json()).paid === 750);
+
+console.log('— admin command centre: overview + deduct + ledger —');
+res = await getJson('/v1/admin/overview', { authorization: 'Bearer ' + boss.token });
+let ov = await res.json();
+check('overview returns KPIs', res.status === 200 && ov.users >= 2 && typeof ov.revenueGBP === 'number' && ov.grantsTotal >= 750, JSON.stringify(ov));
+res = await getJson('/v1/admin/overview', { authorization: 'Bearer ' + janeLogin.token });
+check('non-admin overview refused (403)', res.status === 403);
+
+res = await post('/v1/admin/deduct', { email: 'jane@example.com', amount: 250, reason: 'correction' }, { authorization: 'Bearer ' + boss.token });
+let ded = await res.json();
+check('admin deduct removes 250 (jane paid 500)', res.status === 200 && ded.charged === 250 && ded.wallet.paid === 500, JSON.stringify(ded));
+
+res = await getJson('/v1/admin/ledger?user=jane@example.com', { authorization: 'Bearer ' + boss.token });
+let led = await res.json();
+check('admin ledger returns jane transactions', res.status === 200 && Array.isArray(led.ledger) && led.ledger.length >= 2 && led.email === 'jane@example.com');
+
+console.log('— roles + disable/enable —');
+res = await post('/v1/admin/role', { email: 'jane@example.com', role: 'admin' }, { authorization: 'Bearer ' + boss.token });
+check('admin can promote jane to admin', res.status === 200 && (await res.json()).role === 'admin');
+res = await post('/v1/admin/role', { email: 'jane@example.com', role: 'user' }, { authorization: 'Bearer ' + boss.token });
+check('admin can revoke back to user', res.status === 200 && (await res.json()).role === 'user');
+
+res = await post('/v1/admin/disable', { email: 'boss@nf.test', disabled: true }, { authorization: 'Bearer ' + boss.token });
+check('admin cannot disable own account (400 self_disable)', res.status === 400 && (await res.json()).error === 'self_disable');
+res = await post('/v1/admin/disable', { email: 'jane@example.com', disabled: true }, { authorization: 'Bearer ' + boss.token });
+check('admin disables jane', res.status === 200 && (await res.json()).disabled === true);
+res = await post('/v1/auth/login', { email: 'jane@example.com', password: 'hunter2hunter' });
+check('disabled account cannot log in (403 account_disabled)', res.status === 403 && (await res.json()).error === 'account_disabled');
+res = await post('/v1/admin/disable', { email: 'jane@example.com', disabled: false }, { authorization: 'Bearer ' + boss.token });
+check('admin re-enables jane', res.status === 200 && (await res.json()).disabled === false);
+
+console.log('— revenue + leads + security + maintenance —');
+res = await getJson('/v1/admin/revenue', { authorization: 'Bearer ' + boss.token });
+let rev = await res.json();
+check('revenue endpoint returns totals + breakdown', res.status === 200 && typeof rev.revenueGBP === 'number' && Array.isArray(rev.byPackage) && Array.isArray(rev.purchases));
+
+await post('/v1/leads', { email: 'lead@example.com', name: 'Lead One', message: 'interested' });
+res = await getJson('/v1/admin/leads', { authorization: 'Bearer ' + boss.token });
+let lds = await res.json();
+check('admin sees the submitted lead', res.status === 200 && lds.leads.some((l) => l.email === 'lead@example.com'));
+
+res = await getJson('/v1/admin/security', { authorization: 'Bearer ' + boss.token });
+let sec = await res.json();
+check('security endpoint returns log + bans + health', res.status === 200 && Array.isArray(sec.log) && Array.isArray(sec.bans) && Array.isArray(sec.providers));
+
+res = await post('/v1/admin/maintenance', { on: true }, { authorization: 'Bearer ' + boss.token });
+check('maintenance can be turned on', res.status === 200 && (await res.json()).maintenance === true);
+res = await post('/v1/generate', { user: jane.user.userId, messages: [{ role: 'user', content: 'x' }] });
+check('generation blocked during maintenance (503)', res.status === 503 && (await res.json()).error === 'maintenance');
+res = await getJson('/v1/health');
+check('health reports maintenance', (await res.json()).maintenance === true);
+res = await post('/v1/admin/maintenance', { on: false }, { authorization: 'Bearer ' + boss.token });
+check('maintenance can be turned off', res.status === 200 && (await res.json()).maintenance === false);
 
 console.log('— forgot password → reset → old dead / new works —');
 lastResetLink = null;

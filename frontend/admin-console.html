@@ -3,214 +3,430 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Niche Finder — Admin Console</title>
+<title>Niche Finder — Admin Command Centre</title>
 <meta name="theme-color" content="#070B14">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <meta name="robots" content="noindex">
 <style>
-  :root{--ink:#070B14;--ink-2:#0A1120;--panel:#0E1626;--panel-2:#121C30;--line:rgba(232,166,26,.18);--line-soft:rgba(139,147,165,.16);--text:#EAE5D9;--muted:#8B93A5;--gold:#E8A61A;--gold-bright:#FFC53D;--teal:#3FA79B;--red:#C4604F;--serif:"Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif;--sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;--mono:"SF Mono","Cascadia Code","JetBrains Mono",Consolas,monospace;}
+  :root{--ink:#070B14;--ink-2:#0A1120;--panel:#0E1626;--panel-2:#121C30;--line:rgba(232,166,26,.18);--line-soft:rgba(139,147,165,.16);--text:#EAE5D9;--muted:#8B93A5;--gold:#E8A61A;--gold-bright:#FFC53D;--teal:#3FA79B;--red:#C4604F;--green:#4FBF87;--violet:#8B7BC7;--serif:"Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif;--sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;--mono:"SF Mono","Cascadia Code","JetBrains Mono",Consolas,monospace;}
   *{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--ink);color:var(--text);font-family:var(--sans);min-height:100vh;line-height:1.55;font-size:15px}
+  body{background:var(--ink);color:var(--text);font-family:var(--sans);min-height:100vh;line-height:1.5;font-size:14.5px}
   a{color:var(--gold);text-decoration:none}
-  .wrap{max-width:1080px;margin:0 auto;padding:26px clamp(16px,3vw,34px)}
-  .topbar{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line-soft);padding-bottom:16px;margin-bottom:24px}
-  .brand{display:flex;align-items:center;gap:10px}
-  .brand-mark{width:28px;height:28px;border:1px solid var(--gold);border-radius:50%;display:grid;place-items:center}
+  .wrap{max-width:1200px;margin:0 auto;padding:22px clamp(14px,3vw,32px)}
+  .topbar{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line-soft);padding-bottom:14px;margin-bottom:20px;gap:12px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:9px}
+  .brand-mark{width:26px;height:26px;border:1px solid var(--gold);border-radius:50%;display:grid;place-items:center}
   .brand-mark i{width:7px;height:7px;border-radius:50%;background:var(--gold);display:block}
-  .brand b{font-family:var(--serif);font-size:1.05rem;font-weight:500}.brand em{font-style:normal;color:var(--gold)}
-  .kicker{font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);opacity:.8}
-  .card{background:linear-gradient(180deg,var(--panel-2),var(--panel));border:1px solid var(--line);border-radius:14px;padding:clamp(20px,4vw,30px)}
+  .brand b{font-family:var(--serif);font-size:1.02rem;font-weight:500}.brand em{font-style:normal;color:var(--gold)}
+  .kicker{font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);opacity:.85;margin-left:6px}
+  .who{color:var(--muted);font-size:.85rem;display:flex;align-items:center;gap:12px}
+  .card{background:linear-gradient(180deg,var(--panel-2),var(--panel));border:1px solid var(--line);border-radius:13px;padding:clamp(16px,3vw,24px)}
   .login{max-width:400px;margin:8vh auto 0}
-  h1{font-family:var(--serif);font-weight:500;font-size:1.4rem;margin-bottom:4px}
-  .sub{color:var(--muted);font-size:.9rem;margin-bottom:18px}
-  label{display:block;font-size:.74rem;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:12px 0 6px}
+  h1{font-family:var(--serif);font-weight:500;font-size:1.3rem;margin-bottom:3px}
+  .sub{color:var(--muted);font-size:.86rem;margin-bottom:16px}
+  label{display:block;font-size:.72rem;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:11px 0 5px}
   .field{position:relative}
-  input,select{width:100%;background:var(--ink-2);border:1px solid var(--line-soft);border-radius:10px;color:var(--text);font-size:1rem;padding:11px 13px;font-family:inherit}
-  input:focus,select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(232,166,26,.14)}
+  input,select{width:100%;background:var(--ink-2);border:1px solid var(--line-soft);border-radius:9px;color:var(--text);font-size:.95rem;padding:10px 12px;font-family:inherit}
+  input:focus,select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(232,166,26,.13)}
   .field .eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:0;color:var(--muted);cursor:pointer;padding:8px;line-height:0}
-  button.primary{background:linear-gradient(180deg,var(--gold-bright),var(--gold));color:#241a02;font-weight:700;border:0;border-radius:10px;padding:12px 18px;cursor:pointer;font-size:.95rem}
-  button.primary:disabled{opacity:.6;cursor:default}
-  button.ghost{background:none;border:1px solid var(--line);color:var(--muted);border-radius:9px;padding:9px 14px;cursor:pointer;font-size:.85rem}
-  button.ghost:hover{color:var(--text)}
-  .full{width:100%;margin-top:18px}
-  .msg{margin-top:14px;padding:11px 13px;border-radius:10px;font-size:.88rem;display:none}
+  button{font-family:inherit}
+  .btn{background:linear-gradient(180deg,var(--gold-bright),var(--gold));color:#241a02;font-weight:700;border:0;border-radius:9px;padding:10px 16px;cursor:pointer;font-size:.9rem}
+  .btn:disabled{opacity:.55;cursor:default}
+  .btn.ghost{background:none;border:1px solid var(--line);color:var(--muted);font-weight:500}
+  .btn.ghost:hover{color:var(--text);border-color:var(--gold)}
+  .btn.danger{background:none;border:1px solid rgba(196,96,79,.5);color:#e59a8c;font-weight:500}
+  .full{width:100%}
+  .msg{margin-top:12px;padding:10px 12px;border-radius:9px;font-size:.85rem;display:none}
   .msg.err{display:block;background:rgba(196,96,79,.12);border:1px solid rgba(196,96,79,.4);color:#f0b6ab}
   .msg.ok{display:block;background:rgba(63,167,155,.12);border:1px solid rgba(63,167,155,.4);color:#a7ded6}
   .hide{display:none!important}
-  .grid{display:grid;gap:20px}
-  @media(min-width:820px){.grid{grid-template-columns:1fr 1.4fr}}
-  .grant-row{display:grid;grid-template-columns:1fr 130px;gap:10px}
-  table{width:100%;border-collapse:collapse;font-size:.86rem}
-  th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line-soft);vertical-align:middle}
-  th{color:var(--muted);font-weight:600;font-size:.72rem;letter-spacing:.05em;text-transform:uppercase}
-  td.uid{font-family:var(--mono);font-size:.74rem;color:var(--muted)}
-  .bal{font-variant-numeric:tabular-nums}
-  .pill{font-size:.68rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line-soft);color:var(--muted)}
+  /* KPI row */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+  .kpi{background:linear-gradient(180deg,var(--panel-2),var(--panel));border:1px solid var(--line-soft);border-radius:12px;padding:14px 16px}
+  .kpi .k{font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .kpi .v{font-size:1.5rem;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums}
+  .kpi .v small{font-size:.8rem;color:var(--muted);font-weight:400}
+  .kpi.accent{border-color:var(--line)}
+  .kpi.accent .v{color:var(--gold-bright)}
+  /* tabs */
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line-soft);margin-bottom:16px;flex-wrap:wrap}
+  .tab{background:none;border:0;color:var(--muted);padding:10px 16px;cursor:pointer;font-size:.92rem;border-bottom:2px solid transparent;margin-bottom:-1px}
+  .tab.active{color:var(--gold-bright);border-bottom-color:var(--gold)}
+  .tab:hover{color:var(--text)}
+  .toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+  .toolbar input{max-width:280px}
+  .count{color:var(--muted);font-size:.82rem}
+  /* tables */
+  .tblwrap{overflow-x:auto;border:1px solid var(--line-soft);border-radius:11px}
+  table{width:100%;border-collapse:collapse;font-size:.85rem;min-width:560px}
+  th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line-soft);vertical-align:middle;white-space:nowrap}
+  th{color:var(--muted);font-weight:600;font-size:.68rem;letter-spacing:.05em;text-transform:uppercase;position:sticky;top:0;background:var(--panel)}
+  tbody tr:last-child td{border-bottom:0}
+  tbody tr:hover{background:rgba(232,166,26,.04)}
+  td.uid{font-family:var(--mono);font-size:.72rem;color:var(--muted)}
+  td.msg-cell{white-space:normal;max-width:340px;color:var(--muted)}
+  .bal{font-variant-numeric:tabular-nums;text-align:right}
+  .pill{font-size:.66rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line-soft);color:var(--muted)}
   .pill.admin{color:var(--gold);border-color:var(--gold)}
-  .tblwrap{overflow-x:auto;margin-top:14px}
-  .mini{background:none;border:1px solid var(--line-soft);color:var(--gold);border-radius:7px;padding:5px 9px;cursor:pointer;font-size:.78rem}
+  .pill.on{color:var(--green);border-color:rgba(79,191,135,.5)}
+  .pill.off{color:var(--red);border-color:rgba(196,96,79,.5)}
+  .rowacts{display:flex;gap:5px;flex-wrap:wrap}
+  .mini{background:none;border:1px solid var(--line-soft);color:var(--gold);border-radius:6px;padding:4px 8px;cursor:pointer;font-size:.74rem}
   .mini:hover{border-color:var(--gold)}
-  .who{color:var(--muted);font-size:.85rem}
+  .mini.warn{color:#e59a8c;border-color:rgba(196,96,79,.4)}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .chip{background:var(--ink-2);border:1px solid var(--line-soft);border-radius:8px;padding:8px 12px;font-size:.82rem}
+  .chip b{color:var(--text)}
+  .sw{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:.85rem}
+  .sw input{width:auto}
+  /* modal */
+  .overlay{position:fixed;inset:0;background:rgba(4,7,14,.72);display:none;place-items:center;padding:18px;z-index:100}
+  .overlay.show{display:grid}
+  .modal{width:100%;max-width:520px;max-height:86vh;overflow:auto;background:linear-gradient(180deg,var(--panel-2),var(--panel));border:1px solid var(--line);border-radius:14px;padding:22px}
+  .modal h2{font-family:var(--serif);font-weight:500;font-size:1.15rem;margin-bottom:2px}
+  .modal .x{float:right;background:none;border:0;color:var(--muted);font-size:1.3rem;cursor:pointer;line-height:1}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .empty{padding:26px;text-align:center;color:var(--muted);font-size:.88rem}
+  .foot{margin-top:14px;color:var(--muted);font-size:.78rem;text-align:center}
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="topbar">
-      <div class="brand"><span class="brand-mark"><i></i></span><b>Niche <em>Finder</em></b><span class="kicker" style="margin-left:8px">Admin</span></div>
-      <div id="whoami" class="hide"><span class="who" data-admin-email></span> · <button class="ghost" id="signout">Sign out</button></div>
-    </div>
-
-    <!-- LOGIN -->
-    <section id="login" class="card login">
-      <h1>Admin sign in</h1>
-      <p class="sub">Operators only. Use your admin account.</p>
-      <form id="login-form" novalidate>
-        <label for="email">Email</label>
-        <div class="field"><input id="email" type="email" autocomplete="username" required></div>
-        <label for="pass">Password</label>
-        <div class="field"><input id="pass" type="password" autocomplete="current-password" required><button type="button" class="eye" data-eye="pass" aria-label="Show password">👁</button></div>
-        <button type="submit" class="primary full" id="login-btn">Sign in</button>
-      </form>
-      <div class="msg" id="login-msg"></div>
-    </section>
-
-    <!-- CONSOLE -->
-    <section id="console" class="hide">
-      <div class="grid">
-        <div class="card">
-          <h1 style="font-size:1.15rem">Grant ACUs</h1>
-          <p class="sub">Comp usable ACUs to any user. Enter their email or <code>op_…</code> id.</p>
-          <form id="grant-form" novalidate>
-            <label for="g-user">User (email or id)</label>
-            <input id="g-user" type="text" placeholder="jane@example.com" required>
-            <label for="g-amount">Amount (ACU)</label>
-            <div class="grant-row">
-              <input id="g-amount" type="number" min="1" step="1" placeholder="500" required>
-              <button type="submit" class="primary" id="grant-btn">Grant</button>
-            </div>
-            <label for="g-reason">Reason (optional)</label>
-            <input id="g-reason" type="text" placeholder="launch comp">
-          </form>
-          <div class="msg" id="grant-msg"></div>
-        </div>
-
-        <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <h1 style="font-size:1.15rem">Users</h1>
-            <button class="ghost" id="refresh">Refresh</button>
-          </div>
-          <p class="sub" id="users-count">Loading…</p>
-          <div class="tblwrap">
-            <table>
-              <thead><tr><th>Email</th><th>Role</th><th>Paid</th><th>Free</th><th></th></tr></thead>
-              <tbody id="users-body"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </section>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><span class="brand-mark"><i></i></span><b>Niche <em>Finder</em></b><span class="kicker">Command Centre</span></div>
+    <div id="whoami" class="who hide"><span data-admin-email></span><button class="btn ghost" id="signout">Sign out</button></div>
   </div>
 
-  <script src="nf-config.js"></script>
-  <script>
-  (function () {
-    'use strict';
-    var base = (window.NF_GATEWAY_URL || '').replace(/\/$/, '');
-    var KEY = 'nf_admin_session';
-    var session = null;
-    try { session = JSON.parse(sessionStorage.getItem(KEY) || 'null'); } catch (e) {}
+  <!-- LOGIN -->
+  <section id="login" class="card login">
+    <h1>Admin sign in</h1>
+    <p class="sub">Operators only.</p>
+    <form id="login-form" novalidate>
+      <label for="email">Email</label>
+      <div class="field"><input id="email" type="email" autocomplete="username" required></div>
+      <label for="pass">Password</label>
+      <div class="field"><input id="pass" type="password" autocomplete="current-password" required><button type="button" class="eye" data-eye="pass" aria-label="Show password">👁</button></div>
+      <button type="submit" class="btn full" id="login-btn" style="margin-top:16px">Sign in</button>
+    </form>
+    <div class="msg" id="login-msg"></div>
+  </section>
 
-    var el = function (id) { return document.getElementById(id); };
-    function setMsg(node, t, k) { node.textContent = t || ''; node.className = 'msg' + (k ? ' ' + k : ''); }
-    function authHeaders() { return { 'content-type': 'application/json', authorization: 'Bearer ' + (session && session.token) }; }
+  <!-- CONSOLE -->
+  <section id="console" class="hide">
+    <div class="kpis" id="kpis"></div>
+    <div class="tabs">
+      <button class="tab active" data-tab="users">Users</button>
+      <button class="tab" data-tab="revenue">Revenue</button>
+      <button class="tab" data-tab="leads">Leads</button>
+      <button class="tab" data-tab="security">Security &amp; System</button>
+    </div>
 
-    document.querySelectorAll('[data-eye]').forEach(function (b) {
-      b.addEventListener('click', function () {
-        var inp = el(b.getAttribute('data-eye'));
-        inp.type = inp.type === 'text' ? 'password' : 'text';
-        b.style.color = inp.type === 'text' ? 'var(--gold)' : '';
-      });
+    <!-- USERS -->
+    <div class="panel" data-panel="users">
+      <div class="toolbar">
+        <input id="user-search" type="search" placeholder="Search email or id…">
+        <div><span class="count" id="users-count"></span> <button class="btn ghost" id="users-refresh">Refresh</button></div>
+      </div>
+      <div class="tblwrap"><table>
+        <thead><tr><th>Email</th><th>Role</th><th class="bal">Paid</th><th class="bal">Free</th><th>Joined</th><th>Actions</th></tr></thead>
+        <tbody id="users-body"></tbody>
+      </table></div>
+    </div>
+
+    <!-- REVENUE -->
+    <div class="panel hide" data-panel="revenue">
+      <div class="chips" id="rev-chips"></div>
+      <h1 style="font-size:1rem;margin:14px 0 8px">By package</h1>
+      <div class="tblwrap"><table>
+        <thead><tr><th>Package</th><th class="bal">Sales</th><th class="bal">Revenue</th><th class="bal">ACUs</th></tr></thead>
+        <tbody id="rev-pkg-body"></tbody>
+      </table></div>
+      <h1 style="font-size:1rem;margin:18px 0 8px">Purchases</h1>
+      <div class="tblwrap"><table>
+        <thead><tr><th>When</th><th>User</th><th>Package</th><th class="bal">£</th><th class="bal">ACUs</th></tr></thead>
+        <tbody id="rev-body"></tbody>
+      </table></div>
+    </div>
+
+    <!-- LEADS -->
+    <div class="panel hide" data-panel="leads">
+      <div class="toolbar"><span class="count" id="leads-count"></span><button class="btn ghost" id="leads-refresh">Refresh</button></div>
+      <div class="tblwrap"><table>
+        <thead><tr><th>When</th><th>Name</th><th>Email</th><th>Message</th></tr></thead>
+        <tbody id="leads-body"></tbody>
+      </table></div>
+    </div>
+
+    <!-- SECURITY -->
+    <div class="panel hide" data-panel="security">
+      <div class="chips" id="sys-chips"></div>
+      <label class="sw" style="margin:6px 0 16px"><input type="checkbox" id="maint-toggle"> <span>Maintenance mode — pause all AI generation site-wide</span></label>
+      <h1 style="font-size:1rem;margin:8px 0 8px">Active IP bans</h1>
+      <div class="tblwrap"><table>
+        <thead><tr><th>IP</th><th class="bal">Strikes</th><th>Until</th></tr></thead>
+        <tbody id="bans-body"></tbody>
+      </table></div>
+      <h1 style="font-size:1rem;margin:18px 0 8px">Security log <span class="count">(Sentinel)</span></h1>
+      <div class="tblwrap"><table>
+        <thead><tr><th>When</th><th>IP</th><th>Kind</th><th>Detail</th></tr></thead>
+        <tbody id="seclog-body"></tbody>
+      </table></div>
+    </div>
+  </section>
+</div>
+
+<!-- action modal -->
+<div class="overlay" id="overlay"><div class="modal" id="modal"></div></div>
+
+<script src="nf-config.js"></script>
+<script>
+(function () {
+  'use strict';
+  var base = (window.NF_GATEWAY_URL || '').replace(/\/$/, '');
+  var KEY = 'nf_admin_session';
+  var session = null;
+  try { session = JSON.parse(sessionStorage.getItem(KEY) || 'null'); } catch (e) {}
+  var el = function (id) { return document.getElementById(id); };
+  var usersCache = [];
+
+  function hdr(json) { var h = { authorization: 'Bearer ' + (session && session.token) }; if (json) h['content-type'] = 'application/json'; return h; }
+  function fmt(n) { return (Number(n) || 0).toLocaleString('en-US'); }
+  function gbp(n) { return '£' + (Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }); }
+  function when(ts) { try { return new Date(ts).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); }
+  function setMsg(node, t, k) { node.textContent = t || ''; node.className = 'msg' + (k ? ' ' + k : ''); }
+
+  function api(path, opts) {
+    return fetch(base + path, opts).then(function (r) {
+      if (r.status === 401 || r.status === 403) { showLogin(); throw new Error('unauthorized'); }
+      return r.json().then(function (d) { return { ok: r.ok, status: r.status, data: d }; });
     });
+  }
 
-    function showConsole() {
-      el('login').classList.add('hide');
-      el('console').classList.remove('hide');
-      el('whoami').classList.remove('hide');
-      document.querySelectorAll('[data-admin-email]').forEach(function (n) { n.textContent = session.user.email; });
-      loadUsers();
-    }
-    function showLogin() {
-      sessionStorage.removeItem(KEY); session = null;
-      el('console').classList.add('hide'); el('whoami').classList.add('hide');
-      el('login').classList.remove('hide');
-    }
+  // password eye
+  document.querySelectorAll('[data-eye]').forEach(function (b) {
+    b.addEventListener('click', function () { var i = el(b.getAttribute('data-eye')); i.type = i.type === 'text' ? 'password' : 'text'; b.style.color = i.type === 'text' ? 'var(--gold)' : ''; });
+  });
 
-    // LOGIN
-    el('login-form').addEventListener('submit', function (e) {
-      e.preventDefault();
-      var btn = el('login-btn'); btn.disabled = true; btn.textContent = 'Signing in…'; setMsg(el('login-msg'), '', '');
-      fetch(base + '/v1/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email: el('email').value.trim(), password: el('pass').value }) })
-        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+  /* ---------- auth ---------- */
+  function showConsole() {
+    el('login').classList.add('hide'); el('console').classList.remove('hide'); el('whoami').classList.remove('hide');
+    document.querySelectorAll('[data-admin-email]').forEach(function (n) { n.textContent = session.user.email; });
+    loadOverview(); loadUsers();
+  }
+  function showLogin() {
+    sessionStorage.removeItem(KEY); session = null;
+    el('console').classList.add('hide'); el('whoami').classList.add('hide'); el('login').classList.remove('hide');
+  }
+  el('login-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var btn = el('login-btn'); btn.disabled = true; btn.textContent = 'Signing in…'; setMsg(el('login-msg'), '', '');
+    fetch(base + '/v1/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: el('email').value.trim(), password: el('pass').value }) })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+      .then(function (res) {
+        btn.disabled = false; btn.textContent = 'Sign in';
+        if (!res.ok) { setMsg(el('login-msg'), (res.data && (res.data.message || res.data.error)) || 'Sign-in failed.', 'err'); return; }
+        if (res.data.user.role !== 'admin') { setMsg(el('login-msg'), 'This account is not an administrator.', 'err'); return; }
+        session = res.data; sessionStorage.setItem(KEY, JSON.stringify(session)); showConsole();
+      }).catch(function () { btn.disabled = false; btn.textContent = 'Sign in'; setMsg(el('login-msg'), 'Network error.', 'err'); });
+  });
+  el('signout').addEventListener('click', showLogin);
+
+  /* ---------- tabs ---------- */
+  document.querySelectorAll('.tab').forEach(function (t) {
+    t.addEventListener('click', function () {
+      document.querySelectorAll('.tab').forEach(function (x) { x.classList.remove('active'); });
+      t.classList.add('active');
+      var name = t.getAttribute('data-tab');
+      document.querySelectorAll('.panel').forEach(function (p) { p.classList.toggle('hide', p.getAttribute('data-panel') !== name); });
+      if (name === 'revenue') loadRevenue();
+      if (name === 'leads') loadLeads();
+      if (name === 'security') loadSecurity();
+    });
+  });
+
+  /* ---------- overview KPIs ---------- */
+  function loadOverview() {
+    api('/v1/admin/overview', { headers: hdr() }).then(function (res) {
+      if (!res.ok) return;
+      var d = res.data;
+      var providersOk = (d.providers || []).length;
+      el('kpis').innerHTML =
+        kpi('Users', fmt(d.users), (d.admins || 0) + ' admin · ' + (d.disabled || 0) + ' disabled', true) +
+        kpi('Revenue', gbp(d.revenueGBP), fmt(d.acusSold) + ' ACUs sold', true) +
+        kpi('Comped ACUs', fmt(d.grantsTotal), 'granted free', false) +
+        kpi('Leads', fmt(d.leads), 'enquiries', false) +
+        kpi('AI providers', String(providersOk), (d.providers || []).join(' · ') || 'none', false) +
+        kpi('Status', d.maintenance ? '⏸ Paused' : '● Live', (d.payments ? 'payments on' : 'payments off') + ' · ' + (d.mailConfigured ? 'email on' : 'email off'), false);
+    }).catch(function () {});
+  }
+  function kpi(k, v, sub, accent) {
+    return '<div class="kpi ' + (accent ? 'accent' : '') + '"><div class="k">' + esc(k) + '</div><div class="v">' + v + '</div><div class="k" style="margin-top:3px;text-transform:none;letter-spacing:0;color:var(--muted)">' + esc(sub) + '</div></div>';
+  }
+
+  /* ---------- users ---------- */
+  function loadUsers() {
+    api('/v1/admin/users', { headers: hdr() }).then(function (res) {
+      if (!res.ok) return;
+      usersCache = res.data.users || [];
+      renderUsers();
+    }).catch(function () {});
+  }
+  function renderUsers() {
+    var q = el('user-search').value.trim().toLowerCase();
+    var rows = usersCache.filter(function (u) { return !q || u.email.toLowerCase().indexOf(q) >= 0 || u.userId.toLowerCase().indexOf(q) >= 0; });
+    el('users-count').textContent = rows.length + ' / ' + usersCache.length + ' shown';
+    var body = el('users-body');
+    if (!rows.length) { body.innerHTML = '<tr><td colspan="6"><div class="empty">No users.</div></td></tr>'; return; }
+    body.innerHTML = rows.map(function (u) {
+      return '<tr>' +
+        '<td>' + esc(u.email) + (u.disabled ? ' <span class="pill off">disabled</span>' : '') + '<div class="uid">' + u.userId + '</div></td>' +
+        '<td><span class="pill ' + (u.role === 'admin' ? 'admin' : '') + '">' + u.role + '</span></td>' +
+        '<td class="bal">' + fmt(u.wallet.paid) + '</td>' +
+        '<td class="bal">' + fmt(u.wallet.free) + '</td>' +
+        '<td>' + when(u.createdAt) + '</td>' +
+        '<td><div class="rowacts">' +
+          btn('grant', u.userId, 'Grant') + btn('deduct', u.userId, 'Deduct') + btn('ledger', u.userId, 'Ledger') +
+          btn('role', u.email, u.role === 'admin' ? 'Revoke admin' : 'Make admin') +
+          '<button class="mini warn" data-act="disable" data-email="' + esc(u.email) + '" data-on="' + (u.disabled ? '0' : '1') + '">' + (u.disabled ? 'Enable' : 'Disable') + '</button>' +
+        '</div></td></tr>';
+    }).join('');
+    body.querySelectorAll('[data-act]').forEach(function (b) { b.addEventListener('click', onUserAction); });
+  }
+  function btn(act, target, label) { return '<button class="mini" data-act="' + act + '" data-target="' + esc(target) + '">' + label + '</button>'; }
+
+  function onUserAction(e) {
+    var b = e.currentTarget, act = b.getAttribute('data-act');
+    if (act === 'grant' || act === 'deduct') return openGrantDeduct(act, b.getAttribute('data-target'));
+    if (act === 'ledger') return openLedger(b.getAttribute('data-target'));
+    if (act === 'role') return doRole(b.getAttribute('data-target'));
+    if (act === 'disable') return doDisable(b.getAttribute('data-email'), b.getAttribute('data-on') === '1');
+  }
+
+  el('user-search').addEventListener('input', renderUsers);
+  el('users-refresh').addEventListener('click', function () { loadOverview(); loadUsers(); });
+
+  /* ---------- modal ---------- */
+  function openModal(html) { el('modal').innerHTML = html; el('overlay').classList.add('show'); }
+  function closeModal() { el('overlay').classList.remove('show'); el('modal').innerHTML = ''; }
+  el('overlay').addEventListener('click', function (e) { if (e.target === el('overlay')) closeModal(); });
+
+  function openGrantDeduct(mode, userId) {
+    var u = usersCache.filter(function (x) { return x.userId === userId; })[0];
+    openModal(
+      '<button class="x" id="m-x">×</button><h2>' + (mode === 'grant' ? 'Grant ACUs' : 'Deduct ACUs') + '</h2>' +
+      '<p class="sub">' + esc(u ? u.email : userId) + '</p>' +
+      '<label>Amount (ACU)</label><input id="m-amount" type="number" min="1" step="1" placeholder="500">' +
+      '<label>Reason (optional)</label><input id="m-reason" type="text" placeholder="' + (mode === 'grant' ? 'launch comp' : 'correction') + '">' +
+      '<button class="btn full" id="m-go" style="margin-top:16px">' + (mode === 'grant' ? 'Grant' : 'Deduct') + '</button>' +
+      '<div class="msg" id="m-msg"></div>'
+    );
+    el('m-x').onclick = closeModal;
+    el('m-go').onclick = function () {
+      var amount = parseInt(el('m-amount').value, 10);
+      if (!(amount > 0)) { setMsg(el('m-msg'), 'Enter a positive amount.', 'err'); return; }
+      var go = el('m-go'); go.disabled = true; go.textContent = '…';
+      api('/v1/admin/' + mode, { method: 'POST', headers: hdr(true), body: JSON.stringify({ userId: userId, amount: amount, reason: el('m-reason').value.trim() }) })
         .then(function (res) {
-          btn.disabled = false; btn.textContent = 'Sign in';
-          if (!res.ok) { setMsg(el('login-msg'), (res.data && (res.data.message || res.data.error)) || 'Sign-in failed.', 'err'); return; }
-          if (res.data.user.role !== 'admin') { setMsg(el('login-msg'), 'This account is not an administrator.', 'err'); return; }
-          session = res.data; sessionStorage.setItem(KEY, JSON.stringify(session)); showConsole();
-        }).catch(function () { btn.disabled = false; btn.textContent = 'Sign in'; setMsg(el('login-msg'), 'Network error.', 'err'); });
-    });
+          go.disabled = false; go.textContent = (mode === 'grant' ? 'Grant' : 'Deduct');
+          if (!res.ok) { setMsg(el('m-msg'), (res.data && (res.data.message || res.data.error)) || 'Failed.', 'err'); return; }
+          var w = res.data.wallet;
+          setMsg(el('m-msg'), (mode === 'grant' ? 'Granted ' : 'Deducted ') + fmt(mode === 'grant' ? res.data.granted : res.data.charged) + ' ACU — paid now ' + fmt(w.paid) + '.', 'ok');
+          loadUsers(); loadOverview();
+          setTimeout(closeModal, 1100);
+        }).catch(function () { go.disabled = false; go.textContent = 'Retry'; });
+    };
+  }
 
-    el('signout').addEventListener('click', showLogin);
+  function openLedger(userId) {
+    openModal('<button class="x" id="m-x">×</button><h2>Transaction ledger</h2><p class="sub" id="m-sub">Loading…</p><div class="tblwrap"><table><thead><tr><th>When</th><th>Entry</th><th class="bal">Δ</th><th class="bal">Balance</th></tr></thead><tbody id="m-led"></tbody></table></div>');
+    el('m-x').onclick = closeModal;
+    api('/v1/admin/ledger?user=' + encodeURIComponent(userId) + '&limit=100', { headers: hdr() }).then(function (res) {
+      if (!res.ok) return;
+      el('m-sub').textContent = (res.data.email || userId);
+      var rows = res.data.ledger || [];
+      el('m-led').innerHTML = rows.length ? rows.map(function (e) {
+        var sign = e.amt >= 0 ? '+' : '';
+        return '<tr><td>' + when(e.ts) + '</td><td style="white-space:normal">' + esc(e.t) + '</td><td class="bal" style="color:' + (e.amt >= 0 ? 'var(--green)' : 'var(--red)') + '">' + sign + fmt(e.amt) + '</td><td class="bal">' + fmt(e.balanceAfter) + '</td></tr>';
+      }).join('') : '<tr><td colspan="4"><div class="empty">No transactions.</div></td></tr>';
+    }).catch(function () {});
+  }
 
-    // USERS
-    function fmt(n) { return (n || 0).toLocaleString('en-US'); }
-    function loadUsers() {
-      el('users-count').textContent = 'Loading…';
-      fetch(base + '/v1/admin/users', { headers: authHeaders() })
-        .then(function (r) { if (r.status === 403 || r.status === 401) { showLogin(); throw new Error('session expired'); } return r.json(); })
-        .then(function (d) {
-          var users = d.users || [];
-          el('users-count').textContent = users.length + ' account' + (users.length === 1 ? '' : 's');
-          var body = el('users-body'); body.innerHTML = '';
-          users.forEach(function (u) {
-            var tr = document.createElement('tr');
-            tr.innerHTML =
-              '<td>' + escapeHtml(u.email) + '<div class="uid" title="' + u.userId + '">' + u.userId + '</div></td>' +
-              '<td><span class="pill ' + (u.role === 'admin' ? 'admin' : '') + '">' + u.role + '</span></td>' +
-              '<td class="bal">' + fmt(u.wallet.paid) + '</td>' +
-              '<td class="bal">' + fmt(u.wallet.free) + '</td>' +
-              '<td><button class="mini" data-grant="' + u.userId + '">Grant</button></td>';
-            body.appendChild(tr);
-          });
-          body.querySelectorAll('[data-grant]').forEach(function (b) {
-            b.addEventListener('click', function () { el('g-user').value = b.getAttribute('data-grant'); el('g-amount').focus(); });
-          });
-        }).catch(function () {});
-    }
-    function escapeHtml(s) { return String(s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); }
-    el('refresh').addEventListener('click', loadUsers);
+  function doRole(email) {
+    var u = usersCache.filter(function (x) { return x.email === email; })[0];
+    var next = (u && u.role === 'admin') ? 'user' : 'admin';
+    if (!confirm('Set ' + email + ' role to "' + next + '"?')) return;
+    api('/v1/admin/role', { method: 'POST', headers: hdr(true), body: JSON.stringify({ email: email, role: next }) })
+      .then(function (res) { if (res.ok) { loadUsers(); loadOverview(); } else alert((res.data && (res.data.message || res.data.error)) || 'Failed.'); }).catch(function () {});
+  }
+  function doDisable(email, disable) {
+    if (!confirm((disable ? 'Disable' : 'Enable') + ' account ' + email + '?')) return;
+    api('/v1/admin/disable', { method: 'POST', headers: hdr(true), body: JSON.stringify({ email: email, disabled: disable }) })
+      .then(function (res) { if (res.ok) { loadUsers(); loadOverview(); } else alert((res.data && (res.data.message || res.data.error)) || 'Failed.'); }).catch(function () {});
+  }
 
-    // GRANT
-    el('grant-form').addEventListener('submit', function (e) {
-      e.preventDefault();
-      var btn = el('grant-btn'); var amount = parseInt(el('g-amount').value, 10);
-      if (!(amount > 0)) { setMsg(el('grant-msg'), 'Enter a positive amount.', 'err'); return; }
-      btn.disabled = true; btn.textContent = '…'; setMsg(el('grant-msg'), '', '');
-      fetch(base + '/v1/admin/grant', { method: 'POST', headers: authHeaders(),
-        body: JSON.stringify({ userId: el('g-user').value.trim(), amount: amount, reason: el('g-reason').value.trim() }) })
-        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, status: r.status, data: d }; }); })
-        .then(function (res) {
-          btn.disabled = false; btn.textContent = 'Grant';
-          if (res.status === 403 || res.status === 401) { showLogin(); return; }
-          if (!res.ok) { setMsg(el('grant-msg'), (res.data && (res.data.message || res.data.error)) || 'Grant failed.', 'err'); return; }
-          setMsg(el('grant-msg'), 'Granted ' + fmt(res.data.granted) + ' ACU — new usable balance ' + fmt(res.data.wallet.paid) + '.', 'ok');
-          el('g-amount').value = ''; el('g-reason').value = '';
-          loadUsers();
-        }).catch(function () { btn.disabled = false; btn.textContent = 'Grant'; setMsg(el('grant-msg'), 'Network error.', 'err'); });
-    });
+  /* ---------- revenue ---------- */
+  function loadRevenue() {
+    api('/v1/admin/revenue', { headers: hdr() }).then(function (res) {
+      if (!res.ok) return;
+      var d = res.data;
+      el('rev-chips').innerHTML =
+        '<div class="chip">Total revenue <b>' + gbp(d.revenueGBP) + '</b></div>' +
+        '<div class="chip">ACUs sold <b>' + fmt(d.acusSold) + '</b></div>' +
+        '<div class="chip">Purchases <b>' + fmt(d.count) + '</b></div>' +
+        '<div class="chip">Comped (free) <b>' + fmt(d.grantsTotal) + ' ACU</b></div>';
+      el('rev-pkg-body').innerHTML = (d.byPackage || []).length ? d.byPackage.map(function (p) {
+        return '<tr><td>' + esc(p.name) + '</td><td class="bal">' + fmt(p.count) + '</td><td class="bal">' + gbp(p.gbp) + '</td><td class="bal">' + fmt(p.acus) + '</td></tr>';
+      }).join('') : '<tr><td colspan="4"><div class="empty">No sales yet.</div></td></tr>';
+      el('rev-body').innerHTML = (d.purchases || []).length ? d.purchases.map(function (p) {
+        return '<tr><td>' + when(p.ts) + '</td><td>' + esc(p.email) + '</td><td>' + esc((/·\s*([^(]+?)\s*\(/.exec(p.label) || [])[1] || '') + '</td><td class="bal">' + gbp(p.gbp) + '</td><td class="bal">' + fmt(p.acus) + '</td></tr>';
+      }).join('') : '<tr><td colspan="5"><div class="empty">No purchases yet.</div></td></tr>';
+    }).catch(function () {});
+  }
 
-    if (session && session.token) showConsole(); else showLogin();
-  })();
-  </script>
+  /* ---------- leads ---------- */
+  function loadLeads() {
+    api('/v1/admin/leads', { headers: hdr() }).then(function (res) {
+      if (!res.ok) return;
+      var rows = res.data.leads || [];
+      el('leads-count').textContent = rows.length + ' enquiries';
+      el('leads-body').innerHTML = rows.length ? rows.map(function (l) {
+        return '<tr><td>' + when(l.ts) + '</td><td>' + esc(l.name || '—') + '</td><td>' + esc(l.email) + '</td><td class="msg-cell">' + esc(l.message || '') + '</td></tr>';
+      }).join('') : '<tr><td colspan="4"><div class="empty">No enquiries yet.</div></td></tr>';
+    }).catch(function () {});
+  }
+  el('leads-refresh').addEventListener('click', loadLeads);
+
+  /* ---------- security ---------- */
+  function loadSecurity() {
+    api('/v1/admin/security', { headers: hdr() }).then(function (res) {
+      if (!res.ok) return;
+      var d = res.data;
+      el('sys-chips').innerHTML =
+        '<div class="chip">Providers <b>' + ((d.providers || []).join(' · ') || 'none') + '</b></div>' +
+        '<div class="chip">Fallback <b>' + ((d.fallbackChain || []).join(' → ') || '—') + '</b></div>' +
+        '<div class="chip">Payments <b>' + (d.payments ? 'on' : 'off') + '</b></div>' +
+        '<div class="chip">Mock AI <b>' + (d.mock ? 'on' : 'off') + '</b></div>';
+      el('maint-toggle').checked = !!d.maintenance;
+      el('bans-body').innerHTML = (d.bans || []).length ? d.bans.map(function (b) {
+        return '<tr><td class="uid">' + esc(b.ip) + '</td><td class="bal">' + b.strikes + '</td><td>' + when(b.until) + '</td></tr>';
+      }).join('') : '<tr><td colspan="3"><div class="empty">No active bans.</div></td></tr>';
+      el('seclog-body').innerHTML = (d.log || []).length ? d.log.map(function (e) {
+        return '<tr><td>' + when(e.ts) + '</td><td class="uid">' + esc(e.ip) + '</td><td>' + esc(e.kind) + '</td><td class="msg-cell">' + esc(e.detail) + '</td></tr>';
+      }).join('') : '<tr><td colspan="4"><div class="empty">No security events.</div></td></tr>';
+    }).catch(function () {});
+  }
+  el('maint-toggle').addEventListener('change', function () {
+    var on = el('maint-toggle').checked;
+    if (!confirm(on ? 'Pause ALL AI generation site-wide?' : 'Resume normal operation?')) { el('maint-toggle').checked = !on; return; }
+    api('/v1/admin/maintenance', { method: 'POST', headers: hdr(true), body: JSON.stringify({ on: on }) })
+      .then(function (res) { if (res.ok) { el('maint-toggle').checked = !!res.data.maintenance; loadOverview(); } else el('maint-toggle').checked = !on; })
+      .catch(function () { el('maint-toggle').checked = !on; });
+  });
+
+  /* ---------- boot ---------- */
+  if (session && session.token) showConsole(); else showLogin();
+})();
+</script>
 </body>
 </html>
