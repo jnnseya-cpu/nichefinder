@@ -68,6 +68,7 @@
         <button type="submit" class="primary" id="si-btn">Sign in</button>
       </form>
       <div class="switch">New here? <a href="#" id="to-signup">Create an account</a></div>
+      <div class="switch" style="margin-top:6px"><a href="admin-console.html" style="font-size:.82rem;color:var(--muted)">Administrator sign-in →</a></div>
     </section>
 
     <!-- SIGN UP -->
@@ -112,6 +113,9 @@
     var msg = document.getElementById('msg');
     var params = new URLSearchParams(location.search);
     var next = params.get('next') || 'dashboard.html';
+    // Same-origin guard: only redirect to a local .html page, never an external
+    // URL (prevents open-redirect via a crafted ?next=).
+    if (!/^[a-zA-Z0-9_-]+\.html(\?[^:]*)?$/.test(next)) next = 'dashboard.html';
 
     // Already signed in? Go straight through.
     if (window.NF_AUTH && NF_AUTH.isLoggedIn()) { location.replace(next); return; }

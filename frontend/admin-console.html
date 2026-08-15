@@ -223,9 +223,15 @@
     document.querySelectorAll('[data-admin-email]').forEach(function (n) { n.textContent = session.user.email; });
     loadOverview(); loadUsers();
   }
+  // One login for the whole platform: an admin signs in via the normal account
+  // panel; this page just deep-links there and returns. Non-admins go to their
+  // dashboard. There is no separate admin login form to hunt for.
   function showLogin() {
-    if (window.NF_AUTH) NF_AUTH.clear(); session = null;
-    el('console').classList.add('hide'); el('whoami').classList.add('hide'); el('login').classList.remove('hide');
+    session = null;
+    var acct = window.NF_AUTH && NF_AUTH.account();
+    if (acct && acct.role !== 'admin') { location.replace('dashboard.html'); return; }
+    if (window.NF_AUTH) NF_AUTH.clear();
+    location.replace('account.html?next=admin-console.html');
   }
   el('login-form').addEventListener('submit', function (e) {
     e.preventDefault();

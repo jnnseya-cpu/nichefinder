@@ -110,8 +110,10 @@
           '<div style="font-size:.66rem;letter-spacing:.04em;color:var(--muted,#8B93A5);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(email) + (isAdmin ? ' · ADMIN' : '') + '</div>' +
         '</div>' +
         '<div style="height:1px;background:var(--line,rgba(255,255,255,.1));margin:4px 0"></div>' +
-        item('My Account', 'settings.html') +
         item('Command Center', 'dashboard.html') +
+        item('Search Canvas', 'search.html') +
+        item('Growth Engine', 'growth.html') +
+        item('My Account', 'settings.html') +
         (isAdmin ? item('Admin Console', 'admin-console.html') : '') +
         '<div style="height:1px;background:var(--line,rgba(255,255,255,.1));margin:4px 0"></div>' +
         '<a href="#" id="nf-acct-out" role="menuitem" style="display:block;padding:9px 12px;border-radius:8px;color:#E0806F;text-decoration:none;font-size:.82rem">Sign out</a>' +
