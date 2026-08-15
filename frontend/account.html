@@ -175,9 +175,11 @@
       NF_humanProof().then(function (proof) {
         if (!proof) { setMsg('Could not complete human verification. Please retry.', 'err'); busy(btn, false); return; }
         busy(btn, true, 'Creating account…');
-        return post('/v1/auth/signup', { email: email, password: password, challenge: proof.challenge, nonce: proof.nonce })
+        var ref = null; try { ref = localStorage.getItem('nf_ref') || null; } catch (e) {}
+        return post('/v1/auth/signup', { email: email, password: password, challenge: proof.challenge, nonce: proof.nonce, ref: ref })
           .then(function (res) {
             if (!res.ok) { setMsg(errText(res), 'err'); busy(btn, false); return; }
+            try { localStorage.removeItem('nf_ref'); } catch (e) {} // consume the referral once attributed
             NF_AUTH.set(res.data); location.href = next;
           });
       }).catch(function (err) { setMsg(err.message, 'err'); busy(btn, false); });

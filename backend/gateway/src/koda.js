@@ -16,6 +16,7 @@
 import crypto from 'node:crypto';
 import { GatewayError } from './errors.js';
 import { credit, PACKAGES } from './wallet.js';
+import { onPaidPurchase } from './referrals.js';
 
 const KEY = process.env.KODA_SECRET_KEY || '';
 const WHSEC = process.env.KODA_WEBHOOK_SECRET || '';
@@ -119,5 +120,10 @@ export function handleKodaWebhook(rawBody, sigHeader) {
   }
   const evId = event.id || obj.receipt_id || obj.intent_id || obj.id || meta.order_id;
   const result = credit({ user, packageId, idempotencyKey: `koda_${evId}` });
+  // Reward the referrer once, only on the first (non-replayed) settlement.
+  if (!result.replayed) {
+    try { onPaidPurchase({ user, gbp: PACKAGES[packageId].priceGBP, purchaseKey: `koda_${evId}` }); }
+    catch (e) { console.error('[referrals] koda reward failed:', e.message); }
+  }
   return { received: true, credited: result.credited, replayed: result.replayed, user };
 }

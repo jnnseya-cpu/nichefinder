@@ -10,6 +10,7 @@
 import crypto from 'node:crypto';
 import { GatewayError } from './errors.js';
 import { credit, PACKAGES } from './wallet.js';
+import { onPaidPurchase } from './referrals.js';
 
 const KEY = process.env.STRIPE_SECRET_KEY || '';
 const WHSEC = process.env.STRIPE_WEBHOOK_SECRET || '';
@@ -108,5 +109,10 @@ export function handleWebhook(rawBody, sigHeader) {
     throw new GatewayError('Webhook session missing user/package metadata.', { status: 400, code: 'bad_metadata' });
   }
   const result = credit({ user, packageId, idempotencyKey: `stripe_${event.id}` });
+  // Reward the referrer once, only on the first (non-replayed) settlement.
+  if (!result.replayed) {
+    try { onPaidPurchase({ user, gbp: PACKAGES[packageId].priceGBP, purchaseKey: `stripe_${event.id}` }); }
+    catch (e) { console.error('[referrals] stripe reward failed:', e.message); }
+  }
   return { received: true, credited: result.credited, replayed: result.replayed, user };
 }

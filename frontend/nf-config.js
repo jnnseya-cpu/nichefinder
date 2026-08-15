@@ -29,6 +29,16 @@ window.NF_WALLET_USER = (function () {
   } catch (e) { return 'op_anonymous'; }
 })();
 
+/* Referral capture: a Growth Partner link lands as ?ref=CODE. Persist it (first
+   touch wins) so the signup form can attribute the referral; it's consumed and
+   cleared on successful signup. */
+(function () {
+  try {
+    var ref = new URLSearchParams(location.search).get('ref');
+    if (ref && !localStorage.getItem('nf_ref')) localStorage.setItem('nf_ref', ref.trim().toUpperCase().slice(0, 24));
+  } catch (e) {}
+})();
+
 /* Synchronous SHA-256 (hex) — pure JS, byte-identical to Node's crypto. Used to
    solve the proof-of-work challenge in a tight loop; the browser's WebCrypto
    digest is async-only, which makes tens of thousands of sequential hashes far

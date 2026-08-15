@@ -12,6 +12,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { GatewayError } from './errors.js';
 import { encryptStore, decryptStore, peekWallet, deleteWallet } from './wallet.js';
+import { attachReferral } from './referrals.js';
 
 const STORE_PATH = process.env.AUTH_STORE || path.join(process.cwd(), 'data', 'auth.json');
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
@@ -94,7 +95,7 @@ function createSession(u) {
   return token;
 }
 
-export function signup({ email, password }) {
+export function signup({ email, password, ref }) {
   const em = normEmail(email);
   if (!EMAIL_RE.test(em)) throw new GatewayError('Enter a valid email address.', { status: 400, code: 'invalid_email' });
   validatePassword(password);
@@ -103,6 +104,10 @@ export function signup({ email, password }) {
   const role = em === normEmail(process.env.ADMIN_EMAIL) ? 'admin' : 'user';
   const u = { email: em, userId: newUserId(), salt, hash: hashPassword(password, salt), role, createdAt: Date.now(), reset: null };
   store.users[em] = u;
+  // Attribute the referral if this signup carried an invite code. Best-effort:
+  // a bad/self/duplicate code is silently ignored (never blocks signup). Admins
+  // don't participate as referees.
+  if (ref && role !== 'admin') { try { attachReferral({ referee: u.userId, code: ref }); } catch { /* non-fatal */ } }
   const token = createSession(u);
   return { token, user: publicUser(u) };
 }

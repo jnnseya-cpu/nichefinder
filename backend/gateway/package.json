@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "MOCK_AI=1 node src/server.js",
-    "test": "node test/smoke.js && node test/paycycle.js && node test/koda.js && node test/auth.js && node test/mailer.js"
+    "test": "node test/smoke.js && node test/paycycle.js && node test/koda.js && node test/auth.js && node test/mailer.js && node test/referrals.js"
   },
   "engines": {
     "node": ">=20"

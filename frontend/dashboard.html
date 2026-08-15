@@ -219,10 +219,10 @@
       <h2>Growth Partner Programme <span class="tag">STANDARD REFERRER</span></h2>
       <p>Earn by helping founders discover smarter venture opportunities — Niche Finder only rewards real paid usage, not fake sign-ups.</p>
       <div class="ref-stats">
-        <div class="r"><div class="v">0</div><div class="k">Total referrals</div></div>
-        <div class="r"><div class="v">0</div><div class="k">Qualified referrals</div></div>
-        <div class="r"><div class="v">£0</div><div class="k">Paid commission</div></div>
-        <div class="r"><div class="v">0 ACU</div><div class="k">Pending rewards</div></div>
+        <div class="r"><div class="v" id="refTotal">0</div><div class="k">Total referrals</div></div>
+        <div class="r"><div class="v" id="refQualified">0</div><div class="k">Qualified referrals</div></div>
+        <div class="r"><div class="v" id="refCommission">£0</div><div class="k">Commission earned</div></div>
+        <div class="r"><div class="v" id="refRewards">0 ACU</div><div class="k">Rewards credited</div></div>
       </div>
       <div class="invite">
         <span style="font-family:var(--mono);font-size:.58rem;letter-spacing:.16em;color:var(--muted)">YOUR INVITE CODE</span>
@@ -424,13 +424,35 @@
       function(){ showToast(link); }
     );
   });
-  // stable per-user invite code
-  var code = localStorage.getItem('nf_invite');
-  if (!code){
-    code = 'NF-' + Array.from({ length: 8 }, function(){ return 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random() * 32)]; }).join('');
-    localStorage.setItem('nf_invite', code);
-  }
-  document.getElementById('inviteCode').textContent = code;
+  // Growth Partner programme — real, server-tracked. The invite code is issued
+  // by the gateway (stable per account) and the stats reflect actual referrals
+  // and paid-usage commission. Falls back to a local code only in offline demo.
+  (function refProgramme(){
+    var codeEl = document.getElementById('inviteCode');
+    var base = (window.NF_GATEWAY_URL || '').replace(/\/$/, '');
+    var user = window.NF_WALLET_USER;
+    function set(id, v){ var el = document.getElementById(id); if (el) el.textContent = v; }
+    if (base && user && typeof fetch === 'function'){
+      fetch(base + '/v1/referrals/summary?user=' + encodeURIComponent(user))
+        .then(function(r){ return r.ok ? r.json() : null; })
+        .then(function(s){
+          if (!s) return;
+          if (s.code) codeEl.textContent = s.code;
+          set('refTotal', s.totalReferrals);
+          set('refQualified', s.qualifiedReferrals);
+          set('refCommission', '£' + (s.gbpEarned || 0));
+          set('refRewards', (s.acuEarned || 0).toLocaleString('en-US') + ' ACU');
+        })
+        .catch(function(){});
+    } else {
+      var code = localStorage.getItem('nf_invite');
+      if (!code){
+        code = 'NF-' + Array.from({ length: 8 }, function(){ return 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random() * 32)]; }).join('');
+        localStorage.setItem('nf_invite', code);
+      }
+      codeEl.textContent = code;
+    }
+  })();
 
   // Plans & allowances (spec §11.3): five tiers, conformed to the canonical
   // ACU economy. Selection persists; billing wires up at production launch.

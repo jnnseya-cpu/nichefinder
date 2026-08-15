@@ -8,6 +8,7 @@ import { route, availableProviders, meterAcu } from './router.js';
 import { getWallet, getLedger, charge, credit, grant, summary, deleteWallet, PACKAGES } from './wallet.js';
 import { createCheckout, handleWebhook, paymentsConfigured } from './payments.js';
 import { createKodaIntent, handleKodaWebhook, kodaConfigured } from './koda.js';
+import { summaryFor as referralSummary } from './referrals.js';
 import { issueChallenge, verifyChallenge } from './human.js';
 import { signup, login, logout, sessionFor, requestReset, resetPassword, listUsers, resolveUserId, emailForUserId, setRole, setDisabled, userByEmail, updateProfile, setMedia, changePassword, deleteAccount } from './auth.js';
 import { sendMail, mailConfigured } from './mailer.js';
@@ -285,6 +286,15 @@ const server = http.createServer(async (req, res) => {
     } catch (err) { return handleError(res, err); }
   }
 
+  // ---- referrals: Growth Partner programme summary for one account ----
+  if (method === 'GET' && url.pathname === '/v1/referrals/summary') {
+    try {
+      const user = url.searchParams.get('user');
+      requireCapabilityId(user);
+      return json(res, 200, referralSummary(user));
+    } catch (err) { return handleError(res, err); }
+  }
+
   // ---- leads: waitlist / contact capture (human-paced only; honeypot server-side too) ----
   if (req.method === 'POST' && url.pathname === '/v1/leads') {
     try {
@@ -340,7 +350,7 @@ const server = http.createServer(async (req, res) => {
     try {
       const body = JSON.parse((await readBody(req)) || '{}');
       requireHuman(body);
-      return json(res, 200, signup({ email: body.email, password: body.password }));
+      return json(res, 200, signup({ email: body.email, password: body.password, ref: body.ref }));
     } catch (err) { return handleError(res, err); }
   }
 
