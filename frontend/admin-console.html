@@ -179,13 +179,22 @@
 <div class="overlay" id="overlay"><div class="modal" id="modal"></div></div>
 
 <script src="nf-config.js"></script>
+<script src="nf-auth.js"></script>
 <script>
 (function () {
   'use strict';
   var base = (window.NF_GATEWAY_URL || '').replace(/\/$/, '');
-  var KEY = 'nf_admin_session';
-  var session = null;
-  try { session = JSON.parse(sessionStorage.getItem(KEY) || 'null'); } catch (e) {}
+  // Unified session: the admin console shares the same account session as the
+  // rest of the site (nf-auth.js). One sign-in works everywhere, and the account
+  // menu (top-right) deep-links here — no separate admin login to hunt for.
+  function currentSession() {
+    try {
+      var a = window.NF_AUTH && NF_AUTH.account(), t = window.NF_AUTH && NF_AUTH.token();
+      if (a && t && a.role === 'admin') return { token: t, user: a };
+    } catch (e) {}
+    return null;
+  }
+  var session = currentSession();
   var el = function (id) { return document.getElementById(id); };
   var usersCache = [];
 
@@ -215,7 +224,7 @@
     loadOverview(); loadUsers();
   }
   function showLogin() {
-    sessionStorage.removeItem(KEY); session = null;
+    if (window.NF_AUTH) NF_AUTH.clear(); session = null;
     el('console').classList.add('hide'); el('whoami').classList.add('hide'); el('login').classList.remove('hide');
   }
   el('login-form').addEventListener('submit', function (e) {
@@ -227,7 +236,7 @@
         btn.disabled = false; btn.textContent = 'Sign in';
         if (!res.ok) { setMsg(el('login-msg'), (res.data && (res.data.message || res.data.error)) || 'Sign-in failed.', 'err'); return; }
         if (res.data.user.role !== 'admin') { setMsg(el('login-msg'), 'This account is not an administrator.', 'err'); return; }
-        session = res.data; sessionStorage.setItem(KEY, JSON.stringify(session)); showConsole();
+        if (window.NF_AUTH) NF_AUTH.set(res.data); session = res.data; showConsole();
       }).catch(function () { btn.disabled = false; btn.textContent = 'Sign in'; setMsg(el('login-msg'), 'Network error.', 'err'); });
   });
   el('signout').addEventListener('click', showLogin);
