@@ -734,8 +734,14 @@
   setTxt('dimInaction', B.riskOfInaction);
   setTxt('dimValue', B.commercialValue);
   setTxt('briefNext', B.nextAction);
-  var invMatch = (project.meta || '').match(/US?\$[\d,]+/i);
-  if (invMatch) setTxt('briefInvest', invMatch[0].toUpperCase());
+  // Target Investment = the operator's actual max-investment input, not a demo
+  // default. Fall back to a US$ figure in the tagline only if it isn't set.
+  if (project.investmentUsd) {
+    setTxt('briefInvest', 'US$' + Number(project.investmentUsd).toLocaleString('en-US'));
+  } else {
+    var invMatch = (project.meta || '').match(/US?\$[\d,]+/i);
+    if (invMatch) setTxt('briefInvest', invMatch[0].toUpperCase());
+  }
 
   /* ---------- tabs ---------- */
   document.querySelectorAll('.tab').forEach(function(t){

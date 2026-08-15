@@ -920,6 +920,7 @@
     if (m.brief) proj.brief = m.brief;
     if (m.scores && m.scores.bps != null) proj.bps = Math.round(m.scores.bps) / 10; // 0-100 → 0-10 scale
     proj.bracketFactor = NF.bracket(+budget.value).factor; // Build Hub prices inherit the capital bracket
+    proj.investmentUsd = +budget.value || null; // the operator's actual max-investment input, for the brief
     localStorage.setItem('nf_active_project', JSON.stringify(proj));
     location.href = 'project.html';
   }
