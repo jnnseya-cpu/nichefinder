@@ -691,6 +691,11 @@ const server = http.createServer(async (req, res) => {
       }
       return json(res, 200, { ...result, latencyMs: Date.now() - started });
     } catch (err) {
+      // Every generation failure is logged with its full reason — including
+      // GatewayErrors (no_provider, insufficient_acu, provider 4xx) that
+      // handleError does not log — so live discovery failures are never silent.
+      const attempts = err && err.attempts ? JSON.stringify(err.attempts) : '';
+      console.error(`[generate] failed: code=${err?.code || err?.name || '?'} status=${err?.status ?? '?'} :: ${err?.message || err} ${attempts}`);
       return handleError(res, err);
     }
   }
