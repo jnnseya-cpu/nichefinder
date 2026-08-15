@@ -784,7 +784,10 @@
 
   function fetchNiches(cfg){
     var controller = new AbortController();
-    var timer = setTimeout(function(){ controller.abort(); }, 25000);
+    // Deep, hidden-niche discovery runs maximum-effort reasoning server-side and
+    // can legitimately take a couple of minutes. A short abort would kill every
+    // genuine deep search, so allow real thinking time.
+    var timer = setTimeout(function(){ controller.abort(); }, 180000);
     return fetch(GATEWAY + '/v1/generate', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },

@@ -53,8 +53,11 @@ export const config = {
   },
 
   defaults: {
-    maxTokens: 16000,
-    streamThreshold: 16000, // above this, upstream calls always stream
+    // Deep venture analysis runs adaptive thinking at high effort: the thinking
+    // budget plus the structured JSON output must both fit under max_tokens.
+    // 16k was too tight for xhigh/max reasoning — give the model real headroom.
+    maxTokens: Number(process.env.AI_MAX_TOKENS || 32000),
+    streamThreshold: 8000, // above this, upstream calls always stream
   },
 
   mock: process.env.MOCK_AI === '1',

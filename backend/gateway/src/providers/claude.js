@@ -31,13 +31,19 @@ export async function generate(req) {
 
   let response;
   try {
-    if (maxTokens > config.defaults.streamThreshold) {
-      const stream = getClient().messages.stream(params);
-      response = await stream.finalMessage();
-    } else {
-      response = await getClient().messages.create(params);
-    }
+    // Always stream. Deep venture analysis (adaptive thinking at high effort)
+    // can run for minutes and emit tens of thousands of tokens; a non-streaming
+    // request risks HTTP/idle timeouts on long runs. finalMessage() reassembles
+    // the complete message either way.
+    const stream = getClient().messages.stream(params);
+    response = await stream.finalMessage();
   } catch (err) {
+    // Provider failures must never vanish: surface the real upstream reason to
+    // the logs so we can diagnose 4xx rejections (the client only sees a
+    // sanitized message). No secrets are logged — only status/type/message.
+    console.error(
+      `[claude] generate failed: status=${err?.status ?? '?'} type=${err?.error?.type || err?.name || '?'} model=${model} effort=${params.output_config.effort} maxTokens=${maxTokens} schema=${req.jsonSchema ? 'yes' : 'no'} :: ${err?.message || err}`,
+    );
     throw normalize(err);
   }
 
