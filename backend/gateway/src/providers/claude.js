@@ -30,6 +30,8 @@ export async function generate(req) {
   }
 
   let response;
+  const t0 = Date.now();
+  console.log(`[claude] start model=${model} effort=${params.output_config.effort} maxTokens=${maxTokens} schema=${req.jsonSchema ? 'yes' : 'no'}`);
   try {
     // Always stream. Deep venture analysis (adaptive thinking at high effort)
     // can run for minutes and emit tens of thousands of tokens; a non-streaming
@@ -37,6 +39,7 @@ export async function generate(req) {
     // the complete message either way.
     const stream = getClient().messages.stream(params);
     response = await stream.finalMessage();
+    console.log(`[claude] ok model=${response.model} latencyMs=${Date.now() - t0} outTokens=${response.usage?.output_tokens ?? '?'} stop=${response.stop_reason}`);
   } catch (err) {
     // Provider failures must never vanish: surface the real upstream reason to
     // the logs so we can diagnose 4xx rejections (the client only sees a

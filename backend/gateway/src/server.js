@@ -679,7 +679,9 @@ const server = http.createServer(async (req, res) => {
         debit = { user: body.user, estimate: est };
       }
       const started = Date.now();
+      console.log(`[generate] start effort=${body.effort || 'default'} schema=${body.jsonSchema ? 'yes' : 'no'} billed=${!!debit}`);
       const result = await route(body);
+      console.log(`[generate] ok provider=${result.provider} latencyMs=${Date.now() - started} acu=${result.acu ?? 0} textLen=${(result.text || '').length}`);
       if (debit) {
         const metered = Math.max(config.acu.minimumCharge, Math.min(result.acu || 0, getWallet(debit.user).paid));
         const charged = charge({
