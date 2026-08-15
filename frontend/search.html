@@ -680,11 +680,11 @@
     return Math.round(cost);
   }
   function updAcu(){
-    var b = NF.bracket(+budget.value);
     document.getElementById('acuCost').innerHTML = searchCostNow() + ' <small>ACU</small>';
     var k = document.querySelector('.acu .k');
-    if (k) k.innerHTML = 'Search Cost <small style="display:block;font-size:.56rem;letter-spacing:.12em;color:' +
-      (b.tier > 1 ? '#FFC53D' : '#8B93A5') + '">BRACKET ' + b.tier + ' · ' + b.band + ' PROVIDER COST</small>';
+    // Customer-facing: show only the price. The internal margin band
+    // (provider-cost multiple) is never exposed in the UI.
+    if (k) k.textContent = 'Search Cost';
   }
 
   /* ---------- generate: AI gateway with demo fallback ---------- */

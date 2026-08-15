@@ -13,8 +13,7 @@ process.env.PORT = '18795';
 process.env.KODA_SECRET_KEY = 'sk_test_koda';
 process.env.KODA_WEBHOOK_SECRET = 'koda_whsec_test_secret';
 process.env.KODA_API_BASE = 'http://127.0.0.1:18796/v1';
-process.env.KODA_FX_PER_GBP = '2850';
-process.env.KODA_CURRENCY = 'CDF';
+// No KODA_FX_PER_GBP → automatic-rate mode: charge in GBP, KODA converts.
 process.env.WALLET_STORE = '/tmp/koda-wallets.json';
 process.env.WALLET_STORE_KEY = 'ab'.repeat(32);
 try { fs.unlinkSync(process.env.WALLET_STORE); } catch {}
@@ -58,7 +57,7 @@ console.log('— step 1: customer opens the mobile-money checkout —');
 res = await post('/v1/payments/koda-intent', { user: USER, packageId: 'builder_10' });
 let body = await res.json();
 check('intent created, hosted checkout_url returned', res.status === 200 && body.url.includes('kodajnn.com/pay/'), JSON.stringify(body));
-check('amount converted from GBP via FX (£10 × 2850 = 28500 CDF)', lastIntentBody && lastIntentBody.amount === 28500 && lastIntentBody.currency === 'CDF', JSON.stringify(lastIntentBody));
+check('automatic mode: intent denominated in GBP (£10), KODA converts', lastIntentBody && lastIntentBody.amount === 10 && lastIntentBody.currency === 'GBP', JSON.stringify(lastIntentBody));
 check('metadata carries user + package for settlement', lastIntentBody && lastIntentBody.metadata.user === USER && lastIntentBody.metadata.packageId === 'builder_10', JSON.stringify(lastIntentBody && lastIntentBody.metadata));
 
 console.log('— step 2: customer pays; KODA fires the signed payment.verified webhook —');

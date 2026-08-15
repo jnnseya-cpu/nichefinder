@@ -21,17 +21,18 @@ import { onPaidPurchase } from './referrals.js';
 const KEY = process.env.KODA_SECRET_KEY || '';
 const WHSEC = process.env.KODA_WEBHOOK_SECRET || '';
 const BASE = (process.env.KODA_API_BASE || 'https://kodajnn.com/v1').replace(/\/$/, '');
-const CURRENCY = process.env.KODA_CURRENCY || 'CDF';
 const OPERATORS = (process.env.KODA_OPERATORS || 'orange_cd,mpesa_cd')
   .split(',')
   .map((s) => s.trim())
   .filter(Boolean);
-// Units of KODA_CURRENCY per £1. The ACU credited is fixed by the package, so
-// this only sets the amount the customer is charged in local currency — the
-// wallet always receives exactly the package's ACU regardless of FX drift.
+// Optional fixed-rate override: units of KODA_CURRENCY per £1. Leave unset (the
+// default) to denominate the charge in GBP and let KODA apply its own automatic
+// live rate to the payer's mobile-money currency at checkout. Either way the ACU
+// credited is fixed by the package, so FX never affects what the wallet receives.
 const FX_PER_GBP = Number(process.env.KODA_FX_PER_GBP || 0);
+const CURRENCY = process.env.KODA_CURRENCY || (FX_PER_GBP > 0 ? 'CDF' : 'GBP');
 
-export const kodaConfigured = () => Boolean(KEY && WHSEC && FX_PER_GBP > 0);
+export const kodaConfigured = () => Boolean(KEY && WHSEC);
 
 /* Create a hosted KODA checkout intent for a canonical ACU package. Price is
    derived server-side from shared/nf-economy.js via wallet PACKAGES — the client
@@ -39,7 +40,7 @@ export const kodaConfigured = () => Boolean(KEY && WHSEC && FX_PER_GBP > 0);
 export async function createKodaIntent({ user, packageId, origin }) {
   if (!kodaConfigured()) {
     throw new GatewayError(
-      'Mobile-money payments are not configured on this deployment (set KODA_SECRET_KEY, KODA_WEBHOOK_SECRET, KODA_FX_PER_GBP).',
+      'Mobile-money payments are not configured on this deployment (set KODA_SECRET_KEY and KODA_WEBHOOK_SECRET).',
       { status: 503, code: 'koda_not_configured' },
     );
   }
@@ -50,7 +51,10 @@ export async function createKodaIntent({ user, packageId, origin }) {
   }
   const base = (origin || '').replace(/\/$/, '');
   const total = pkg.acus + pkg.bonus;
-  const amount = Math.round(pkg.priceGBP * FX_PER_GBP);
+  // Automatic rate (default): charge the GBP price and let KODA convert to the
+  // payer's currency at its live rate. Fixed-rate mode (KODA_FX_PER_GBP set):
+  // send a pre-converted local amount.
+  const amount = FX_PER_GBP > 0 ? Math.round(pkg.priceGBP * FX_PER_GBP) : pkg.priceGBP;
   const orderId = `nf_${packageId}_${user.slice(-8)}_${Date.now().toString(36)}`;
   let res;
   try {
