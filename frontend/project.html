@@ -692,7 +692,7 @@
       verdict: { type: 'string', description: 'A punchy 2-3 sentence headline verdict/thesis opening the document' },
       sections: {
         type: 'array',
-        description: '7 to 9 substantive, detailed sections — never generic, always specific and quantified to this venture.',
+        description: '6 to 8 substantive, detailed sections — never generic, always specific and quantified to this venture. Be deep but efficient: no padding or repetition.',
         items: {
           type: 'object',
           properties: {
@@ -751,15 +751,17 @@
       ' Audience: a demanding founder and professional investors. Be EXTREMELY detailed, specific, quantified and punchy — no generic filler, no hedging, no repetition. Every claim must be concrete to THIS exact venture, market and location. Make it visual with section stats, bullets, callouts and tables. Keep all figures internally consistent with the anchored financials provided.';
     var usr = 'Produce the ' + a.t + ' for this venture, using every relevant detail. Full project context as JSON:\n' + JSON.stringify(projectContext(), null, 2);
 
+    var controller = new AbortController();
+    var timer = setTimeout(function(){ controller.abort(); }, 210000); // deep docs run ~2 min; never hang
     fetch(base + '/v1/document', {
-      method: 'POST', headers: { 'content-type': 'application/json' },
+      method: 'POST', headers: { 'content-type': 'application/json' }, signal: controller.signal,
       body: JSON.stringify({
         user: window.NF_WALLET_USER, docType: a.id, system: sys,
         messages: [{ role: 'user', content: usr }], jsonSchema: DOC_SCHEMA, effort: 'high',
         investorMode: invMode, capitalGBP: P.investmentUsd ? Math.round(P.investmentUsd * 0.79) : 0,
         idempotencyKey: 'doc_' + P.id + '_' + a.id + '_' + Date.now()
       })
-    }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, status: r.status, d: d }; }); })
+    }).then(function(r){ clearTimeout(timer); return r.json().then(function(d){ return { ok: r.ok, status: r.status, d: d }; }); })
     .then(function(res){
       if (!res.ok){
         if (res.status === 402){ restore(cost + ' ACU'); NF.openTopup(cost, label, render); return; }
@@ -773,9 +775,12 @@
       try { localStorage.setItem('nf_doc_' + P.id + '_' + a.id, JSON.stringify({ content: res.d.content, ts: Date.now(), version: ver })); } catch(e){}
       if (res.d.wallet) NF.syncWallet(res.d.wallet);
       finishDoc(a, res.d.charged || cost, res.d.content, isRegen);
-    }).catch(function(){
+    }).catch(function(err){
+      clearTimeout(timer);
       restore(cost + ' ACU');
-      showToast('<b>Network error.</b> The document could not be generated — you were not charged. Please try again.');
+      showToast((err && err.name === 'AbortError')
+        ? '<b>Timed out.</b> This document took too long — you were not charged. Please try again.'
+        : '<b>Network error.</b> The document could not be generated — you were not charged. Please try again.');
     });
   }
 

@@ -330,8 +330,10 @@ const server = http.createServer(async (req, res) => {
         }
         debit = { user: body.user, price };
       }
-      // Fixed price → bound provider spend so a huge prompt can't outrun it.
-      const genBody = { ...body, maxTokens: Math.min(Number(body.maxTokens) || 22000, 28000) };
+      // Fixed price → bound provider spend, AND keep generation inside a live
+      // request window: a too-large budget runs past the provider timeout, fails
+      // over, and the page spins for minutes. 14k fits a deep, detailed document.
+      const genBody = { ...body, maxTokens: Math.min(Number(body.maxTokens) || 14000, 18000) };
       const started = Date.now();
       console.log(`[document] start type=${body.docType} price=${price} effort=${body.effort || 'high'} billed=${!!debit}`);
       const result = await route(genBody);
