@@ -75,11 +75,19 @@
     }
 
     var base = (window.NF_GATEWAY_URL || '').replace(/\/$/, '');
-    var host = document.querySelector('header.site .wrap') || document.querySelector('header .wrap');
+    /* Installed-PWA / standalone: there is no browser chrome, and the page
+       header is a single flex row that clips its overflow (body{overflow-x:hidden}),
+       so a header-mounted menu gets pushed off-screen on phones. Pin it instead,
+       clear of the status-bar / notch via the safe-area insets, so the account
+       menu is always present and tappable in the installed app. */
+    var standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+      window.navigator.standalone === true;
+    var host = standalone ? null : (document.querySelector('header.site .wrap') || document.querySelector('header .wrap'));
     var wrap = document.createElement('div');
     wrap.id = 'nf-acct-menu';
     wrap.style.cssText = 'display:inline-flex;align-items:center;font-family:inherit;z-index:1200;' +
-      (host ? 'position:relative;margin-left:14px' : 'position:fixed;top:12px;right:16px');
+      (host ? 'position:relative;margin-left:14px'
+            : 'position:fixed;top:calc(env(safe-area-inset-top, 0px) + 12px);right:calc(env(safe-area-inset-right, 0px) + 14px)');
 
     function item(label, href) {
       return '<a href="' + href + '" role="menuitem" style="display:block;padding:9px 12px;border-radius:8px;color:var(--text,#E8ECF4);text-decoration:none;font-size:.82rem">' + label + '</a>';
