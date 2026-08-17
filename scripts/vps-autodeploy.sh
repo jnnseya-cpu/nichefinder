@@ -17,6 +17,13 @@ TESTLOG="${NF_TEST_LOG:-/var/log/nf-deploy-test.log}"
 stamp() { date -u +%FT%TZ; }
 
 cd "$REPO"
+
+# Single-flight lock: prevent an overlapping run (e.g. the timer firing while a
+# manual run is mid-deploy) from clobbering the other's working-tree state — the
+# race that can otherwise leave HEAD reset onto an older commit.
+exec 9>/tmp/nf-deploy.lock
+flock -n 9 || { echo "$(stamp) another deploy is in progress — skipping this run"; exit 0; }
+
 git fetch --quiet origin "$BRANCH"
 LOCAL=$(git rev-parse HEAD)
 REMOTE=$(git rev-parse "origin/$BRANCH")
