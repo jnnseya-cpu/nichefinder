@@ -43,6 +43,7 @@
     confidence_report: 200,
     bizplan: 500,
     bizplan_pdf: 150,
+    gtm: 750,               // Go-To-Market Execution Blueprint (0–90 day launch plan)
     pitch: 500,             // standard deck; premium 650 / elite 850 by template tier
     pitch_premium: 650,
     pitch_elite: 850,

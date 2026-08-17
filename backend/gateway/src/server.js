@@ -356,7 +356,7 @@ const server = http.createServer(async (req, res) => {
       if (inj) { strike(ip, 'prompt_injection', inj); throw new GatewayError('Instruction blocked by the platform security agent.', { status: 400, code: 'non_human_instruction' }); }
 
       const ECO = globalThis.NF_ECONOMY;
-      const PRICE_KEY = { validation: 'validation', forecast: 'forecast', pnl: 'pnl', riskmap: 'riskmap', bizplan: 'bizplan', pitch: 'pitch', export: 'excel_model' };
+      const PRICE_KEY = { validation: 'validation', forecast: 'forecast', pnl: 'pnl', riskmap: 'riskmap', bizplan: 'bizplan', pitch: 'pitch', export: 'excel_model', gtm: 'gtm' };
       const key = PRICE_KEY[body.docType];
       if (!key || !ECO.COSTS[key]) throw new GatewayError(`Unknown document type "${body.docType}".`, { status: 400, code: 'unknown_document' });
       const price = Math.round(ECO.COSTS[key] * ECO.bracketFor(body.capitalGBP).factor * (body.investorMode === true ? ECO.COSTS.investor_multiplier : 1));

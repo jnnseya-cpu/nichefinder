@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Niche Finder — Deep-Dive Analysis</title>
 <script>/* Auth gate — personal page requires sign-in (redirects before render, no flash) */(function(){try{if(!localStorage.getItem('nf_session')){location.replace('account.html?next='+encodeURIComponent(location.pathname.split('/').pop()+location.search));}}catch(e){}})();</script>
+<script>/* No active venture on this account → go discover one (never show a demo project) */(function(){try{if(localStorage.getItem('nf_session')&&!localStorage.getItem('nf_active_project')){location.replace('search.html');}}catch(e){}})();</script>
 <meta name="description" content="Investor-grade deep-dive analysis for a validated venture opportunity.">
 <meta name="theme-color" content="#070B14">
 <link rel="manifest" href="manifest.webmanifest">
@@ -424,52 +425,29 @@
   var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   /* ---------- project data: from localStorage (set by search.html) or demo default ---------- */
+  // Neutral skeleton ONLY — never a demo venture. A fresh account is redirected
+  // to Search by the head gate above (no active project), so this is only used to
+  // backfill genuinely-missing keys on a real unlocked project with empty/neutral
+  // values (never fabricated content), keeping render() safe without leaking a
+  // demo idea onto the page.
   var DEFAULT = {
-    id: 'demo-coldchain',
-    title: 'Solar-Powered Cold-Chain Micro-Depots',
-    meta: 'AGRIBUSINESS · KINSHASA, DRC · HYBRID · MAX INVESTMENT US$10,000',
-    score: 87,
-    sub: { 'Market Readiness': 91, 'Competitive Gap': 84, 'Prospect of Success': 87 },
-    thesis: 'Off-grid refrigerated storage hubs serving smallholder produce cooperatives around Kinshasa, monetized per-crate with mobile-money settlement. <b>Post-harvest losses above 35%</b> signal strong latent demand, while grid unreliability makes solar-first cold storage a structural advantage rather than a green premium. The wedge is a single 20-crate depot at a high-traffic collection point, expanding along existing trader routes.',
-    market: { 'Addressable Market': '$46M', 'Break-even': '14 mo', 'Gross Margin': '61%', 'Startup Capital': '$9,400' },
-    fin: {
-      years: ['Year 1', 'Year 2', 'Year 3'],
-      revenue: [118000, 540000, 1240000],
-      costs: [104000, 342000, 486000],
-      cashflow: [14000, 198000, 754000]
-    },
-    risks: [
-      { sev: 'high', t: 'Equipment import lead times', p: 'Solar refrigeration units clear customs in 6–14 weeks. Mitigate with a regional distributor holding buffer stock in Matadi.' },
-      { sev: 'med', t: 'Mobile-money settlement fees', p: 'Per-transaction fees compress margin on small crate fees. Negotiate aggregator rates once volume passes 2,000 tx/month.' },
-      { sev: 'med', t: 'Cooperative payment discipline', p: 'Prepaid crate credits rather than invoicing keeps receivables near zero.' },
-      { sev: 'low', t: 'Competitive response', p: 'No solar cold-chain operator currently serves the target corridors; diesel incumbents carry 3× operating cost.' }
-    ],
-    roadmap: [
-      { t: 'Validate the corridor', p: 'Interview 30 traders at the target collection point; pre-sell 60% of depot capacity as prepaid crate credits.', tm: 'Weeks 1–4' },
-      { t: 'Deploy pilot depot', p: 'Install the first 20-crate solar depot; instrument temperature logging for spoilage-reduction proof.', tm: 'Weeks 5–10' },
-      { t: 'Prove unit economics', p: 'Run 90 days at target utilization; capture spoilage-delta data for the investor pack.', tm: 'Weeks 11–22' },
-      { t: 'Raise & replicate', p: 'Use validated depot economics to raise for 10 additional depots along two trading corridors.', tm: 'Months 6–12' }
-    ],
-    bps: 8,
-    brief: {
-      score: '8.5',
-      rationale: 'This niche offers novelty by pairing solar-first infrastructure with prepaid mobile-money economics rather than generic cold storage. Unmet demand is high — post-harvest losses above 35% are already a priced pain. Timing is strong: falling solar equipment costs, mature mobile-money rails, and no structural incumbent in the target corridors. Defensibility builds through corridor density, cooperative relationships, and utilization data no new entrant will hold.',
-      situation: 'Smallholder cooperatives lose over a third of produce value between harvest and sale. Legacy cold-chain operators carry 3× the operating cost and avoid these corridors entirely.',
-      insight: 'Reliability, not price, is the purchase trigger. A prepaid crate-credit model converts spoilage risk into a predictable operating expense farmers already understand.',
-      riskAlert: 'Equipment import lead times of 6–14 weeks are the dominant execution risk. Engagement discipline of cooperatives beyond the pilot corridor is unproven.',
-      recommendation: 'Unlocked',
-      confidence: 'HIGH CERTAINTY',
-      optimalRoute: 'Deploy the single-depot wedge at the highest-traffic collection point, pre-selling 60% capacity before installation. AI-driven route data and utilization telemetry make each subsequent depot a lower-risk copy.',
-      pivot: 'Pivot to a B2B equipment-leasing model for existing traders if direct depot operation shows weak utilization — same supply chain, different balance sheet.',
-      riskOfInaction: 'Solar hardware costs are falling; a funded competitor could lock the best collection points within 12–18 months, making later entry a price war.',
-      commercialValue: 'High. Recurring prepaid revenue, 61% contribution margin, and a repeatable expansion unit that pays back in under 4,000 transactions. Scales along existing trade corridors with minimal marginal overhead.',
-      nextAction: 'Finalize commercial assumptions.'
-    }
+    id: '',
+    title: 'Your Venture',
+    meta: '',
+    score: null,
+    sub: {},
+    thesis: '',
+    market: {},
+    fin: { years: [], revenue: [], costs: [], cashflow: [] },
+    risks: [],
+    roadmap: [],
+    bps: null,
+    brief: null
   };
 
   var project;
   try { project = JSON.parse(localStorage.getItem('nf_active_project')) || DEFAULT; } catch (e) { project = DEFAULT; }
-  // merge: AI-generated niches may carry partial data — fill remaining analysis sections from the template
+  // Backfill only genuinely-missing keys with neutral defaults (no demo content).
   Object.keys(DEFAULT).forEach(function(k){ if (project[k] == null) project[k] = DEFAULT[k]; });
   // persist the merged project so asset.html renders documents from identical data
   try { localStorage.setItem('nf_active_project', JSON.stringify(project)); } catch (e) {}
@@ -606,6 +584,7 @@
 
   /* ---------- actions ---------- */
   var ACTIONS = [
+    { id: 'gtm', t: 'Go-To-Market Blueprint', d: '0–90 day launch plan: target customer, beachhead, offer & pricing, supplier sourcing, first 10 & first 100 customers, roadmap, budget, KPIs', cost: NF.COSTS.gtm, advances: null, hc: '#E8A61A', featured: true },
     { id: 'validation', t: 'Market Validation Report', d: 'Deep dive into local demand, competition, and timing', cost: NF.COSTS.validation, advances: 'validated', hc: '#3FA79B' },
     { id: 'forecast', t: '3-Year Cashflow Forecast', d: 'Revenue build-up, cashflow, and break-even analysis', cost: NF.COSTS.forecast, advances: 'financial_ready', hc: '#E8A61A' },
     { id: 'pnl', t: '3-Year Profit & Loss', d: 'Structured P&L with margins, opex, and net position', cost: NF.COSTS.pnl, advances: 'financial_ready', hc: '#FFC53D' },
@@ -713,6 +692,12 @@
     required: ['title', 'subtitle', 'verdict', 'sections'],
     additionalProperties: false
   };
+  // GTM Blueprint needs more sections than a standard document — clone the base
+  // schema and widen the section count + tighten each body toward stats/tables.
+  var GTM_SCHEMA = JSON.parse(JSON.stringify(DOC_SCHEMA));
+  GTM_SCHEMA.properties.sections.description = '12 to 16 sections covering the full Go-To-Market blueprint in the exact order specified — never generic, always specific and quantified to THIS venture and market. Prefer stat cards, bullets and tables over long prose.';
+  GTM_SCHEMA.properties.sections.items.properties.body.description = '1 to 2 tight, punchy paragraphs specific to THIS venture. Prefer bullets, stats and tables over prose walls. Separate paragraphs with \\n\\n.';
+
   var PROTECT = ' Where relevant, advise how the operator protects the idea and builds a durable moat — first-mover speed, IP (trademarks, patents, registered designs), trade secrets, exclusive supply/distribution deals, brand, data and network effects — covering BOTH local and international exposure, including how to withstand a well-funded copycat.';
   var DOC_SPECS = {
     validation: 'Produce an investor-grade MARKET VALIDATION REPORT: the verdict; demand evidence with concrete signals; TAM/SAM/SOM sizing with real numbers and how they were derived; customer segments and willingness to pay; a competitive scan naming realistic competitor archetypes, their models and weaknesses, and the whitespace; and a validation checklist (what is proven vs the exact experiments still to run).' + PROTECT,
@@ -721,7 +706,24 @@
     riskmap: 'Produce a RISK HEATMAP: the most material regulatory, market, operational, financial, execution and competitive risks for this venture and country. For each: likelihood, impact, early-warning signals, and a concrete mitigation. Include a ranked table. Give special attention to copycat/idea-theft risk.' + PROTECT,
     bizplan: 'Produce an investor-ready BUSINESS PLAN: executive summary; the problem; the solution and how it works; business model and unit economics; market opportunity and sizing; go-to-market and growth engine; competition, moat and DEFENSIBILITY; operations and key processes; team and hiring plan; financial highlights; funding ask and use of funds; and milestones. Every section concrete and quantified.' + PROTECT,
     pitch: 'Produce a 12-slide INVESTOR PITCH DECK — each section is exactly one slide in order: Title/vision, Problem, Solution, Why Now, Market Size, Product, Business Model, Go-to-Market, Competition & Moat (incl. how the idea is protected), Traction & Milestones, Financials & Ask, Team/Close. Slide bodies must be punchy: 3-5 short bullets and/or 1-3 big numbers per slide (use the stats field for numbers), never paragraphs.',
-    export: 'Produce a one-page EXPORT PACK OVERVIEW an operator can hand to an investor alongside the full asset set: a crisp summary of the opportunity, the headline numbers, the ask, and what each document contains. Punchy and confident.'
+    export: 'Produce a one-page EXPORT PACK OVERVIEW an operator can hand to an investor alongside the full asset set: a crisp summary of the opportunity, the headline numbers, the ask, and what each document contains. Punchy and confident.',
+    gtm: 'Produce a complete GO-TO-MARKET EXECUTION BLUEPRINT — a founder\'s 0–90 day launch operating plan answering "I have this opportunity; exactly what do I do now to get my first 100 paying customers?". Be specific, quantified and consistent with the anchored financials; prefer stat cards, bullets and tables over prose. Grade every externally-derived figure inline as (verified), (estimate) or (assumption — validate); NEVER invent supplier prices, MOQs, market sizes, CAC, competitor names or regulations as fact — where unknown say "requires quotation", "requires verification" or "insufficient data" and state how to resolve it. Produce these sections IN THIS ORDER: '
+      + '1) GTM COMMAND CARD — a one-screen exec summary; put in the stats cards: GTM Score (/100), Data Confidence (/100), Verdict, Recommended price, Est. gross margin, Target CAC, Max CAC, Initial capital, Days to first 10, Days to first 100, 90-day revenue target, Primary customer, Primary channel. The verdict must be one of LAUNCH FAST / LAUNCH / VALIDATE FIRST / PILOT ONLY / PIVOT / DO NOT LAUNCH. '
+      + '2) IDEAL CUSTOMER PROFILE & PERSONAS — primary, secondary, early-adopter, highest-value, and the segment to AVOID first (table); for the primary persona: demographics/firmographics, problem, pain severity, buying trigger, current alternative, objections, willingness to pay, where to find them (online+offline), best message + channel, conversion difficulty. '
+      + '3) BEACHHEAD MARKET — the single smallest segment for fastest traction (START HERE: customer, location, problem, offer, price, channel, reason, beachhead score /100) + 3 ranked expansion markets. '
+      + '4) OFFER & PRICING LADDER — core product, minimum sellable version, and an Entry/Core/Premium/Recurring ladder as a table (price, est. cost, gross profit, margin, purpose, target); include the full offer (promise, bonuses, guarantee, delivery, top objections + responses). No false scarcity. '
+      + '5) SUPPLIER INTELLIGENCE & SOURCING — supplier categories relevant to THIS model; the exact search queries to find them (e.g. "[product] manufacturer [country]", "[product] wholesaler [city]") and directories/marketplaces/associations/trade shows; a supplier SHORTLIST table (name, country, type, MOQ, indicative cost, lead time, customisation, contact route, evidence level, risk) — mark unverified figures "requires quotation/verification", or return INSUFFICIENT VERIFIED DATA; a due-diligence checklist; and a ready-to-send RFQ template (product, spec, quantities at 1/100/500/1000, lead time, Incoterms, payment terms, warranty, certifications, private-label). For digital/service ventures use infrastructure/API/professional-service suppliers instead. '
+      + '6) LANDED COST & UNIT ECONOMICS — a deterministic landed-cost table (product, packaging, freight, insurance, duty, customs, taxes, warehousing, fulfilment, payment processing, returns = TRUE LANDED COST); then selling price → contribution before/after CAC, gross margin, contribution margin, Max CAC, Target CAC, AOV, LTV, LTV:CAC, CAC payback — show assumptions. '
+      + '7) COMPETITOR ATTACK MAP & HOW WE WIN — direct competitors, indirect alternatives, do-nothing option (table: product, price, positioning, target, strength, weakness, gap); then 3–5 defensible ways to win — NOT "be cheaper" unless economics support it. '
+      + '8) POSITIONING — 5-second pitch, 30-second pitch, customer value proposition, sales pitch and investor positioning using: For [customer] who struggle with [problem], [business] provides [solution] that delivers [outcome], unlike [alternative], because [differentiator]. '
+      + '9) CUSTOMER ACQUISITION MAP — score realistic channels (search, SEO, Meta, Instagram, TikTok, YouTube, LinkedIn, email, cold outreach, WhatsApp, marketplaces, communities, influencers, affiliates, referral, partnerships, events, field sales) on relevance/speed/cost/scalability/intent; assign each PRIMARY/SECONDARY/EXPERIMENT/AVOID with rationale + estimated CAC (table). '
+      + '10) FIRST 10 CUSTOMERS (FOUNDER-LED) — build a 100-prospect list, a daily outreach cadence (e.g. 20/day × 5 days), a specific early-adopter offer, and the funnel (100→30→15→10) as configurable assumptions for THIS business, plus the outreach message. '
+      + '11) FIRST 100 CUSTOMERS ENGINE — a channel allocation that SUMS TO 100 (adjust to this opportunity), a prospecting plan per segment (who, where, search terms, decision maker, channel, message, daily target, expected result), and a sales sequence. '
+      + '12) REFERRAL & PARTNERSHIP ENGINES — referral give/get with the MAXIMUM incentive that stays below sustainable CAC (show the maths), and a Top partnership-target table (partner type, why they fit, what we offer, what we want, structure, approach, priority). '
+      + '13) 30/60/90-DAY LAUNCH ROADMAP — phased tasks with gates: Days 1–7 Validate (gate: problem real?), 8–14 Build, 15–21 Soft launch, 22–30 Prove (Day-30 gate SCALE/FIX/PIVOT/STOP); 31–60 Repeatability (25–75 customers or B2B pipeline milestone); 61–90 Scale to first 100 — concrete tasks and a target per phase. '
+      + '14) LAUNCH BUDGET — Lean / Recommended / Aggressive scenarios, each a category table (inventory, samples, website, branding, software, advertising, sales, logistics, packaging, professional fees, working capital, contingency) reconciling to its total; flag cash-protection warnings (spend > budget, CAC > max CAC, contribution ≤ 0, MOQ over-exposure). '
+      + '15) KPIs & WEEKLY WAR ROOM — the daily/weekly/monthly KPIs to track and a weekly Founder War Room template (what won, what lost, biggest bottleneck, #1 priority, start/stop/continue). '
+      + '16) RISKS, REGULATORY & LAUNCH DECISION — a risk register table (category, risk, probability 1–5, impact 1–5, score P×I, mitigation, contingency); a country/sector regulatory checklist marked "verify with official source"; the go/no-go gates; then the FINAL LAUNCH DECISION (GTM score, data confidence, verdict, first customer, first offer, first supplier action, first channel, target/max CAC, 30/60/90 targets, capital required, biggest risk) and YOUR NEXT 10 ACTIONS — each with priority, action, why, deadline and expected result. End on action, not analysis.' + PROTECT
   };
   function projectContext(){
     return {
@@ -759,7 +761,7 @@
       method: 'POST', headers: { 'content-type': 'application/json' }, signal: controller.signal,
       body: JSON.stringify({
         user: window.NF_WALLET_USER, docType: a.id, project: P.id, system: sys,
-        messages: [{ role: 'user', content: usr }], jsonSchema: DOC_SCHEMA, effort: 'high',
+        messages: [{ role: 'user', content: usr }], jsonSchema: (a.id === 'gtm' ? GTM_SCHEMA : DOC_SCHEMA), effort: 'high', maxTokens: (a.id === 'gtm' ? 18000 : 14000),
         // Capital bracket is applied at PARITY (a flat 10k boundary, no FX) — the
         // same basis the Search Canvas and this page's own bFactor use — so the
         // server-charged bracket matches the price shown on screen. (Previously
