@@ -4,12 +4,15 @@
    touches gateway/API calls or non-GET requests, so wallet and live-AI paths
    always hit the network.
    NOTE: bump VERSION on any change here to force old caches to clear on activate. */
-const VERSION = 'nf-v7';
+const VERSION = 'nf-v8';
 const SHELL = [
   'index.html', 'search.html', 'project.html', 'dashboard.html', 'asset.html',
   'growth.html', 'settings.html', 'account.html',
   'nf-config.js', 'nf-auth.js', 'nf-wallet.js', 'nf-support.js', 'nf-consent.js',
   'page.css', 'nf-polish.css', 'icon.svg', 'manifest.webmanifest',
+  'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png',
+  // NOTE: apple-touch-startup-image splashes (pwa/splash/*) are fetched & cached
+  // by the OS at install time and served network-first here — not precached (8MB+).
   '../shared/nf-economy.js' // canonical economy — shared with the backend gateway
 ];
 
