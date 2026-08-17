@@ -20,22 +20,27 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Niche Finder">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap">
 <style>
   :root{
-    --ink:#070B14;
-    --ink-2:#0A1120;
-    --panel:#0E1626;
-    --panel-2:#121C30;
-    --line:rgba(232,166,26,.14);
-    --line-soft:rgba(139,147,165,.14);
-    --text:#EAE5D9;
-    --muted:#8B93A5;
+    --ink:#05070E;
+    --ink-2:#080B15;
+    --panel:#0D1424;
+    --panel-2:#111A2E;
+    --line:rgba(232,166,26,.16);
+    --line-soft:rgba(150,160,180,.12);
+    --text:#ECE7DA;
+    --muted:#9299AB;
     --gold:#E8A61A;
     --gold-bright:#FFC53D;
-    --gold-dim:rgba(232,166,26,.55);
+    --gold-deep:#B9781A;
+    --gold-dim:rgba(232,166,26,.5);
+    --champ:#F6E7C4;
     --teal:#3FA79B;
-    --serif:"Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif;
-    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --serif:"Fraunces","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+    --sans:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     --mono:"SF Mono","Cascadia Code","JetBrains Mono",Consolas,"Liberation Mono",monospace;
   }
   *{box-sizing:border-box;margin:0;padding:0}
@@ -45,9 +50,25 @@
     color:var(--text);
     font-family:var(--sans);
     font-size:17px;
-    line-height:1.65;
+    line-height:1.7;
+    letter-spacing:.004em;
     -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    text-rendering:optimizeLegibility;
     overflow-x:hidden;
+  }
+  /* cinematic ambient key-light (behind content) */
+  body::before{
+    content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+    background:
+      radial-gradient(1200px 760px at 80% -8%, rgba(232,166,26,.10), transparent 58%),
+      radial-gradient(1000px 820px at -8% 105%, rgba(63,167,155,.06), transparent 55%);
+  }
+  /* film grain (above content, below nav & modals) — the ultrarealistic finish */
+  body::after{
+    content:"";position:fixed;inset:0;z-index:2;pointer-events:none;opacity:.05;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size:140px 140px;
   }
   ::selection{background:var(--gold);color:var(--ink)}
   a{color:inherit}
@@ -69,10 +90,10 @@
   /* ---------- NAV ---------- */
   header.nav{
     position:fixed;inset:0 0 auto 0;z-index:50;
-    backdrop-filter:blur(14px);
-    -webkit-backdrop-filter:blur(14px);
-    background:rgba(7,11,20,.62);
-    border-bottom:1px solid var(--line-soft);
+    backdrop-filter:blur(20px) saturate(150%);
+    -webkit-backdrop-filter:blur(20px) saturate(150%);
+    background:rgba(5,7,14,.55);
+    border-bottom:1px solid rgba(232,166,26,.12);
   }
   .nav-inner{display:flex;align-items:center;justify-content:space-between;height:66px}
   .brand{display:flex;align-items:center;gap:11px;text-decoration:none}
@@ -121,7 +142,7 @@
     max-width:15ch;
     margin:26px 0 0;
   }
-  .hero h1 .gold{color:var(--gold-bright);font-style:italic}
+  .hero h1 .gold{font-style:italic;background:linear-gradient(100deg,var(--champ),var(--gold-bright) 48%,var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
   .hero p.lede{
     max-width:56ch;
     margin:26px 0 0;
@@ -136,9 +157,10 @@
     transition:transform .18s ease, background .18s ease, border-color .18s ease;
     border:1px solid transparent;
   }
+  .btn{border-radius:6px}
   .btn:hover{transform:translateY(-2px)}
-  .btn-gold{background:var(--gold);color:var(--ink)}
-  .btn-gold:hover{background:var(--gold-bright)}
+  .btn-gold{background:linear-gradient(180deg,var(--gold-bright),var(--gold));color:#1b1206;font-weight:700;box-shadow:0 12px 34px -14px rgba(232,166,26,.65), inset 0 1px 0 rgba(255,255,255,.4);}
+  .btn-gold:hover{filter:brightness(1.06);box-shadow:0 18px 46px -16px rgba(232,166,26,.8), inset 0 1px 0 rgba(255,255,255,.5)}
   .btn-gold .arr{transition:transform .18s}
   .btn-gold:hover .arr{transform:translateX(4px)}
   .btn-ghost{border-color:rgba(234,229,217,.22);color:var(--text)}
@@ -222,7 +244,7 @@
     font-size:clamp(1.9rem,3.6vw,2.9rem);line-height:1.12;letter-spacing:-.01em;
     text-wrap:balance;margin-top:22px;
   }
-  .act-head h2 .gold{color:var(--gold-bright);font-style:italic}
+  .act-head h2 .gold{font-style:italic;background:linear-gradient(100deg,var(--champ),var(--gold-bright) 48%,var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
   .act-head p{color:var(--muted);margin-top:18px;max-width:58ch}
 
   /* features */
@@ -275,6 +297,7 @@
   .layer:nth-child(2){margin-left:clamp(8px,2vw,26px)}
   .layer:nth-child(3){margin-left:clamp(16px,4vw,52px)}
   .layer:nth-child(4){margin-left:clamp(24px,6vw,78px)}
+  .layer:nth-child(5){margin-left:clamp(30px,8vw,102px)}
   @media(max-width:900px){.layer{margin-left:0!important}}
 
   /* proof */
@@ -303,7 +326,7 @@
     font-size:clamp(2.6rem,6vw,4.6rem);line-height:1.06;letter-spacing:-.015em;
     text-wrap:balance;margin:26px auto 0;max-width:16ch;
   }
-  .final h2 .gold{color:var(--gold-bright);font-style:italic}
+  .final h2 .gold{font-style:italic;background:linear-gradient(100deg,var(--champ),var(--gold-bright) 48%,var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
   .final p{color:var(--muted);max-width:52ch;margin:24px auto 0}
   .final .hero-ctas{justify-content:center}
 
@@ -355,7 +378,7 @@
     <div class="wrap">
       <p class="eyebrow rise d1">Autonomous venture intelligence</p>
       <h1 class="rise d2">The Operating System for <span class="gold">Venture Creation</span></h1>
-      <p class="lede rise d3">From market signal to investor-ready venture — powered by an autonomous venture intelligence system that discovers, validates, and builds your next business.</p>
+      <p class="lede rise d3">From a market signal to an investor-ready venture — in minutes. Niche Finder finds the opportunity, proves the numbers, writes the plan, and hands you the 0–90 day playbook to your first 100 customers.</p>
       <!-- FREE INSTANT-VALUE HOOK — no signup, no card, instant score. The organic funnel. -->
       <div class="freescore rise d4" id="freeScore">
         <div class="fs-head">Score your business idea free — no signup</div>
@@ -602,16 +625,17 @@
         </div>
         <ul class="asset-list reveal">
           <li><span class="tick">✓</span>Investor Pitch Decks</li>
-          <li><span class="tick">✓</span>Business Plans</li>
-          <li><span class="tick">✓</span>3-Year Financial Models</li>
-          <li><span class="tick">✓</span>Execution Roadmaps</li>
+          <li><span class="tick">✓</span>Business Plans &amp; 3-Year Models</li>
+          <li><span class="tick">✓</span>Go-To-Market Blueprints</li>
+          <li><span class="tick">✓</span>First-100-Customer Playbooks</li>
         </ul>
       </div>
-      <div class="layer-stack reveal" aria-label="The four output layers">
+      <div class="layer-stack reveal" aria-label="The five output layers">
         <div class="layer"><span class="ln">LAYER 01</span><span class="lt">Opportunity Validation</span></div>
         <div class="layer"><span class="ln">LAYER 02</span><span class="lt">Financial Modeling</span></div>
         <div class="layer"><span class="ln">LAYER 03</span><span class="lt">Business Plan</span></div>
         <div class="layer"><span class="ln">LAYER 04</span><span class="lt">Investor Pitch Deck</span></div>
+        <div class="layer"><span class="ln">LAYER 05</span><span class="lt">Go-To-Market Blueprint</span></div>
       </div>
     </div>
   </section>
@@ -626,8 +650,8 @@
       </div>
       <div class="proof-grid">
         <div class="proof reveal">
-          <div class="big">7</div>
-          <p>Investor-grade documents per venture — validation, 3-year forecast, P&amp;L, risk heatmap, business plan, pitch deck, and export pack.</p>
+          <div class="big">8</div>
+          <p>Investor-grade engines per venture — validation, 3-year forecast, P&amp;L, risk heatmap, business plan, pitch deck, go-to-market blueprint, and export pack.</p>
         </div>
         <div class="proof reveal">
           <div class="big">3</div>
