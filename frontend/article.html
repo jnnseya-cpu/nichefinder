@@ -159,10 +159,10 @@
   ld.textContent = JSON.stringify({ '@context': 'https://schema.org', '@type': 'Article', headline: title,
     description: metaDesc, author: { '@type': 'Organization', name: 'Niche Finder' },
     publisher: { '@type': 'Organization', name: 'Niche Finder Ltd' },
-    mainEntityOfPage: location.origin + '/frontend/article.html?s=' + encodeURIComponent(canonSlug) });
+    mainEntityOfPage: location.origin + '/article.html?s=' + encodeURIComponent(canonSlug) });
   document.head.appendChild(ld);
   var canon = document.createElement('link'); canon.rel = 'canonical';
-  canon.href = location.origin + '/frontend/article.html?s=' + encodeURIComponent(canonSlug);
+  canon.href = location.origin + '/article.html?s=' + encodeURIComponent(canonSlug);
   document.head.appendChild(canon);
 })();
 </script>

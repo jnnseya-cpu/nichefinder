@@ -178,7 +178,7 @@
 
     <section class="blk" id="plansBlk">
       <h2>Plans &amp; Allowances <span class="tag" id="planTag">CURRENT: PAY AS YOU GO</span></h2>
-      <p>Monthly plans credit paid-class ACUs each cycle at the same £1 = 100 ACU anchor — every action still prices from the canonical schedule and your capital bracket. Billing activates with the production release; your selection is saved to this account.</p>
+      <p>Today, ACU is <strong>pay-as-you-go</strong> — top up any time at £1 = 100 ACU (card via Stripe or mobile money via KODA), and every action prices from the canonical schedule and your capital bracket. <strong>Monthly subscription plans are coming soon</strong>; until then the buttons below open a one-time ACU top-up.</p>
       <div class="bgrid" id="planGrid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr))"></div>
     </section>
 
@@ -467,25 +467,25 @@
   var planGrid = document.getElementById('planGrid');
   var planTag = document.getElementById('planTag');
   function renderPlans(){
-    var current = localStorage.getItem('nf_plan') || '';
-    planTag.textContent = 'CURRENT: ' + (current ? (PLANS.filter(function(p){ return p.id === current; })[0] || {name:'PAY AS YOU GO'}).name.toUpperCase() : 'PAY AS YOU GO');
+    // Monthly subscriptions are not live yet — only one-time ACU top-ups are
+    // wired to real payment. So the tag always reflects pay-as-you-go, paid
+    // tiers are marked "coming soon", and the CTA opens the working Buy ACU flow
+    // (no misleading "ACTIVE" plan or saved-selection that never charges).
+    planTag.textContent = 'CURRENT: PAY AS YOU GO';
     planGrid.innerHTML = '';
     PLANS.forEach(function(p){
-      var active = p.id === current;
+      var isFree = p.id === 'free';
       var c = document.createElement('div');
       c.className = 'bcard';
-      c.style.cssText = '--bc:' + (active ? 'var(--gold)' : 'var(--line)') + (active ? ';box-shadow:0 0 0 1px rgba(232,166,26,.35)' : '');
-      c.innerHTML = '<span class="bk">' + p.name + (active ? ' · ACTIVE' : '') + '</span>' +
+      c.style.cssText = '--bc:var(--line)';
+      c.innerHTML = '<span class="bk">' + p.name + (isFree ? '' : ' · <span style="color:var(--muted);font-size:.6rem;letter-spacing:.12em">COMING SOON</span>') + '</span>' +
         '<p style="margin:4px 0 2px"><b style="font-size:1.05rem">' + p.price + '</b> · ' + p.acu + '</p>' +
         '<p style="font-size:.78rem;color:var(--muted)">' + p.d + '</p>';
       var btn = document.createElement('button');
       btn.className = 'top-up';
-      btn.textContent = active ? 'Selected ✓' : 'Select plan';
-      btn.addEventListener('click', function(){
-        localStorage.setItem('nf_plan', p.id);
-        renderPlans();
-        showToast(p.name + ' plan saved — billing activates at production launch.');
-      });
+      btn.textContent = isFree ? 'Included' : 'Buy ACU →';
+      if (isFree) { btn.disabled = true; btn.style.opacity = '.55'; btn.style.cursor = 'default'; }
+      else { btn.addEventListener('click', function(){ if (window.NF && NF.openTopup) NF.openTopup(0, 'ACU top-up'); }); }
       c.appendChild(btn);
       planGrid.appendChild(c);
     });
