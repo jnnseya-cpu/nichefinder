@@ -32,12 +32,19 @@ function addr(s) {
 }
 
 // RFC-822 message. Exported for unit testing the header/body construction.
+// Neutralise header injection: a header value may never contain CR/LF (that
+// would split into new headers or into the body). Applied to EVERY header,
+// including From/To/Subject — the Subject can carry attacker-controlled text
+// (e.g. the contact-form name), so sanitising only the extra headers is not
+// enough.
+const oneLine = (v) => String(v == null ? '' : v).replace(/[\r\n]+/g, ' ').trim();
+
 export function buildMessage({ from, to, subject, text, html, date, headers: extra }) {
   const headers = [
-    `From: ${from}`,
-    `To: ${to}`,
-    `Subject: ${subject}`,
-    `Date: ${date || new Date().toUTCString()}`,
+    `From: ${oneLine(from)}`,
+    `To: ${oneLine(to)}`,
+    `Subject: ${oneLine(subject)}`,
+    `Date: ${oneLine(date) || new Date().toUTCString()}`,
     'MIME-Version: 1.0',
     `Content-Type: ${html ? 'text/html' : 'text/plain'}; charset=utf-8`,
     'Content-Transfer-Encoding: 8bit',

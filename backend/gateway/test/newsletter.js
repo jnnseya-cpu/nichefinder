@@ -49,7 +49,10 @@ console.log('— mailer custom headers —');
 const msg = buildMessage({ from: 'A <a@x.com>', to: 'b@y.com', subject: 'Hi', html: '<b>x</b>', headers: { 'List-Unsubscribe': '<https://x/u>', 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' } });
 check('List-Unsubscribe header is emitted', /\r\nList-Unsubscribe: <https:\/\/x\/u>\r\n/.test(msg), msg);
 check('one-click post header is emitted', /List-Unsubscribe-Post: List-Unsubscribe=One-Click/.test(msg));
-check('header injection is neutralised', !/\r\nInjected:/i.test(buildMessage({ from: 'a@x', to: 'b@y', subject: 's', text: 't', headers: { 'X-Test': 'ok\r\nInjected: evil' } })));
+check('extra-header injection is neutralised', !/\r\nInjected:/i.test(buildMessage({ from: 'a@x', to: 'b@y', subject: 's', text: 't', headers: { 'X-Test': 'ok\r\nInjected: evil' } })));
+// The Subject carries attacker-controlled text (contact-form name) — CRLF in it
+// must not be able to inject a Bcc header or split into the body.
+check('base-header (subject) injection is neutralised', !/\r\nBcc:/i.test(buildMessage({ from: 'a@x', to: 'b@y', subject: 'New enquiry from Bob\r\nBcc: victim@x', text: 't' })));
 
 console.log(failures === 0 ? '\nNEWSLETTER: all checks passed.' : `\n${failures} check(s) FAILED.`);
 process.exit(failures ? 1 : 0);

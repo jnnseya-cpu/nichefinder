@@ -4,6 +4,23 @@
 process.env.MOCK_AI = '1';
 process.env.ALLOW_FREE_AI = '1'; // keyless demo suite; enforcement is covered by test/paycycle.js
 process.env.PORT = process.env.PORT || '18787';
+// Hermetic stores: never touch the deploy host's real data/ directory (a
+// production wallets.json is encrypted and would throw without the key). Point
+// every persistent store at a throwaway temp path, like the other tests do.
+import os from 'node:os';
+import path from 'node:path';
+import fs from 'node:fs';
+const TMP = path.join(os.tmpdir(), 'nf-smoke');
+process.env.WALLET_STORE = path.join(TMP, 'wallets.json');
+process.env.AUTH_STORE = path.join(TMP, 'auth.json');
+process.env.LEADS_STORE = path.join(TMP, 'leads.jsonl');
+process.env.DOCS_STORE = path.join(TMP, 'docs.json');
+process.env.NEWSLETTER_STATE = path.join(TMP, 'newsletter.json');
+process.env.SENTINEL_LOG = path.join(TMP, 'sentinel.jsonl');
+process.env.MAINT_FLAG = path.join(TMP, 'maint.flag');
+process.env.AVATAR_STORE = path.join(TMP, 'avatars');
+try { fs.rmSync(TMP, { recursive: true, force: true }); } catch {}
+try { fs.mkdirSync(TMP, { recursive: true }); } catch {}
 
 const BASE = `http://127.0.0.1:${process.env.PORT}`;
 let failures = 0;

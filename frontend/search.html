@@ -831,6 +831,9 @@
       if (!r.ok) throw new Error('gateway ' + r.status);
       return r.json();
     }).then(function(data){
+      // Adopt the server's authoritative balance after its metered charge, so the
+      // on-screen ACU reflects the real deduction (the client no longer self-bills).
+      if (data && data.wallet) { try { NF.syncWallet(data.wallet); } catch (e) {} }
       var parsed = JSON.parse(data.text);
       return parsed.niches.map(function(n){
         return {
@@ -1052,7 +1055,17 @@
     }
     var b = NF.bracket(+budget.value);
     var searchCost = searchCostNow();
-    if (!charge(searchCost, 'niche generation' + (b.tier > 1 ? ' · bracket ' + b.tier : ''))) return;
+    // Billing authority: when a gateway is configured, /v1/generate is the SOLE
+    // biller — it meters and debits the wallet server-side. Charging here too
+    // (the wrapped charge() mirrors to /v1/wallet/charge) would DOUBLE-bill, so
+    // only gate on a sufficient paid balance and let the server charge and return
+    // the authoritative wallet (adopted in fetchNiches). Offline demo has no
+    // server to bill, so it charges the local wallet as before.
+    if (window.NF_GATEWAY_URL) {
+      if (NF.wallet().paid < searchCost) { NF.openTopup(searchCost, 'Niche discovery'); return; }
+    } else if (!charge(searchCost, 'niche generation' + (b.tier > 1 ? ' · bracket ' + b.tier : ''))) {
+      return;
+    }
     gen.disabled = true; gen.textContent = 'Running discovery…';
     nichesEl.innerHTML = ''; thinking.classList.add('on');
     document.getElementById('results').scrollIntoView({behavior: reduced ? 'auto' : 'smooth'});
