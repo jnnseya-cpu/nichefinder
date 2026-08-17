@@ -82,7 +82,20 @@
        menu is always present and tappable in the installed app. */
     var standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
       window.navigator.standalone === true;
+    // In standalone the page header is a space-between flex row with the CTA
+    // pinned to the right corner, so a full pill would overlap it. Use a COMPACT
+    // circular control pinned top-right and reserve a little space in the page's
+    // own header so the control clears the CTA.
+    var compact = standalone;
     var host = standalone ? null : (document.querySelector('header.site .wrap') || document.querySelector('header .wrap'));
+    var PERSON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-3.6 3.6-6 8-6s8 2.4 8 6"></path></svg>';
+    function reserveHeaderSpace() {
+      var bar = document.querySelector('header.site .wrap') || document.querySelector('header .nav-inner') || document.querySelector('header .wrap');
+      if (bar && bar.getAttribute('data-nf-reserved') !== '1') {
+        bar.style.paddingRight = 'calc(env(safe-area-inset-right, 0px) + 58px)';
+        bar.setAttribute('data-nf-reserved', '1');
+      }
+    }
     var wrap = document.createElement('div');
     wrap.id = 'nf-acct-menu';
     wrap.style.cssText = 'display:inline-flex;align-items:center;font-family:inherit;z-index:1200;' +
@@ -94,23 +107,27 @@
     }
 
     if (!NS.isLoggedIn()) {
-      wrap.innerHTML = '<a href="account.html" style="display:inline-flex;align-items:center;padding:7px 15px;border:1px solid var(--line,rgba(255,255,255,.18));border-radius:99px;color:var(--text,#E8ECF4);text-decoration:none;font-size:.8rem">Sign in</a>';
-      if (host) host.appendChild(wrap); else document.body.appendChild(wrap);
+      wrap.innerHTML = compact
+        ? '<a href="account.html" aria-label="Sign in" style="display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;border:1px solid var(--line,rgba(255,255,255,.3));background:var(--panel-2,rgba(255,255,255,.06));color:var(--text,#E8ECF4);text-decoration:none">' + PERSON + '</a>'
+        : '<a href="account.html" style="display:inline-flex;align-items:center;padding:7px 15px;border:1px solid var(--line,rgba(255,255,255,.18));border-radius:99px;color:var(--text,#E8ECF4);text-decoration:none;font-size:.8rem">Sign in</a>';
+      if (host) host.appendChild(wrap); else { document.body.appendChild(wrap); reserveHeaderSpace(); }
       return;
     }
 
     var name = (acct && (acct.name || acct.email)) || 'Account';
     var email = (acct && acct.email) || '';
     var isAdmin = acct && acct.role === 'admin';
-    var av = 'width:30px;height:30px;border-radius:50%;background:var(--gold,#E8A61A);color:#0b0f18;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;overflow:hidden;background-size:cover;background-position:center;flex:0 0 auto;';
+    var avSize = compact ? 36 : 30;
+    var av = 'width:' + avSize + 'px;height:' + avSize + 'px;border-radius:50%;background:var(--gold,#E8A61A);color:#0b0f18;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;overflow:hidden;background-size:cover;background-position:center;flex:0 0 auto;';
     var avInner = (name || '?').trim().charAt(0).toUpperCase();
     if (acct && acct.avatar) { av += "background-image:url('" + base + '/v1/media?f=' + encodeURIComponent(acct.avatar) + "');"; avInner = ''; }
 
     wrap.innerHTML =
-      '<button id="nf-acct-btn" aria-haspopup="true" aria-expanded="false" style="display:inline-flex;align-items:center;gap:9px;background:var(--panel-2,rgba(255,255,255,.05));border:1px solid var(--line,rgba(255,255,255,.16));border-radius:99px;padding:4px 12px 4px 4px;cursor:pointer;color:var(--text,#E8ECF4);font-family:inherit;font-size:.82rem">' +
+      '<button id="nf-acct-btn" aria-haspopup="true" aria-expanded="false" aria-label="Account menu" style="display:inline-flex;align-items:center;gap:9px;background:' + (compact ? 'transparent' : 'var(--panel-2,rgba(255,255,255,.05))') + ';border:1px solid ' + (compact ? 'transparent' : 'var(--line,rgba(255,255,255,.16))') + ';border-radius:99px;padding:' + (compact ? '0' : '4px 12px 4px 4px') + ';cursor:pointer;color:var(--text,#E8ECF4);font-family:inherit;font-size:.82rem">' +
         '<span style="' + av + '">' + avInner + '</span>' +
-        '<span style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(name) + '</span>' +
-        '<span style="opacity:.6;font-size:.7rem">▾</span>' +
+        (compact ? '' :
+          '<span style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(name) + '</span>' +
+          '<span style="opacity:.6;font-size:.7rem">▾</span>') +
       '</button>' +
       '<div id="nf-acct-drop" role="menu" style="display:none;position:absolute;top:calc(100% + 8px);right:0;min-width:210px;background:var(--panel,#0E1626);border:1px solid var(--line,rgba(255,255,255,.16));border-radius:12px;padding:6px;box-shadow:0 14px 44px rgba(0,0,0,.45)">' +
         '<div style="padding:8px 12px 6px">' +
@@ -126,7 +143,7 @@
         '<div style="height:1px;background:var(--line,rgba(255,255,255,.1));margin:4px 0"></div>' +
         '<a href="#" id="nf-acct-out" role="menuitem" style="display:block;padding:9px 12px;border-radius:8px;color:#E0806F;text-decoration:none;font-size:.82rem">Sign out</a>' +
       '</div>';
-    if (host) host.appendChild(wrap); else document.body.appendChild(wrap);
+    if (host) host.appendChild(wrap); else { document.body.appendChild(wrap); reserveHeaderSpace(); }
 
     var btn = wrap.querySelector('#nf-acct-btn');
     var drop = wrap.querySelector('#nf-acct-drop');
