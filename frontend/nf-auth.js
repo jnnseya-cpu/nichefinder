@@ -14,15 +14,36 @@
   var acct = account();
   if (acct && acct.userId) window.NF_WALLET_USER = acct.userId;
 
+  /* On first sign-in, move any ACU bought as a guest in THIS browser into the
+     account, so a pre-login purchase isn't stranded on the anonymous wallet.
+     Requires the account's bearer token; the server move is idempotent and only
+     ever credits the authenticated account. Fire-and-forget. */
+  function migrateGuestWallet(fromId, token, accountId) {
+    try {
+      var base = (window.NF_GATEWAY_URL || '').replace(/\/$/, '');
+      if (!base || !token || !fromId || fromId === accountId) return;
+      if (!/^op_[a-z0-9]{10,}$/.test(fromId)) return;
+      fetch(base + '/v1/wallet/migrate', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token },
+        body: JSON.stringify({ from: fromId })
+      }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+        if (d && d.wallet && window.NF && typeof NF.syncWallet === 'function') NF.syncWallet(d.wallet);
+      }).catch(function () {});
+    } catch (e) {}
+  }
+
   var NS = {
     token: token,
     account: account,
     isLoggedIn: function () { return !!token() && !!account(); },
     authHeader: function () { var t = token(); return t ? { authorization: 'Bearer ' + t } : {}; },
     set: function (session) {
+      var prev = window.NF_WALLET_USER; // the guest wallet id active before sign-in
       localStorage.setItem(TOKEN_KEY, session.token);
       localStorage.setItem(ACCT_KEY, JSON.stringify(session.user));
       window.NF_WALLET_USER = session.user.userId;
+      migrateGuestWallet(prev, session.token, session.user.userId);
     },
     updateAccount: function (user) { if (user) { localStorage.setItem(ACCT_KEY, JSON.stringify(user)); acct = user; } },
     clear: function () { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(ACCT_KEY); },

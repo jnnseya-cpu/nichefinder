@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { config } from './config.js';
 import { GatewayError } from './errors.js';
 import { route, availableProviders, meterAcu } from './router.js';
-import { getWallet, getLedger, charge, credit, grant, summary, deleteWallet, PACKAGES } from './wallet.js';
+import { getWallet, getLedger, charge, credit, grant, summary, deleteWallet, migratePaid, PACKAGES } from './wallet.js';
 import { createCheckout, handleWebhook, paymentsConfigured } from './payments.js';
 import { createKodaIntent, handleKodaWebhook, kodaConfigured } from './koda.js';
 import { summaryFor as referralSummary } from './referrals.js';
@@ -754,6 +754,22 @@ const server = http.createServer(async (req, res) => {
   if (method === 'GET' && (url.pathname === '/v1/wallet/ledger' || url.pathname === '/v1/wallet/transactions')) {
     try {
       return json(res, 200, { ledger: getLedger(url.searchParams.get('user'), url.searchParams.get('limit')) });
+    } catch (err) { return handleError(res, err); }
+  }
+
+  // Guest→account wallet migration on first login/signup. Requires the ACCOUNT's
+  // bearer session (moves ONLY into the authenticated account), and `from` must
+  // be a capability-grade guest id that is NOT already an account wallet — so it
+  // can never be used to pull ACU out of another user's account. Idempotent.
+  if (req.method === 'POST' && url.pathname === '/v1/wallet/migrate') {
+    try {
+      const s = sessionFor(bearer(req));
+      if (!s) return json(res, 401, { error: 'auth_required' });
+      const body = JSON.parse((await readBody(req)) || '{}');
+      const from = String(body.from || '');
+      if (!/^op_[a-z0-9]{10,}$/.test(from)) return json(res, 400, { error: 'invalid_from' });
+      if (emailForUserId(from)) return json(res, 400, { error: 'not_a_guest_wallet' });
+      return json(res, 200, migratePaid({ from, to: s.userId }));
     } catch (err) { return handleError(res, err); }
   }
 

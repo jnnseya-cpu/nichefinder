@@ -249,3 +249,27 @@ export function credit({ user, packageId, idempotencyKey }) {
     return { credited: total, package: packageId, wallet: view(wallet) };
   });
 }
+
+// Move a guest (anonymous) wallet's PAID balance into an account wallet on first
+// login/signup, so ACU bought before signing in isn't stranded. Only the paid
+// pool moves — welcome (free) ACUs are per-identity and read-only, so migrating
+// them would let one person farm multiple welcome grants. Naturally idempotent:
+// the source is zeroed, so a repeat move transfers 0. The source is read from
+// the live store WITHOUT minting, so a bogus/empty `from` has no side effect.
+export function migratePaid({ from, to }) {
+  if (!from || !to || from === to) {
+    return { moved: 0, wallet: to ? view(requireUser(to)) : null };
+  }
+  const src = store.wallets[from]; // live object (peekWallet returns a copy)
+  if (!src || src.paid <= 0) {
+    return { moved: 0, wallet: view(requireUser(to)) };
+  }
+  const dst = requireUser(to);
+  const moved = src.paid;
+  src.paid = 0;
+  dst.paid += moved;
+  ledger(src, 'MIGRATED_OUT · balance moved to account', -moved, { type: 'debit_migrate', pool: 'paid', bracketFactor: 1 });
+  ledger(dst, `MIGRATED_IN · from guest wallet ${String(from).slice(0, 12)}…`, moved, { type: 'credit_migrate', pool: 'paid', bracketFactor: 1 });
+  persist();
+  return { moved, wallet: view(dst) };
+}

@@ -759,7 +759,12 @@
       body: JSON.stringify({
         user: window.NF_WALLET_USER, docType: a.id, project: P.id, system: sys,
         messages: [{ role: 'user', content: usr }], jsonSchema: DOC_SCHEMA, effort: 'high',
-        investorMode: invMode, capitalGBP: P.investmentUsd ? Math.round(P.investmentUsd * 0.79) : 0,
+        // Capital bracket is applied at PARITY (a flat 10k boundary, no FX) — the
+        // same basis the Search Canvas and this page's own bFactor use — so the
+        // server-charged bracket matches the price shown on screen. (Previously
+        // this converted USD→GBP, so the server billed one bracket lower than the
+        // UI displayed for ventures just over a 10k boundary.)
+        investorMode: invMode, capitalGBP: P.investmentUsd || 0,
         idempotencyKey: 'doc_' + P.id + '_' + a.id + '_' + Date.now()
       })
     }).then(function(r){ clearTimeout(timer); return r.json().then(function(d){ return { ok: r.ok, status: r.status, d: d }; }); })
