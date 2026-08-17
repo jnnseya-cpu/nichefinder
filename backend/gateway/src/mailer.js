@@ -32,7 +32,7 @@ function addr(s) {
 }
 
 // RFC-822 message. Exported for unit testing the header/body construction.
-export function buildMessage({ from, to, subject, text, html, date }) {
+export function buildMessage({ from, to, subject, text, html, date, headers: extra }) {
   const headers = [
     `From: ${from}`,
     `To: ${to}`,
@@ -42,6 +42,14 @@ export function buildMessage({ from, to, subject, text, html, date }) {
     `Content-Type: ${html ? 'text/html' : 'text/plain'}; charset=utf-8`,
     'Content-Transfer-Encoding: 8bit',
   ];
+  // Optional extra headers (e.g. List-Unsubscribe). Values are single-lined to
+  // prevent header injection through a stray CR/LF.
+  if (extra && typeof extra === 'object') {
+    for (const [k, v] of Object.entries(extra)) {
+      if (v == null) continue;
+      headers.push(`${k}: ${String(v).replace(/[\r\n]+/g, ' ').trim()}`);
+    }
+  }
   const body = String(html || text || '');
   // Dot-stuffing: any line beginning with "." must be doubled so it isn't read
   // as the end-of-DATA terminator — including the very first line of the body.
@@ -122,11 +130,11 @@ function converse(sock, { helo, from, to, message, upgrade }) {
   });
 }
 
-export async function sendMail({ to, subject, text, html }) {
+export async function sendMail({ to, subject, text, html, headers }) {
   if (!mailConfigured()) throw new Error('SMTP not configured');
   const from = addr(FROM);
   const rcpt = addr(to);
-  const message = buildMessage({ from: FROM, to, subject, text, html });
+  const message = buildMessage({ from: FROM, to, subject, text, html, headers });
   const helo = (FROM.split('@')[1] || 'localhost').replace(/[>]/g, '');
   const plaintext = String(process.env.SMTP_SECURE || '').toLowerCase() === 'false';
   const starttls = !plaintext && PORT === 587;

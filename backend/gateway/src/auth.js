@@ -177,6 +177,25 @@ export function listUsers() {
     });
 }
 
+// --- Newsletter audience ----------------------------------------------------
+// The weekly product email goes to real customers who haven't opted out. Admins
+// are operators (no mailbox) and disabled accounts are excluded.
+export function listNewsletterRecipients() {
+  return Object.values(store.users)
+    .filter((u) => u.role === 'user' && !u.disabled && !u.newsletterOptOut)
+    .map((u) => ({ email: u.email, userId: u.userId, name: (u.profile && u.profile.name) || '' }));
+}
+
+// One-click unsubscribe: flip the opt-out flag for the account behind a userId.
+// Idempotent — unsubscribing an already-unsubscribed account still returns ok.
+export function setNewsletterOptOut(userId, optOut) {
+  const u = Object.values(store.users).find((x) => x.userId === userId);
+  if (!u) throw new GatewayError('No such subscriber.', { status: 404, code: 'user_not_found' });
+  u.newsletterOptOut = !!optOut;
+  persist();
+  return { ok: true, email: u.email, optOut: u.newsletterOptOut };
+}
+
 // Resolve an admin-supplied target (either a capability id or an email) to the
 // canonical wallet userId a grant should credit.
 export function resolveUserId(idOrEmail) {

@@ -13,6 +13,7 @@ import { saveDoc, getDoc, listDocs } from './docstore.js';
 import { issueChallenge, verifyChallenge } from './human.js';
 import { signup, login, logout, sessionFor, requestReset, resetPassword, listUsers, resolveUserId, emailForUserId, setRole, setDisabled, userByEmail, updateProfile, setMedia, changePassword, deleteAccount } from './auth.js';
 import { sendMail, mailConfigured } from './mailer.js';
+import { startNewsletterScheduler, sendNewsletterOnce, handleUnsubscribe } from './newsletter.js';
 
 const MAX_BODY_BYTES = 2 * 1024 * 1024;
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -290,6 +291,26 @@ const server = http.createServer(async (req, res) => {
     } catch (err) { return handleError(res, err); }
   }
 
+  // ---- newsletter: one-click unsubscribe (public; signed token, no login) ----
+  // Handles both GET (the link) and POST (RFC 8058 List-Unsubscribe-Post).
+  if ((method === 'GET' || req.method === 'POST') && url.pathname === '/v1/newsletter/unsubscribe') {
+    const u = url.searchParams.get('u');
+    const t = url.searchParams.get('t');
+    let ok = true;
+    try { handleUnsubscribe(u, t); } catch { ok = false; }
+    const page = `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+      <title>Niche Finder — ${ok ? 'Unsubscribed' : 'Link invalid'}</title>
+      <div style="font-family:system-ui,Segoe UI,Arial,sans-serif;max-width:520px;margin:12vh auto;padding:0 22px;color:#0b1220;text-align:center">
+        <h1 style="font-size:22px">${ok ? 'You’re unsubscribed' : 'This link is invalid'}</h1>
+        <p style="color:#5a6472">${ok
+          ? 'You will no longer receive the weekly Niche Finder product email. Changed your mind? Just reply to any earlier email or contact us and we’ll turn it back on.'
+          : 'We couldn’t process this unsubscribe request. Please use the link from a recent email, or update your preferences in your account.'}</p>
+        <p><a href="/settings.html" style="color:#8A6300;font-weight:700;text-decoration:none">Go to your account &rsaquo;</a></p>
+      </div>`;
+    res.writeHead(ok ? 200 : 400, { 'content-type': 'text/html; charset=utf-8', 'access-control-allow-origin': '*' });
+    return res.end(page);
+  }
+
   // ---- referrals: Growth Partner programme summary for one account ----
   if (method === 'GET' && url.pathname === '/v1/referrals/summary') {
     try {
@@ -560,6 +581,20 @@ const server = http.createServer(async (req, res) => {
       return raw.split('\n').map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean).reverse().slice(0, cap);
     } catch { return []; }
   };
+
+  // Admin: send the newsletter now, or preview one to a single address.
+  //   body { to?: "someone@example.com" }  — with `to`, sends a single preview
+  //   (any account) without advancing the weekly clock. Auth: admin session OR
+  //   the x-admin-key header (so a script/cron can trigger it too).
+  if (req.method === 'POST' && url.pathname === '/v1/admin/newsletter/send') {
+    try {
+      const keyOk = req.headers['x-admin-key'] && req.headers['x-admin-key'] === process.env.ADMIN_API_KEY;
+      if (!adminOf() && !keyOk) return json(res, 403, { error: 'admin_required' });
+      const body = JSON.parse((await readBody(req)) || '{}');
+      const result = await sendNewsletterOnce({ force: true, to: body.to || null });
+      return json(res, 200, result);
+    } catch (err) { return handleError(res, err); }
+  }
 
   if (req.method === 'POST' && url.pathname === '/v1/admin/grant') {
     try {
@@ -842,4 +877,5 @@ function handleError(res, err) {
 
 server.listen(config.port, () => {
   console.log(`[gateway] listening on :${config.port} (mock=${config.mock}) providers=${availableProviders().join(',') || 'none'}`);
+  startNewsletterScheduler();
 });
