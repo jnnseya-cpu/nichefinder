@@ -22,7 +22,7 @@
 <meta name="apple-mobile-web-app-title" content="Niche Finder">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Inter:wght@400;500;600;700&display=swap">
 <style>
   :root{
     --ink:#05070E;
@@ -31,15 +31,16 @@
     --panel-2:#111A2E;
     --line:rgba(232,166,26,.16);
     --line-soft:rgba(150,160,180,.12);
-    --text:#ECE7DA;
-    --muted:#9299AB;
+    --text:#F3EFE7;
+    --muted:#98A0B2;
     --gold:#E8A61A;
     --gold-bright:#FFC53D;
     --gold-deep:#B9781A;
     --gold-dim:rgba(232,166,26,.5);
     --champ:#F6E7C4;
+    --ivory:#EFEADD;
     --teal:#3FA79B;
-    --serif:"Fraunces","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+    --serif:"Playfair Display","Times New Roman",Georgia,serif;
     --sans:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     --mono:"SF Mono","Cascadia Code","JetBrains Mono",Consolas,"Liberation Mono",monospace;
   }
@@ -61,12 +62,13 @@
   body::before{
     content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
     background:
-      radial-gradient(1200px 760px at 80% -8%, rgba(232,166,26,.10), transparent 58%),
-      radial-gradient(1000px 820px at -8% 105%, rgba(63,167,155,.06), transparent 55%);
+      radial-gradient(1300px 820px at 82% -10%, rgba(232,166,26,.14), transparent 56%),
+      radial-gradient(900px 720px at 8% 8%, rgba(70,110,180,.08), transparent 55%),
+      radial-gradient(1100px 900px at -8% 108%, rgba(63,167,155,.07), transparent 55%);
   }
   /* film grain (above content, below nav & modals) — the ultrarealistic finish */
   body::after{
-    content:"";position:fixed;inset:0;z-index:2;pointer-events:none;opacity:.05;mix-blend-mode:overlay;
+    content:"";position:fixed;inset:0;z-index:2;pointer-events:none;opacity:.06;mix-blend-mode:overlay;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
     background-size:140px 140px;
   }
@@ -134,13 +136,13 @@
   }
   .hero h1{
     font-family:var(--serif);
-    font-weight:400;
-    font-size:clamp(2.7rem,7.2vw,5.4rem);
-    line-height:1.04;
-    letter-spacing:-.015em;
+    font-weight:600;
+    font-size:clamp(3.1rem,8.4vw,6.4rem);
+    line-height:1.0;
+    letter-spacing:-.02em;
     text-wrap:balance;
-    max-width:15ch;
-    margin:26px 0 0;
+    max-width:14ch;
+    margin:30px 0 0;
   }
   .hero h1 .gold{font-style:italic;background:linear-gradient(100deg,var(--champ),var(--gold-bright) 48%,var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
   .hero p.lede{
@@ -240,8 +242,8 @@
   section.act.tint{background:linear-gradient(180deg,var(--ink) 0%,var(--ink-2) 18%,var(--ink-2) 82%,var(--ink) 100%)}
   .act-head{max-width:720px;margin-bottom:64px}
   .act-head h2{
-    font-family:var(--serif);font-weight:400;
-    font-size:clamp(1.9rem,3.6vw,2.9rem);line-height:1.12;letter-spacing:-.01em;
+    font-family:var(--serif);font-weight:500;
+    font-size:clamp(2rem,3.9vw,3.15rem);line-height:1.1;letter-spacing:-.015em;
     text-wrap:balance;margin-top:22px;
   }
   .act-head h2 .gold{font-style:italic;background:linear-gradient(100deg,var(--champ),var(--gold-bright) 48%,var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
@@ -322,8 +324,8 @@
   .final .eyebrow{justify-content:center}
   .final .eyebrow::after{content:"";width:34px;height:1px;background:var(--gold-dim);flex:none}
   .final h2{
-    font-family:var(--serif);font-weight:400;
-    font-size:clamp(2.6rem,6vw,4.6rem);line-height:1.06;letter-spacing:-.015em;
+    font-family:var(--serif);font-weight:600;
+    font-size:clamp(2.8rem,6.6vw,5.2rem);line-height:1.02;letter-spacing:-.02em;
     text-wrap:balance;margin:26px auto 0;max-width:16ch;
   }
   .final h2 .gold{font-style:italic;background:linear-gradient(100deg,var(--champ),var(--gold-bright) 48%,var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
