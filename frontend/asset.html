@@ -191,6 +191,10 @@
     .sec{break-inside:avoid}
     .slide{break-after:page;border-radius:0;box-shadow:none;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     .doc-band{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    /* keep the dark MarketWar OS recommendation panel legible in the PDF */
+    .gtm-partner,.gtm-partner *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .gtm-partner{break-inside:avoid}
+    .gtm-partner a{color:#241A02!important}
   }
   @media (prefers-reduced-motion: reduce){*{transition-duration:.01ms!important;animation:none!important}}
 </style>
@@ -243,7 +247,7 @@
     </a>
     <div class="nav-right">
       <a class="nav-btn" href="project.html">← Back to Project</a>
-      <button class="nav-btn gold" onclick="print()">Export PDF</button>
+      <button id="dlBtn" class="nav-btn gold" onclick="print()">Export PDF</button>
     </div>
   </div>
 </header>
@@ -1079,7 +1083,7 @@
     // recommended marketing execution partner. Rendered deterministically (not by
     // the model) so it is guaranteed to appear and is a real clickable link.
     var gtmCta = (type === 'gtm')
-      ? '<div style="margin-top:34px;border-radius:16px;padding:2px;background:linear-gradient(135deg,#E8A61A,#FFC53D 40%,rgba(232,166,26,.25))">' +
+      ? '<div class="gtm-partner" style="margin-top:34px;border-radius:16px;padding:2px;background:linear-gradient(135deg,#E8A61A,#FFC53D 40%,rgba(232,166,26,.25))">' +
           '<div style="border-radius:14px;padding:30px clamp(20px,4vw,38px);background:linear-gradient(180deg,#0F1526,#0B1120)">' +
             '<div style="font-family:var(--mono,monospace);font-size:.66rem;letter-spacing:.24em;text-transform:uppercase;color:#E8A61A">Recommended Marketing Partner</div>' +
             '<div style="font-family:var(--serif,Georgia,serif);font-size:clamp(1.5rem,3.4vw,2.1rem);line-height:1.14;color:#F3EFE7;margin:12px 0 8px;max-width:24ch">Turn this blueprint into paying customers — with MarketWar OS.</div>' +
@@ -1128,6 +1132,14 @@
       if (type === 'pitch') render.pitch = renderAIPitch;
       else if (type !== 'export') render[type] = renderAIDoc;
     }
+    // Name the browser's "Save as PDF" file after the document. The GTM Blueprint
+    // downloads as "GO-TO-MARKET — <venture>" so the saved file is self-describing.
+    try {
+      var vt = (P && P.title) ? P.title : 'Niche Finder';
+      document.title = (type === 'gtm' ? 'GO-TO-MARKET' : T.n) + ' — ' + vt;
+      var dl = document.getElementById('dlBtn');
+      if (dl) dl.textContent = (type === 'gtm') ? 'Download GO-TO-MARKET' : 'Export PDF';
+    } catch (e) {}
     render[type]();
   }
 
