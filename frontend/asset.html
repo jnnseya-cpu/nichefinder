@@ -1127,6 +1127,28 @@
     document.querySelectorAll('.theme-pick').forEach(function(b){ b.addEventListener('click', function(){ localStorage.setItem('nf_deck_theme', b.dataset.theme); renderAIPitch(); scrollTo({ top: 0 }); }); });
   }
 
+  // One-click, self-contained download of the rendered document — a fully styled
+  // HTML file that opens offline anywhere and can be saved as PDF. Used for the
+  // GTM "Download GO-TO-MARKET" button so the user gets a real file, not a print
+  // dialog. Serializes the on-screen .doc plus the page's styles.
+  function downloadStandaloneDoc(){
+    var art = document.querySelector('.doc');
+    if (!art){ window.print(); return; }
+    var styles = Array.prototype.map.call(document.querySelectorAll('style'), function(s){ return s.textContent; }).join('\n');
+    var fonts = '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap">';
+    var title = document.title || 'GO-TO-MARKET';
+    var doc = '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
+      '<meta name="viewport" content="width=device-width,initial-scale=1"><title>' + esc(title) + '</title>' + fonts +
+      '<style>body{margin:0;background:#fff;padding:clamp(12px,3vw,32px);display:flex;justify-content:center}.doc{max-width:900px;width:100%;box-shadow:none}' + styles + '</style>' +
+      '</head><body>' + art.outerHTML + '</body></html>';
+    var fname = title.replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim() || 'GO-TO-MARKET';
+    var blob = new Blob([doc], { type: 'text/html;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = fname + '.html';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 3000);
+  }
+
   function applyAndRender(){
     if (aiDoc){
       if (type === 'pitch') render.pitch = renderAIPitch;
@@ -1138,7 +1160,10 @@
       var vt = (P && P.title) ? P.title : 'Niche Finder';
       document.title = (type === 'gtm' ? 'GO-TO-MARKET' : T.n) + ' — ' + vt;
       var dl = document.getElementById('dlBtn');
-      if (dl) dl.textContent = (type === 'gtm') ? 'Download GO-TO-MARKET' : 'Export PDF';
+      if (dl && type === 'gtm') {
+        dl.textContent = 'Download GO-TO-MARKET';
+        dl.onclick = function (e) { if (e) e.preventDefault(); downloadStandaloneDoc(); return false; };
+      }
     } catch (e) {}
     render[type]();
   }
