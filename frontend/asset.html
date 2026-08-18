@@ -1075,12 +1075,22 @@
     var verdict = aiDoc.verdict
       ? '<div class="callout" style="--pct:' + P.score + '"><div class="verdict-badge" style="--pct:' + P.score + '"><span>' + P.score + '</span><small>/100</small></div><div class="big">' + esc(aiDoc.verdict) + '</div></div>'
       : '';
-    // GTM Blueprint ends on execution: a handoff to the recommended acquisition
-    // execution layer (external link for now; native handoff is a later increment).
+    // GTM Blueprint ends on execution: a prominent, always-present handoff to the
+    // recommended marketing execution partner. Rendered deterministically (not by
+    // the model) so it is guaranteed to appear and is a real clickable link.
     var gtmCta = (type === 'gtm')
-      ? '<div class="callout" style="margin-top:26px"><div class="big" style="margin-bottom:10px">Ready to execute? Hand this plan to your customer-acquisition engine.</div>' +
-        '<a href="https://www.marketwaros.com/" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;background:#E8A61A;color:#241A02;font-weight:700;text-decoration:none;padding:12px 22px;border-radius:8px">Execute with MarketWar OS →</a>' +
-        '<div style="font-size:.75rem;color:#8B93A5;margin-top:8px">MarketWar OS is the recommended execution layer — campaigns, outreach, conversion and scale. Native one-click handoff coming soon.</div></div>'
+      ? '<div style="margin-top:34px;border-radius:16px;padding:2px;background:linear-gradient(135deg,#E8A61A,#FFC53D 40%,rgba(232,166,26,.25))">' +
+          '<div style="border-radius:14px;padding:30px clamp(20px,4vw,38px);background:linear-gradient(180deg,#0F1526,#0B1120)">' +
+            '<div style="font-family:var(--mono,monospace);font-size:.66rem;letter-spacing:.24em;text-transform:uppercase;color:#E8A61A">Recommended Marketing Partner</div>' +
+            '<div style="font-family:var(--serif,Georgia,serif);font-size:clamp(1.5rem,3.4vw,2.1rem);line-height:1.14;color:#F3EFE7;margin:12px 0 8px;max-width:24ch">Turn this blueprint into paying customers — with MarketWaros.</div>' +
+            '<div style="color:#98A0B2;font-size:.95rem;max-width:60ch">You now have the plan. MarketWaros is our recommended execution partner to run it end-to-end — the fastest path from strategy to live customer acquisition.</div>' +
+            '<div style="display:flex;flex-wrap:wrap;gap:10px;margin:20px 0 24px">' +
+              ['Paid campaigns & creative','Content & organic growth','Cold outreach & funnels','Conversion & scale'].map(function(t){ return '<span style="font-size:.8rem;color:#E9DFC8;background:rgba(232,166,26,.10);border:1px solid rgba(232,166,26,.22);padding:7px 13px;border-radius:999px">' + t + '</span>'; }).join('') +
+            '</div>' +
+            '<a href="https://www.marketwaros.com/" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:10px;background:linear-gradient(180deg,#FFC53D,#E8A61A);color:#241A02;font-weight:800;letter-spacing:.01em;text-decoration:none;padding:15px 30px;border-radius:10px;box-shadow:0 14px 34px -14px rgba(232,166,26,.7)">Launch your marketing with MarketWaros →</a>' +
+            '<div style="font-size:.78rem;color:#8B93A5;margin-top:14px">Visit <span style="color:#E8A61A">www.marketwaros.com</span> — campaigns, creative, outreach, conversion and scale. Native one-click handoff coming soon.</div>' +
+          '</div>' +
+        '</div>'
       : '';
     root.innerHTML = '<article class="doc"><div class="doc-band"><div class="doc-brandline"><i></i>NICHE FINDER · VENTURE INTELLIGENCE OS</div>' +
       '<h1>' + esc(aiDoc.title || (P.title + ' — ' + T.n)) + '</h1>' +

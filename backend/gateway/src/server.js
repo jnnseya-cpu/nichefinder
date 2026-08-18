@@ -372,8 +372,11 @@ const server = http.createServer(async (req, res) => {
       }
       // Fixed price → bound provider spend, AND keep generation inside a live
       // request window: a too-large budget runs past the provider timeout, fails
-      // over, and the page spins for minutes. 14k fits a deep, detailed document.
-      const genBody = { ...body, maxTokens: Math.min(Number(body.maxTokens) || 14000, 18000) };
+      // over, and the page spins for minutes. 14k fits a deep, detailed document;
+      // the GTM Blueprint is far larger (17 sections incl. marketing engine +
+      // 30/60/90 roadmap), so it gets a higher ceiling.
+      const tokenCap = body.docType === 'gtm' ? 24000 : 18000;
+      const genBody = { ...body, maxTokens: Math.min(Number(body.maxTokens) || 14000, tokenCap) };
       const started = Date.now();
       console.log(`[document] start type=${body.docType} price=${price} effort=${body.effort || 'high'} billed=${!!debit}`);
       const result = await route(genBody);
