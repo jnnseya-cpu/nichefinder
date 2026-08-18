@@ -247,6 +247,7 @@
     </a>
     <div class="nav-right">
       <a class="nav-btn" href="project.html">← Back to Project</a>
+      <button id="dlBtn2" class="nav-btn" style="display:none" onclick="print()">PDF</button>
       <button id="dlBtn" class="nav-btn gold" onclick="print()">Export PDF</button>
     </div>
   </div>
@@ -261,6 +262,7 @@
 <script src="../shared/nf-economy.js"></script>
 <script src="nf-wallet.js"></script>
 <script src="nf-xlsx.js"></script>
+<script src="nf-docx.js"></script>
 <script>
 (function(){
   'use strict';
@@ -1149,6 +1151,21 @@
     setTimeout(function(){ URL.revokeObjectURL(a.href); }, 3000);
   }
 
+  // Download the GTM Blueprint as a real, editable Word (.docx) file built from
+  // the structured AI content — headings, tables, stats and the MarketWar OS
+  // recommendation. Opens in Word/Docs/Pages and exports to PDF in one click.
+  function downloadGtmWord(){
+    if (!aiDoc || !window.NF_DOCX){ downloadStandaloneDoc(); return; }
+    var fname = 'GO-TO-MARKET — ' + ((P && P.title) ? P.title : 'Venture');
+    NF_DOCX.download(fname, aiDoc, {
+      venture: (P && P.title) || 'Venture',
+      score: (P && P.score != null) ? P.score : null,
+      date: today,
+      positioning: (P && P.meta) || '',
+      partner: { name: 'MarketWar OS', url: 'https://www.marketwaros.com/', blurb: 'Recommended marketing execution partner — run this plan end-to-end: campaigns, creative, outreach, conversion and scale.' }
+    });
+  }
+
   function applyAndRender(){
     if (aiDoc){
       if (type === 'pitch') render.pitch = renderAIPitch;
@@ -1160,9 +1177,19 @@
       var vt = (P && P.title) ? P.title : 'Niche Finder';
       document.title = (type === 'gtm' ? 'GO-TO-MARKET' : T.n) + ' — ' + vt;
       var dl = document.getElementById('dlBtn');
+      var dl2 = document.getElementById('dlBtn2');
       if (dl && type === 'gtm') {
-        dl.textContent = 'Download GO-TO-MARKET';
-        dl.onclick = function (e) { if (e) e.preventDefault(); downloadStandaloneDoc(); return false; };
+        // Primary = real Word file (editable, opens anywhere, exports to PDF);
+        // secondary = browser PDF. Word needs the structured AI content; if it's
+        // not present (offline demo), fall back to the standalone HTML download.
+        if (aiDoc && window.NF_DOCX) {
+          dl.textContent = 'Download Word';
+          dl.onclick = function (e) { if (e) e.preventDefault(); downloadGtmWord(); return false; };
+          if (dl2) dl2.style.display = '';
+        } else {
+          dl.textContent = 'Download GO-TO-MARKET';
+          dl.onclick = function (e) { if (e) e.preventDefault(); downloadStandaloneDoc(); return false; };
+        }
       }
     } catch (e) {}
     render[type]();
