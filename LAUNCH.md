@@ -41,8 +41,10 @@ Morning sequence (60–90 min of founder admin, in order):
 1. **Stripe**: create account → copy `sk_live_` → add webhook endpoint
    `https://<host>/v1/payments/stripe-webhook` (event: `checkout.session.completed`) → copy `whsec_`
 2. **Anthropic**: create API key, load £50–100 credit (Gemini/OpenAI optional failover)
-3. **Deploy**: push this repo to Render using `render.yaml` (or `docker build` anywhere) —
-   paste the 3–5 secrets in the dashboard; `WALLET_STORE_KEY`/`ADMIN_API_KEY` auto-generate
+3. **Deploy**: on your Hostinger VPS, follow **DEPLOY-VPS.md** (Node 20 + Caddy,
+   clone to `/opt/nichefinder`, `npm ci --omit=dev`, systemd service) — put the
+   secrets in `/etc/nichefinder.env`; generate `WALLET_STORE_KEY`/`ADMIN_API_KEY`
+   with `openssl rand -hex 32` / `-hex 24`
 4. **Domain**: point DNS at the service; set `PUBLIC_ORIGIN`; set `window.NF_GATEWAY_URL`
    in `frontend/nf-config.js` to the same origin; redeploy (one commit)
 5. **Rehearse with test keys first**: `sk_test_` + card 4242 4242 4242 4242 → watch ACUs land
@@ -56,7 +58,7 @@ Morning sequence (60–90 min of founder admin, in order):
 |---|---|---|---|
 | 1 | Create Stripe account (business details + bank account for payouts) | Founder | 1–2 h (approval usually same-day) |
 | 2 | Buy provider API credit: Anthropic (required), Google/OpenAI (optional failover) | Founder | 15 min |
-| 3 | Deploy `backend/gateway` to Render / Railway / Fly (Node 20, `npm start`) with env: `ANTHROPIC_API_KEY`, `WALLET_STORE_KEY` (64 hex), `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `PUBLIC_ORIGIN`, persistent disk for `data/` | Founder (or hand me the dashboard) | 30 min |
+| 3 | Deploy on the Hostinger VPS per **DEPLOY-VPS.md** (Node 20 + Caddy, systemd `nichefinder` service) with env in `/etc/nichefinder.env`: `ANTHROPIC_API_KEY`, `WALLET_STORE_KEY` (64 hex), `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `PUBLIC_ORIGIN`; `data/` lives on the VPS disk | Founder (or hand me the server) | 30 min |
 | 4 | In Stripe: add webhook endpoint `https://<host>/v1/payments/stripe-webhook`, event `checkout.session.completed`; copy `whsec_` into env | Founder | 5 min |
 | 5 | Point a domain (e.g. app.nichefinderhq.com) at the deploy; set `window.NF_GATEWAY_URL` in `frontend/nf-config.js` to that origin; redeploy | Founder | 15 min |
 | 6 | Test-mode dry run (sk_test keys): buy Starter £5 with card 4242…, watch ACUs land via webhook; then flip to live keys | Founder | 20 min |
@@ -90,7 +92,7 @@ The blocker fixes below all honour that.
 | 🔴 | **No real accounts** — wallet is keyed to a per-browser id | Clear cookies = lose balance; can't use two devices; welcome-ACU farming | Build email+password auth **inside the gateway**: bcrypt-style hashing via Node `crypto.scrypt`, accounts in the existing AES-256-GCM encrypted store, signed session tokens (HMAC), `NF_WALLET_USER` bound to the account id. Gate signup with the in-house human challenge (`NF_verifyHuman`). Zero third parties. | 2–3 days dev |
 | 🔴 | **Business & legal reality** — Stripe needs a legal entity + bank account; Terms/Privacy reviewed for your jurisdictions | Payments and refunds are regulated | Register the company (or use existing), open business bank account, solicitor pass over Terms/Privacy/refund policy | Founder, days |
 | 🟠 | **AI quality pass at scale** — prompts tested but not tuned against volume with fresh keys | Public output quality = the brand | Once keys are live, structured evals on 20–30 real searches across countries; tune prompts | 1 day |
-| 🟠 | **File-store wallet on one instance** — fine for a single-instance beta, races if scaled horizontally | Two instances would race the store | Stay single-instance for beta (no new vendor). When scale demands it, use the managed database **your existing host already offers** (Render/Railway/Fly Postgres) — same vendor, not a new one; schema already specified | 2–3 days dev when needed |
+| 🟠 | **File-store wallet on one instance** — fine for a single-instance beta, races if scaled horizontally | Two instances would race the store | Stay single-instance for beta (no new vendor). When scale demands it, run Postgres **on the same VPS** (or Hostinger's managed database) — no new vendor; schema already specified | 2–3 days dev when needed |
 | 🟠 | **Refund/chargeback ops** — webhook credits, but reversals are manual | Disputes will happen | Add `charge.refunded`/`dispute` handlers to the **existing Stripe webhook** issuing compensating debits + written refund policy | ½ day dev |
 | 🟢 | **Human verification (CAPTCHA)** — DONE in-house | Human-only law, production grade | ✅ Proof-of-work challenge on the gateway (`/v1/human/*`) + browser solver (`NF_verifyHuman`); no Turnstile/reCAPTCHA. Stacks with honeypot, submission-timing, and the Sentinel agent | shipped |
 | 🟢 | **Anti-hacking + non-human instruction blocking** — DONE in-house | Attack + prompt-injection defence | ✅ Sentinel agent screens every request, blocks injection before provider calls, strike-bans abusers | shipped |
