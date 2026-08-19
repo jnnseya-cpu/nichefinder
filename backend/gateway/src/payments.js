@@ -9,8 +9,10 @@
 // falls back to demo crediting — so the same build runs pre- and post-launch.
 import crypto from 'node:crypto';
 import { GatewayError } from './errors.js';
-import { credit, PACKAGES } from './wallet.js';
+import { credit, PACKAGES, peekWallet } from './wallet.js';
 import { onPaidPurchase } from './referrals.js';
+import { emailForUserId } from './auth.js';
+import { sendMail } from './mailer.js';
 
 const KEY = process.env.STRIPE_SECRET_KEY || '';
 const WHSEC = process.env.STRIPE_WEBHOOK_SECRET || '';
@@ -86,6 +88,43 @@ export function verifySignature(rawBody, sigHeader, secret = WHSEC, toleranceSec
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
+/* Email the buyer a receipt after a settled purchase. Fire-and-forget: never
+   let a mail hiccup fail the webhook (the money + ACUs are already settled).
+   Skips silently for guest/anonymous wallets that have no account email.
+   Exported so the KODA settlement path can reuse it. */
+export function sendPurchaseReceipt({ user, packageId, method = 'card' }) {
+  try {
+    const email = emailForUserId(user);
+    if (!email) return;                    // guest wallet — no account on file
+    const pkg = PACKAGES[packageId];
+    if (!pkg) return;
+    const acu = (pkg.acus || 0) + (pkg.bonus || 0);
+    const balance = (peekWallet(user) || {}).paid;
+    const origin = (process.env.PUBLIC_ORIGIN || 'https://nichefinderhq.com').replace(/\/$/, '');
+    const subject = `Your Niche Finder receipt — ${acu} ACU credited`;
+    const text =
+      `Thank you for your purchase.\n\n` +
+      `Package: ${pkg.name}\n` +
+      `Amount paid: £${pkg.priceGBP} (${method})\n` +
+      `ACU credited: ${acu}${pkg.bonus ? ` (${pkg.acus} + ${pkg.bonus} bonus)` : ''}\n` +
+      (balance != null ? `New balance: ${balance} ACU\n` : '') +
+      `\nOpen your dashboard: ${origin}/dashboard.html\n\n— Niche Finder`;
+    const html =
+      `<div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;color:#1C2233">` +
+      `<h2 style="font-family:Georgia,serif;color:#1C2233">Payment received</h2>` +
+      `<p>Thank you for your purchase — your ACU balance is topped up and ready.</p>` +
+      `<table style="border-collapse:collapse;width:100%;font-size:14px;margin:14px 0">` +
+      `<tr><td style="padding:6px 0;color:#5D6575">Package</td><td style="padding:6px 0;text-align:right;font-weight:600">${pkg.name}</td></tr>` +
+      `<tr><td style="padding:6px 0;color:#5D6575">Amount paid</td><td style="padding:6px 0;text-align:right;font-weight:600">£${pkg.priceGBP} (${method})</td></tr>` +
+      `<tr><td style="padding:6px 0;color:#5D6575">ACU credited</td><td style="padding:6px 0;text-align:right;font-weight:600">${acu}${pkg.bonus ? ` <span style="color:#8A8F9C;font-weight:400">(${pkg.acus} + ${pkg.bonus} bonus)</span>` : ''}</td></tr>` +
+      (balance != null ? `<tr><td style="padding:6px 0;color:#5D6575">New balance</td><td style="padding:6px 0;text-align:right;font-weight:600">${balance} ACU</td></tr>` : '') +
+      `</table>` +
+      `<p><a href="${origin}/dashboard.html" style="display:inline-block;background:#E8A61A;color:#241A02;font-weight:700;text-decoration:none;padding:11px 22px;border-radius:8px">Open your dashboard →</a></p>` +
+      `<p style="color:#8A8F9C;font-size:12px;margin-top:18px">Niche Finder — the operating system for venture creation.</p></div>`;
+    sendMail({ to: email, subject, text, html }).catch((e) => console.error('[receipt] send failed:', e.message));
+  } catch (e) { console.error('[receipt] build failed:', e.message); }
+}
+
 /* Settlement-only crediting: ACUs land exactly once per Stripe event
    (event.id is the idempotency key), only on checkout.session.completed
    with payment_status=paid. Everything else is acknowledged and ignored. */
@@ -109,10 +148,13 @@ export function handleWebhook(rawBody, sigHeader) {
     throw new GatewayError('Webhook session missing user/package metadata.', { status: 400, code: 'bad_metadata' });
   }
   const result = credit({ user, packageId, idempotencyKey: `stripe_${event.id}` });
-  // Reward the referrer once, only on the first (non-replayed) settlement.
+  // Reward the referrer once, and email the buyer a receipt — only on the first
+  // (non-replayed) settlement, so a webhook replay never double-rewards or
+  // double-emails.
   if (!result.replayed) {
     try { onPaidPurchase({ user, gbp: PACKAGES[packageId].priceGBP, purchaseKey: `stripe_${event.id}` }); }
     catch (e) { console.error('[referrals] stripe reward failed:', e.message); }
+    sendPurchaseReceipt({ user, packageId, method: 'card' });
   }
   return { received: true, credited: result.credited, replayed: result.replayed, user };
 }

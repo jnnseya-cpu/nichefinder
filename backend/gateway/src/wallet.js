@@ -123,7 +123,14 @@ function idempotent(key, fn) {
   if (key) {
     store.idempotency[key] = result;
     const keys = Object.keys(store.idempotency);
-    if (keys.length > 5000) delete store.idempotency[keys[0]];
+    if (keys.length > 20000) {
+      // Evict the oldest NON-settlement key. Payment settlement keys
+      // (stripe_/koda_) must NEVER be evicted — a late webhook replay after
+      // eviction would double-credit real money. Transient generation keys are
+      // safe to drop.
+      const victim = keys.find((k) => !/^(stripe_|koda_)/.test(k));
+      if (victim) delete store.idempotency[victim];
+    }
   }
   return { replayed: false, ...result };
 }

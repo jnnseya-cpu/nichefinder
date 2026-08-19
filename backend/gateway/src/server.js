@@ -746,8 +746,12 @@ const server = http.createServer(async (req, res) => {
   }
 
   // ---- P0 wallet: server-side ACU system of record ----
+  // Reads require a platform-issued capability id (same contract as the billed
+  // paths). Without it, an arbitrary/guessable string (e.g. user=admin) would
+  // both read a wallet AND mint its welcome grant as a side effect of getWallet.
   if (method === 'GET' && url.pathname === '/v1/wallet') {
     try {
+      requireCapabilityId(url.searchParams.get('user'));
       return json(res, 200, getWallet(url.searchParams.get('user')));
     } catch (err) { return handleError(res, err); }
   }
@@ -756,6 +760,7 @@ const server = http.createServer(async (req, res) => {
   // /ledger remains for existing clients. Same enriched entries either way.
   if (method === 'GET' && (url.pathname === '/v1/wallet/ledger' || url.pathname === '/v1/wallet/transactions')) {
     try {
+      requireCapabilityId(url.searchParams.get('user'));
       return json(res, 200, { ledger: getLedger(url.searchParams.get('user'), url.searchParams.get('limit')) });
     } catch (err) { return handleError(res, err); }
   }

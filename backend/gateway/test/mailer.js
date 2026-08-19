@@ -56,6 +56,12 @@ const msg = buildMessage({ from: 'A <a@x.com>', to: 'b@y.com', subject: 'Hi', te
 check('has From/To/Subject headers', /From: A <a@x.com>/.test(msg) && /To: b@y.com/.test(msg) && /Subject: Hi/.test(msg));
 check('dot-stuffs leading-dot lines', /\r\n\.\.dot line/.test(msg), JSON.stringify(msg));
 
+const mp = buildMessage({ from: 'A <a@x.com>', to: 'b@y.com', subject: 'Hi', text: 'plain body', html: '<b>rich</b>', date: 'Fri, 01 Jan 2027 00:00:00 GMT' });
+check('multipart/alternative when text+html both present', /Content-Type: multipart\/alternative; boundary="NFALT_[0-9a-f]+"/.test(mp), mp.slice(0, 300));
+check('multipart carries the plain-text part', /Content-Type: text\/plain; charset=utf-8[\s\S]*plain body/.test(mp));
+check('multipart carries the html part', /Content-Type: text\/html; charset=utf-8[\s\S]*<b>rich<\/b>/.test(mp));
+check('single-part html when only html given', /Content-Type: text\/html; charset=utf-8/.test(buildMessage({ from: 'a@x', to: 'b@y', subject: 's', html: '<i>x</i>' })));
+
 console.log('— full send over SMTP —');
 await sendMail({ to: 'jane@example.com', subject: 'Reset your password', html: '<b>hello</b>' });
 check('AUTH sent the configured username', seen.authUser === 'contact@nichefinderhq.com', seen.authUser);

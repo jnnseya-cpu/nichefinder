@@ -13,6 +13,7 @@
 //   SMTP_SECURE "false" forces plaintext (tests only); otherwise TLS is used
 import tls from 'node:tls';
 import net from 'node:net';
+import crypto from 'node:crypto';
 
 const HOST = process.env.SMTP_HOST || '';
 const PORT = Number(process.env.SMTP_PORT || 465);
@@ -46,9 +47,31 @@ export function buildMessage({ from, to, subject, text, html, date, headers: ext
     `Subject: ${oneLine(subject)}`,
     `Date: ${oneLine(date) || new Date().toUTCString()}`,
     'MIME-Version: 1.0',
-    `Content-Type: ${html ? 'text/html' : 'text/plain'}; charset=utf-8`,
-    'Content-Transfer-Encoding: 8bit',
   ];
+  // Body: when BOTH a plaintext and an HTML part are supplied, send a proper
+  // multipart/alternative so text-only clients and spam filters get the plain
+  // part (better deliverability + accessibility). Previously the text part was
+  // silently dropped and the mail went HTML-only. Single-part when only one
+  // format is given.
+  let body;
+  const hasHtml = html != null && String(html) !== '';
+  const hasText = text != null && String(text) !== '';
+  if (hasHtml && hasText) {
+    const boundary = 'NFALT_' + crypto.randomBytes(16).toString('hex');
+    headers.push(`Content-Type: multipart/alternative; boundary="${boundary}"`);
+    body =
+      `--${boundary}\r\n` +
+      'Content-Type: text/plain; charset=utf-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n' +
+      String(text) + '\r\n' +
+      `--${boundary}\r\n` +
+      'Content-Type: text/html; charset=utf-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n' +
+      String(html) + '\r\n' +
+      `--${boundary}--\r\n`;
+  } else {
+    headers.push(`Content-Type: ${hasHtml ? 'text/html' : 'text/plain'}; charset=utf-8`);
+    headers.push('Content-Transfer-Encoding: 8bit');
+    body = String(html || text || '');
+  }
   // Optional extra headers (e.g. List-Unsubscribe). Values are single-lined to
   // prevent header injection through a stray CR/LF.
   if (extra && typeof extra === 'object') {
@@ -57,9 +80,9 @@ export function buildMessage({ from, to, subject, text, html, date, headers: ext
       headers.push(`${k}: ${String(v).replace(/[\r\n]+/g, ' ').trim()}`);
     }
   }
-  const body = String(html || text || '');
-  // Dot-stuffing: any line beginning with "." must be doubled so it isn't read
-  // as the end-of-DATA terminator — including the very first line of the body.
+  // Dot-stuffing over the WHOLE payload: any line beginning with "." must be
+  // doubled so it isn't read as the end-of-DATA terminator — including the very
+  // first line of the body. Boundary lines start with "--" so they're untouched.
   let safeBody = body.replace(/\r?\n/g, '\r\n').replace(/\r\n\./g, '\r\n..');
   if (safeBody.startsWith('.')) safeBody = '.' + safeBody;
   return headers.join('\r\n') + '\r\n\r\n' + safeBody;

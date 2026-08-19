@@ -17,6 +17,7 @@ import crypto from 'node:crypto';
 import { GatewayError } from './errors.js';
 import { credit, PACKAGES } from './wallet.js';
 import { onPaidPurchase } from './referrals.js';
+import { sendPurchaseReceipt } from './payments.js';
 
 const KEY = process.env.KODA_SECRET_KEY || '';
 const WHSEC = process.env.KODA_WEBHOOK_SECRET || '';
@@ -168,12 +169,22 @@ export function handleKodaWebhook(rawBody, sigHeader) {
   if (!user || !PACKAGES[packageId]) {
     throw new GatewayError('Webhook missing user/package metadata.', { status: 400, code: 'bad_metadata' });
   }
-  const evId = event.id || obj.receipt_id || obj.intent_id || obj.id || meta.order_id;
+  // Idempotency key: prefer the order_id WE minted in the intent (guaranteed
+  // present + unique per purchase, and echoed back in metadata) so replays are
+  // caught even if KODA's own event id shifts. Fall back to KODA's ids. If none
+  // resolve, refuse rather than credit under `koda_undefined` (which would
+  // collapse distinct payments onto one key).
+  const evId = meta.order_id || event.id || obj.receipt_id || obj.intent_id || obj.id;
+  if (!evId) {
+    throw new GatewayError('Webhook missing a settlement id for idempotency.', { status: 400, code: 'bad_metadata' });
+  }
   const result = credit({ user, packageId, idempotencyKey: `koda_${evId}` });
-  // Reward the referrer once, only on the first (non-replayed) settlement.
+  // Reward the referrer once, and email the buyer a receipt — only on the first
+  // (non-replayed) settlement.
   if (!result.replayed) {
     try { onPaidPurchase({ user, gbp: PACKAGES[packageId].priceGBP, purchaseKey: `koda_${evId}` }); }
     catch (e) { console.error('[referrals] koda reward failed:', e.message); }
+    sendPurchaseReceipt({ user, packageId, method: 'mobile money' });
   }
   return { received: true, credited: result.credited, replayed: result.replayed, user };
 }
