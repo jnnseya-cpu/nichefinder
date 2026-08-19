@@ -378,6 +378,25 @@ const server = http.createServer(async (req, res) => {
       const tokenCap = body.docType === 'gtm' ? 24000 : 18000;
       const genBody = { ...body, maxTokens: Math.min(Number(body.maxTokens) || 14000, tokenCap) };
       const started = Date.now();
+
+      // The Export Pack is assembled deterministically on the client (xlsx
+      // financial model + the already-generated documents) — it uses NO AI. Bill
+      // the catalogue price but skip the provider call and the discarded-document
+      // persist. Previously this ran a full deep generation whose "overview"
+      // output the export page never rendered: pure wasted spend every click.
+      if (body.docType === 'export') {
+        if (clientGone) { console.log('[document] export: client disconnected — no charge'); return; }
+        if (debit) {
+          const charged = charge({
+            user: debit.user, amount: debit.price, label: 'document · export', action: 'generation',
+            bracketFactor: 1, idempotencyKey: body.idempotencyKey || `doc_export_${started}_${debit.user.slice(-8)}`,
+          });
+          console.log(`[document] export packaged (no AI) price=${price} user=${debit.user.slice(-8)}`);
+          return json(res, 200, { docType: 'export', charged: charged.charged, wallet: charged.wallet });
+        }
+        return json(res, 200, { docType: 'export', charged: 0 });
+      }
+
       console.log(`[document] start type=${body.docType} price=${price} effort=${body.effort || 'high'} billed=${!!debit}`);
       const result = await route(genBody);
       let content;

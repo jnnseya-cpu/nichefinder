@@ -8,5 +8,6 @@ Disallow: /project.html
 Disallow: /asset.html
 Disallow: /account.html
 Disallow: /settings.html
+Disallow: /growth.html
 Disallow: /reset.html
 Sitemap: https://nichefinderhq.com/sitemap.xml

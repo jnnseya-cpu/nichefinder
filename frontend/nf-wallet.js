@@ -328,6 +328,9 @@
       if (!w || typeof w.paid !== 'number') return;
       saveWallet({ paid: w.paid, free: typeof w.free === 'number' ? w.free : loadWallet().free });
       try { document.dispatchEvent(new CustomEvent('nf:wallet')); } catch (e) {}
-    }
+    },
+    // Re-pull the authoritative balance from the gateway (e.g. after returning
+    // from a payment, where the webhook credits asynchronously).
+    refresh: hydrateFromServer
   };
 })();

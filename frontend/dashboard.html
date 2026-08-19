@@ -264,8 +264,8 @@
       </div>
       <div class="invite">
         <span style="font-family:var(--mono);font-size:.58rem;letter-spacing:.16em;color:var(--muted)">YOUR INVITE CODE</span>
-        <code id="inviteCode">NF-QWFCJEER</code>
-        <button class="btn" id="copyRef">Copy referral link</button>
+        <code id="inviteCode">Loading…</code>
+        <button class="btn" id="copyRef" disabled>Copy referral link</button>
         <button class="btn">Programme details</button>
       </div>
     </section>
@@ -341,6 +341,21 @@
     toast.textContent = msg; toast.classList.add('on');
     clearTimeout(toastTimer); toastTimer = setTimeout(function(){ toast.classList.remove('on'); }, 2600);
   }
+
+  // Returning from a successful checkout (Stripe/KODA redirect to
+  // dashboard.html?payment=success): acknowledge it and re-pull the
+  // authoritative balance a few times, since the settlement webhook credits
+  // asynchronously and may land a moment after the redirect.
+  (function(){
+    try {
+      var q = new URLSearchParams(location.search);
+      if (q.get('payment') === 'success'){
+        showToast('Payment received — your ACUs are being credited. Balance updates momentarily.');
+        if (window.NF && NF.refresh){ NF.refresh(); setTimeout(NF.refresh, 2500); setTimeout(NF.refresh, 6000); }
+        try { history.replaceState(null, '', location.pathname); } catch (e) {}
+      }
+    } catch (e) {}
+  })();
 
   var w = NF.wallet();
   var ledger = get('nf_ledger', []);
@@ -455,18 +470,31 @@
   document.getElementById('recal').addEventListener('click', function(){
     showToast('Operational sync complete — behavioral signals ingested.');
   });
+  // The referral link the Copy button uses. Empty until the gateway resolves the
+  // account's real code+link, so we never copy a placeholder that maps to no
+  // account (which would silently lose the referral).
+  var inviteLink = '';
+  function setInvite(code, link){
+    var codeEl = document.getElementById('inviteCode');
+    var btn = document.getElementById('copyRef');
+    if (code && codeEl) codeEl.textContent = code;
+    // Prefer the server-built link (uses the deployment's real origin); fall back
+    // to this page's own origin — never a hardcoded domain.
+    inviteLink = link || (code ? (location.origin + '/?ref=' + code) : '');
+    if (btn) btn.disabled = !inviteLink;
+  }
   document.getElementById('copyRef').addEventListener('click', function(){
-    var link = 'https://nichefinderhq.com/?ref=' + document.getElementById('inviteCode').textContent;
-    (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject()).then(
+    if (!inviteLink){ showToast('Your referral link is still loading — try again in a moment.'); return; }
+    (navigator.clipboard ? navigator.clipboard.writeText(inviteLink) : Promise.reject()).then(
       function(){ showToast('Referral link copied.'); },
-      function(){ showToast(link); }
+      function(){ showToast(inviteLink); }
     );
   });
-  // Growth Partner programme — real, server-tracked. The invite code is issued
-  // by the gateway (stable per account) and the stats reflect actual referrals
-  // and paid-usage commission. Falls back to a local code only in offline demo.
+  // Growth Partner programme — real, server-tracked. The invite code + link are
+  // issued by the gateway (stable per account) and the stats reflect actual
+  // referrals and paid-usage commission. Falls back to a local code only in the
+  // no-gateway offline demo.
   (function refProgramme(){
-    var codeEl = document.getElementById('inviteCode');
     var base = (window.NF_GATEWAY_URL || '').replace(/\/$/, '');
     var user = window.NF_WALLET_USER;
     function set(id, v){ var el = document.getElementById(id); if (el) el.textContent = v; }
@@ -475,7 +503,7 @@
         .then(function(r){ return r.ok ? r.json() : null; })
         .then(function(s){
           if (!s) return;
-          if (s.code) codeEl.textContent = s.code;
+          setInvite(s.code, s.link);
           set('refTotal', s.totalReferrals);
           set('refQualified', s.qualifiedReferrals);
           set('refCommission', '£' + (s.gbpEarned || 0));
@@ -488,7 +516,7 @@
         code = 'NF-' + Array.from({ length: 8 }, function(){ return 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random() * 32)]; }).join('');
         localStorage.setItem('nf_invite', code);
       }
-      codeEl.textContent = code;
+      setInvite(code, location.origin + '/?ref=' + code);
     }
   })();
 
