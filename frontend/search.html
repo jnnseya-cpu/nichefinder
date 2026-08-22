@@ -878,6 +878,7 @@
       // on-screen ACU reflects the real deduction (the client no longer self-bills).
       if (data && data.wallet) { try { NF.syncWallet(data.wallet); } catch (e) {} }
       var parsed = JSON.parse(data.text);
+      try { if (window.NF_TRACK) NF_TRACK.search({ country: (document.getElementById('country') || {}).value, results: (parsed.niches || []).length }); } catch (e) {} // conversion (consent-gated)
       return parsed.niches.map(function(n){
         return {
           t: n.title,
@@ -949,6 +950,7 @@
 
   function unlockProject(m){
     if (!charge(unlockCostNow(), 'Deep-Dive unlock')) return;
+    try { if (window.NF_TRACK) NF_TRACK.unlock({ venture: m.t, score: m.s, value: unlockCostNow(), currency: 'ACU' }); } catch (e) {} // conversion (consent-gated)
     var proj = {
       id: slug(m.t),
       title: m.t,

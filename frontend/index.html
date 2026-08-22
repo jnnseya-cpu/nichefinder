@@ -505,6 +505,7 @@
         '<a class="btn btn-gold" id="fsClaim" href="search.html">Get full analysis →</a>'+
         '<button class="fs-share" id="fsShareBtn" type="button">Share result</button>'+
         '</div>';
+      try { if (window.NF_TRACK) NF_TRACK.freeScore({ country: c, score: overall, verdict: verdict }); } catch(e){} // conversion (consent-gated)
       // email capture → lead store (organic list-building from day one)
       document.getElementById('fsClaim').addEventListener('click', function(){
         var em = (document.getElementById('fsEmail').value||'').trim();
@@ -512,6 +513,7 @@
         if (em && /.+@.+\..+/.test(em) && base){
           try { fetch(base+'/v1/leads',{method:'POST',headers:{'content-type':'application/json'},
             body:JSON.stringify({email:em,name:'',message:'Free score: '+i+' / '+c+' = '+overall})}).catch(function(){}); } catch(e){}
+          try { if (window.NF_TRACK) NF_TRACK.lead({ source: 'free_score', country: c }); } catch(e){}
         }
         try { localStorage.setItem('nf_first_idea', JSON.stringify({idea:i,country:c})); } catch(e){}
       });

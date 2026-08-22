@@ -1142,6 +1142,7 @@
   function downloadStandaloneDoc(){
     var art = document.querySelector('.doc');
     if (!art){ window.print(); return; }
+    try { if (window.NF_TRACK) NF_TRACK.download({ format: 'html', docType: type }); } catch (e) {} // consent-gated
     var styles = Array.prototype.map.call(document.querySelectorAll('style'), function(s){ return s.textContent; }).join('\n');
     var fonts = '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap">';
     var title = document.title || 'GO-TO-MARKET';
@@ -1162,6 +1163,7 @@
   // recommendation. Opens in Word/Docs/Pages and exports to PDF in one click.
   function downloadGtmWord(){
     if (!aiDoc || !window.NF_DOCX){ downloadStandaloneDoc(); return; }
+    try { if (window.NF_TRACK) NF_TRACK.download({ format: 'docx', docType: type }); } catch (e) {} // consent-gated
     var fname = 'GO-TO-MARKET — ' + ((P && P.title) ? P.title : 'Venture');
     NF_DOCX.download(fname, aiDoc, {
       venture: (P && P.title) || 'Venture',

@@ -49,31 +49,44 @@
     pixelQueue = [];
   }
 
-  // Fire a Meta standard/custom event, respecting consent + load state.
-  function fbTrack(event, params) {
-    var args = params ? ['track', event, params] : ['track', event];
+  // Fire a Meta standard (track) or custom (trackCustom) event, respecting
+  // consent + load state.
+  function fbTrack(event, params, custom) {
+    var method = custom ? 'trackCustom' : 'track';
+    var args = params ? [method, event, params] : [method, event];
     if (loaded.fb && window.fbq) { try { window.fbq.apply(null, args); } catch (e) {} return; }
     pixelQueue.push(args);
     if (consent('marketing')) loadPixel(); // flushes the queue
   }
 
-  // Unified conversion helper: GTM dataLayer event + optional Meta event.
-  function track(gtmEvent, params, fbEvent) {
+  // Unified helper: GTM dataLayer event + optional Meta event (standard or,
+  // when `custom` is true, a Meta custom event).
+  function track(gtmEvent, params, fbEvent, custom) {
     dl(assign({ event: gtmEvent }, params || {}));
-    if (fbEvent) fbTrack(fbEvent, params || undefined);
+    if (fbEvent) fbTrack(fbEvent, params || undefined, custom);
   }
-  function assign(a, b) { for (var k in b) if (Object.prototype.hasOwnProperty.call(b, k)) a[k] = b[k]; return a; }
+  function assign(a, b) { if (b) for (var k in b) if (Object.prototype.hasOwnProperty.call(b, k)) a[k] = b[k]; return a; }
 
+  // p is passed to BOTH GTM (event params) and Meta (event params).
   window.NF_TRACK = {
-    // p is passed to both GTM (as event params) and Meta (as event params).
+    // account
     signup: function (p) { track('sign_up', p, 'CompleteRegistration'); },
+    login: function (p) { track('login', p, 'Login', true); },
     lead: function (p) { track('lead', p, 'Lead'); },
     contact: function (p) { track('contact', p, 'Contact'); },
+    // discovery + build
+    freeScore: function (p) { track('free_score', p, 'Search'); },
     search: function (p) { track('search', p, 'Search'); },
+    unlock: function (p) { track('unlock', p, 'ViewContent'); },
+    generateDoc: function (p) { track('generate_document', p, 'ViewContent'); },
+    download: function (p) { track('download', p, 'Download', true); },
+    growthTool: function (p) { track('growth_tool', p, 'GrowthTool', true); },
+    // commerce
     startCheckout: function (p) { track('begin_checkout', p, 'InitiateCheckout'); },
-    purchase: function (p) { track('purchase', p, 'Purchase'); },       // p: {value, currency, ...}
-    subscribe: function (p) { track('subscribe', p, 'Subscribe'); },    // p: {value, currency, ...}
-    event: function (name, p, fbEvent) { track(name, p, fbEvent); }     // escape hatch
+    purchase: function (p) { track('purchase', p, 'Purchase'); },       // {value, currency, ...}
+    subscribe: function (p) { track('subscribe', p, 'Subscribe'); },    // {value, currency, ...}
+    // escape hatch: NF_TRACK.event('name', {..}, 'MetaEvent', /*custom*/ true)
+    event: function (name, p, fbEvent, custom) { track(name, p, fbEvent, custom); }
   };
 
   function evaluate() {

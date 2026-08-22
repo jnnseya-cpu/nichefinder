@@ -211,6 +211,7 @@
         password: document.getElementById('si-pass').value
       }).then(function (res) {
         if (!res.ok) { setMsg(errText(res), 'err'); busy(btn, false); return; }
+        try { if (window.NF_TRACK) NF_TRACK.login({ method: 'email' }); } catch (e) {} // conversion (consent-gated)
         NF_AUTH.set(res.data); location.href = next;
       }).catch(function (err) { setMsg(err.message, 'err'); busy(btn, false); });
     });

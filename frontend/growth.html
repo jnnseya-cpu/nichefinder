@@ -227,6 +227,7 @@
           var l = glog();
           l.unshift({ tool: 'growth_insight', platform: t.n, cost: NF.COSTS.growth_insight, ts: Date.now() });
           localStorage.setItem('nf_growth_log', JSON.stringify(l.slice(0, 200)));
+          try { if (window.NF_TRACK) NF_TRACK.growthTool({ tool: 'growth_insight', platform: t.n, value: NF.COSTS.growth_insight, currency: 'ACU' }); } catch (e) {} // consent-gated
           kpis();
         }, 600);
         $('studio').scrollIntoView({ behavior: 'smooth' });
@@ -260,6 +261,7 @@
       var l = glog();
       l.unshift({ tool: active.id, platform: p, venture: v.slice(0, 60), cost: cost, ts: Date.now() });
       localStorage.setItem('nf_growth_log', JSON.stringify(l.slice(0, 200)));
+      try { if (window.NF_TRACK) NF_TRACK.growthTool({ tool: active.id, platform: p, value: cost, currency: 'ACU' }); } catch (e) {} // consent-gated
       kpis(); acu();
     }, 900);
   });

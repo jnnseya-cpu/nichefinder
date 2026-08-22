@@ -838,6 +838,7 @@
   }
 
   function finishDoc(a, charged, content, isRegen){
+    try { if (window.NF_TRACK) NF_TRACK.generateDoc({ docType: a.id, name: a.t, value: charged, currency: 'ACU', regenerated: !!isRegen }); } catch (e) {} // conversion (consent-gated)
     if (state.doneActions.indexOf(a.id) < 0) state.doneActions.push(a.id);
     if (a.advances && STAGES.indexOf(a.advances) > STAGES.indexOf(state.status)) state.status = a.advances;
     logReport(a.id, a.t);
