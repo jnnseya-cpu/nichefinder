@@ -107,7 +107,7 @@
 <body>
 
 <div style="background:linear-gradient(90deg,#3a2a05,#241a02);border-bottom:1px solid rgba(232,166,26,.5);color:#f6e7c4;font-size:.82rem;line-height:1.4;padding:10px 18px;text-align:center">
-  <b style="color:#FFC53D">INTERNAL PROTOTYPE</b> — this is the notification-template catalogue and preview. "Log test event" records a local preview only; it does <b>not</b> send email. Real transactional mail (receipts, resets, newsletter) is sent by the gateway. Admin operations: <a href="admin-console.html" style="color:#FFC53D;font-weight:600">Admin Console →</a>
+  <b style="color:#FFC53D">INTERNAL CONSOLE</b> — the notification-template catalogue and preview. "Send test" delivers the selected template to <b>your own admin email</b> via the gateway when you're signed in as an administrator (otherwise it records a local preview). Full admin operations: <a href="admin-console.html" style="color:#FFC53D;font-weight:600">Admin Console →</a>
 </div>
 
 <header class="site">
@@ -156,7 +156,7 @@
           <input class="field" id="brand" value="Niche Finder" readonly>
           <div class="qa-actions">
             <button class="btn gold" id="btnPreview" type="button">Preview email</button>
-            <button class="btn" id="btnSend" type="button">Log test event (preview)</button>
+            <button class="btn" id="btnSend" type="button">Send test</button>
           </div>
           <h2 style="margin-top:26px">Recent deliveries</h2>
           <p class="sub">Latest test fires from this console</p>
@@ -475,16 +475,45 @@ function renderLog(){
     el.appendChild(row);
   });
 }
-document.getElementById('btnSend').addEventListener('click', function(){
-  var e = findEv(sel.value);
+function logDelivery(e){
   var log = loadLog();
   log.unshift({ n: e.n, k: e.k, ch: e.ch, ts: Date.now() });
   if (log.length > 20) log.length = 20;
   localStorage.setItem('nf_comms_log', JSON.stringify(log));
   renderLog();
-  this.textContent = 'Logged locally ✓ (' + e.ch.map(function(c){ return CH_LABEL[c]; }).join(', ') + ')';
+}
+document.getElementById('btnSend').addEventListener('click', function(){
+  var e = findEv(sel.value);
   var btn = this;
-  setTimeout(function(){ btn.textContent = 'Log test event (preview)'; }, 2600);
+  function reset(t){ btn.textContent = t; setTimeout(function(){ btn.disabled = false; btn.textContent = 'Send test'; }, 2600); }
+  var base = (window.NF_GATEWAY_URL || '').replace(/\/$/, '');
+  var acct = window.NF_AUTH && NF_AUTH.account && NF_AUTH.account();
+  var token = window.NF_AUTH && NF_AUTH.token && NF_AUTH.token();
+  // Signed in as an admin with a gateway → send the rendered template to the
+  // admin's own email for real. Otherwise fall back to a local preview log.
+  if (base && token && acct && acct.role === 'admin' && typeof fetch === 'function'){
+    var subject = fill(e.s);
+    var html = '<div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;color:#1C2233">' +
+      '<h2 style="font-family:Georgia,serif;color:#1C2233">Niche Finder</h2>' +
+      '<p style="font-size:15px"><b>' + esc(subject) + '</b></p>' +
+      '<p>' + esc(fill(bodyFor(e))) + '</p>' +
+      '<p style="color:#8A8F9C;font-size:12px;margin-top:16px">Event <span style="font-family:monospace">' + esc(e.k) + '</span> · test send from the Comms console.</p></div>';
+    btn.disabled = true; btn.textContent = 'Sending…';
+    fetch(base + '/v1/admin/test-email', {
+      method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token },
+      body: JSON.stringify({ subject: subject, html: html })
+    }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
+      .then(function(res){
+        if (res.ok && res.d && res.d.sent){ logDelivery(e); reset('Sent ✓ to ' + res.d.to); }
+        else if (res.d && res.d.error === 'mail_not_configured'){ reset('SMTP not configured'); }
+        else { reset('Send failed'); }
+      })
+      .catch(function(){ reset('Network error'); });
+  } else {
+    logDelivery(e);
+    btn.textContent = 'Logged locally ✓ (preview)';
+    setTimeout(function(){ btn.textContent = 'Send test'; }, 2600);
+  }
 });
 renderLog();
 
@@ -513,6 +542,8 @@ CATS.forEach(function(c, idx){
   </div>
 </footer>
 
+<script src="nf-config.js"></script>
+<script src="nf-auth.js"></script>
 <script src="nf-consent.js" defer></script>
 </body>
 </html>

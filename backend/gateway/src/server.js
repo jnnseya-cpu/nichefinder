@@ -627,6 +627,24 @@ const server = http.createServer(async (req, res) => {
     } catch (err) { return handleError(res, err); }
   }
 
+  // Admin: send a notification-template preview to the signed-in admin's own
+  // email — the real "send test" behind the Comms console. Body { subject, html }
+  // is the preview the client already renders; the server dispatches it via the
+  // real mailer to the admin's address only (never an arbitrary recipient).
+  if (req.method === 'POST' && url.pathname === '/v1/admin/test-email') {
+    try {
+      const s = adminOf();
+      if (!s) return json(res, 403, { error: 'admin_required' });
+      if (!mailConfigured()) return json(res, 503, { error: 'mail_not_configured', message: 'SMTP is not configured on this deployment.' });
+      const body = JSON.parse((await readBody(req)) || '{}');
+      const subject = String(body.subject || 'Niche Finder — test notification').slice(0, 200);
+      const html = String(body.html || '').slice(0, 100000);
+      const text = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() || 'Test notification from Niche Finder.';
+      await sendMail({ to: s.email, subject: `[TEST] ${subject}`, text, html });
+      return json(res, 200, { sent: true, to: s.email });
+    } catch (err) { return handleError(res, err); }
+  }
+
   if (req.method === 'POST' && url.pathname === '/v1/admin/grant') {
     try {
       const s = adminOf();

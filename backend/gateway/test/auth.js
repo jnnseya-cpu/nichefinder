@@ -111,6 +111,12 @@ res = await getJson('/v1/admin/ledger?user=jane@example.com', { authorization: '
 let led = await res.json();
 check('admin ledger returns jane transactions', res.status === 200 && Array.isArray(led.ledger) && led.ledger.length >= 2 && led.email === 'jane@example.com');
 
+console.log('— admin test-email (Comms console send) —');
+res = await post('/v1/admin/test-email', { subject: 'Ping', html: '<b>hi</b>' }, { authorization: 'Bearer ' + janeLogin.token });
+check('non-admin cannot send a test email (403)', res.status === 403);
+res = await post('/v1/admin/test-email', { subject: 'Ping', html: '<b>hi</b>' }, { authorization: 'Bearer ' + boss.token });
+check('admin test-email is gated by SMTP config (503 when unconfigured, else 200)', res.status === 503 || res.status === 200, String(res.status));
+
 console.log('— roles + disable/enable —');
 res = await post('/v1/admin/role', { email: 'jane@example.com', role: 'admin' }, { authorization: 'Bearer ' + boss.token });
 check('admin can promote jane to admin', res.status === 200 && (await res.json()).role === 'admin');
