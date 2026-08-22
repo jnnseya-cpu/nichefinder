@@ -25,6 +25,20 @@
     { id: 'investor_50', name: 'Investor', priceGBP: 50, acus: 5000, bonus: 1500, total: 6500, desc: 'Full investor packages across multiple ventures.' }
   ];
 
+  /* Recurring subscription PLANS. Each paid plan grants a monthly ACU allotment
+     (credited to the spendable/paid balance on each Stripe billing cycle; the
+     paid balance rolls over). Self-serve plans have a monthly GBP price; the
+     Enterprise plan is contact-sales (no self-serve checkout). `free` is the
+     default, non-purchasable state. Prices/allotments are the canonical source
+     for both the dashboard cards and the gateway checkout. */
+  var PLANS = [
+    { id: 'free',    name: 'Free',         priceGBP: 0,   acusPerMonth: 0,    selfServe: false, desc: 'One-time welcome ACU · browse & preview' },
+    { id: 'starter', name: 'Starter',      priceGBP: 19,  acusPerMonth: 200,  selfServe: true,  desc: 'Rollover · unlock + validation focus' },
+    { id: 'pro',     name: 'Professional', priceGBP: 49,  acusPerMonth: 600,  selfServe: true,  recommended: true, desc: 'Rollover · all documents · priority generation' },
+    { id: 'growth',  name: 'Growth',       priceGBP: 99,  acusPerMonth: 1500, selfServe: true,  desc: 'Bulk generation · API access · 3 team seats' },
+    { id: 'ent',     name: 'Enterprise',   priceGBP: null, acusPerMonth: null, selfServe: false, desc: 'White-label · SSO · SLA · compliance reports' }
+  ];
+
   /* Canonical action schedule — bracket-1 (≤ £10k) prices. */
   var COSTS = {
     niche_search: 125,
@@ -135,6 +149,7 @@
     ANCHOR_GBP_PER_100_ACU: ANCHOR_GBP_PER_100_ACU,
     WELCOME_FREE: WELCOME_FREE,
     PACKAGES: PACKAGES,
+    PLANS: PLANS,
     COSTS: COSTS,
     bracketFor: bracketFor,
     costFor: costFor,

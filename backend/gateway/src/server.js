@@ -6,7 +6,7 @@ import { config } from './config.js';
 import { GatewayError } from './errors.js';
 import { route, availableProviders, meterAcu } from './router.js';
 import { getWallet, getLedger, charge, credit, grant, summary, deleteWallet, migratePaid, PACKAGES } from './wallet.js';
-import { createCheckout, handleWebhook, paymentsConfigured } from './payments.js';
+import { createCheckout, createSubscriptionCheckout, handleWebhook, paymentsConfigured } from './payments.js';
 import { createKodaIntent, handleKodaWebhook, kodaConfigured } from './koda.js';
 import { summaryFor as referralSummary } from './referrals.js';
 import { saveDoc, getDoc, listDocs } from './docstore.js';
@@ -262,6 +262,15 @@ const server = http.createServer(async (req, res) => {
       const body = JSON.parse((await readBody(req)) || '{}');
       const origin = process.env.PUBLIC_ORIGIN || `${req.headers['x-forwarded-proto'] || 'http'}://${req.headers.host}`;
       return json(res, 200, await createCheckout({ user: body.user, packageId: body.packageId, origin }));
+    } catch (err) { return handleError(res, err); }
+  }
+
+  // Recurring subscription checkout — hosted Stripe session for a monthly PLAN.
+  if (req.method === 'POST' && url.pathname === '/v1/payments/subscribe') {
+    try {
+      const body = JSON.parse((await readBody(req)) || '{}');
+      const origin = process.env.PUBLIC_ORIGIN || `${req.headers['x-forwarded-proto'] || 'http'}://${req.headers.host}`;
+      return json(res, 200, await createSubscriptionCheckout({ user: body.user, planId: body.planId, origin }));
     } catch (err) { return handleError(res, err); }
   }
 

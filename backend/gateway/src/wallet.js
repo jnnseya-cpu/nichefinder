@@ -49,6 +49,9 @@ export function decryptStore(envelope, key = STORE_KEY) {
 export const PACKAGES = Object.fromEntries(
   ECONOMY.PACKAGES.map((p) => [p.id, { name: p.name, priceGBP: p.priceGBP, acus: p.acus, bonus: p.bonus }])
 );
+export const PLANS = Object.fromEntries(
+  (ECONOMY.PLANS || []).map((p) => [p.id, { name: p.name, priceGBP: p.priceGBP, acusPerMonth: p.acusPerMonth, selfServe: p.selfServe }])
+);
 
 let store = load();
 let persistTimer = null;
@@ -111,7 +114,7 @@ function ledger(wallet, label, amt, extra = {}) {
 }
 
 function view(wallet) {
-  return { paid: wallet.paid, free: wallet.free, total: wallet.paid + wallet.free };
+  return { paid: wallet.paid, free: wallet.free, total: wallet.paid + wallet.free, plan: wallet.plan || null };
 }
 
 function idempotent(key, fn) {
@@ -255,6 +258,39 @@ export function credit({ user, packageId, idempotencyKey }) {
     persist();
     return { credited: total, package: packageId, wallet: view(wallet) };
   });
+}
+
+// Credit a subscription plan's monthly ACU allotment to the paid pool and stamp
+// the active plan on the wallet. Idempotent per billing event (the Stripe invoice
+// id is the key), so a webhook replay never double-credits a cycle. Called for
+// both the first invoice and every renewal.
+export function creditPlanAllotment({ user, planId, idempotencyKey }) {
+  const wallet = requireUser(user);
+  const plan = PLANS[planId];
+  if (!plan || !plan.acusPerMonth) {
+    throw new GatewayError(`Unknown or non-crediting plan "${planId}".`, { status: 400, code: 'unknown_plan' });
+  }
+  return idempotent(idempotencyKey, () => {
+    wallet.paid += plan.acusPerMonth;
+    wallet.plan = { id: planId, status: 'active', since: (wallet.plan && wallet.plan.since) || Date.now(), renewedAt: Date.now() };
+    ledger(wallet, `SUBSCRIPTION · ${plan.name} (£${plan.priceGBP}/mo = ${plan.acusPerMonth.toLocaleString('en-US')} ACU)`, plan.acusPerMonth, {
+      type: 'credit_subscription',
+      pool: 'paid',
+      bracketFactor: 1,
+    });
+    persist();
+    return { credited: plan.acusPerMonth, plan: planId, wallet: view(wallet) };
+  });
+}
+
+// Mark a wallet's subscription ended (on Stripe cancellation/deletion). Already-
+// credited ACUs are kept (they were paid for); only the plan status changes.
+export function endPlan({ user }) {
+  const wallet = store.wallets[user];
+  if (!wallet || !wallet.plan) return { ended: false };
+  wallet.plan = { ...wallet.plan, status: 'canceled', canceledAt: Date.now() };
+  persist();
+  return { ended: true, wallet: view(wallet) };
 }
 
 // Move a guest (anonymous) wallet's PAID balance into an account wallet on first

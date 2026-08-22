@@ -531,31 +531,59 @@
   ];
   var planGrid = document.getElementById('planGrid');
   var planTag = document.getElementById('planTag');
-  function renderPlans(){
-    // Monthly subscriptions are not live yet — only one-time ACU top-ups are
-    // wired to real payment. So the tag always reflects pay-as-you-go, paid
-    // tiers are marked "coming soon", and the CTA opens the working Buy ACU flow
-    // (no misleading "ACTIVE" plan or saved-selection that never charges).
-    planTag.textContent = 'CURRENT: PAY AS YOU GO';
+  var planBase = (window.NF_GATEWAY_URL || '').replace(/\/$/, '');
+  var planUser = window.NF_WALLET_USER;
+  function planName(id){ var p = PLANS.filter(function(x){ return x.id === id; })[0]; return p ? p.name : id; }
+
+  // Self-serve subscription: create a Stripe subscription Checkout session and
+  // redirect. Falls back to the one-time Buy ACU flow if the gateway/payments
+  // aren't configured (offline demo).
+  function subscribe(planId, btn){
+    if (!planBase || !planUser){ if (window.NF && NF.openTopup) NF.openTopup(0, 'ACU top-up'); return; }
+    btn.disabled = true; var label = btn.textContent; btn.textContent = 'Redirecting…';
+    fetch(planBase + '/v1/payments/subscribe', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ user: planUser, planId: planId })
+    }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
+      .then(function(res){
+        if (res.ok && res.d && res.d.url){ location.href = res.d.url; return; }
+        btn.disabled = false; btn.textContent = label;
+        showToast((res.d && (res.d.message || res.d.error)) || 'Subscriptions are not available right now.');
+      })
+      .catch(function(){ btn.disabled = false; btn.textContent = label; showToast('Network error — please try again.'); });
+  }
+
+  function paintPlans(currentPlan){
+    var active = currentPlan && currentPlan.status === 'active' ? currentPlan.id : null;
+    planTag.textContent = active ? ('CURRENT: ' + planName(active).toUpperCase()) : 'CURRENT: PAY AS YOU GO';
     planGrid.innerHTML = '';
     PLANS.forEach(function(p){
-      var isFree = p.id === 'free';
+      var isFree = p.id === 'free', isEnt = p.id === 'ent', isActive = active === p.id;
       var c = document.createElement('div');
       c.className = 'bcard';
-      c.style.cssText = '--bc:var(--line)';
-      c.innerHTML = '<span class="bk">' + p.name + (isFree ? '' : ' · <span style="color:var(--muted);font-size:.6rem;letter-spacing:.12em">COMING SOON</span>') + '</span>' +
+      c.style.cssText = '--bc:' + (isActive ? 'var(--gold)' : 'var(--line)');
+      c.innerHTML = '<span class="bk">' + p.name + (isActive ? ' · <span style="color:var(--gold-bright);font-size:.6rem;letter-spacing:.12em">ACTIVE</span>' : '') + '</span>' +
         '<p style="margin:4px 0 2px"><b style="font-size:1.05rem">' + p.price + '</b> · ' + p.acu + '</p>' +
         '<p style="font-size:.78rem;color:var(--muted)">' + p.d + '</p>';
       var btn = document.createElement('button');
       btn.className = 'top-up';
-      btn.textContent = isFree ? 'Included' : 'Buy ACU →';
-      if (isFree) { btn.disabled = true; btn.style.opacity = '.55'; btn.style.cursor = 'default'; }
-      else { btn.addEventListener('click', function(){ if (window.NF && NF.openTopup) NF.openTopup(0, 'ACU top-up'); }); }
+      if (isFree){ btn.textContent = 'Included'; btn.disabled = true; btn.style.opacity = '.55'; btn.style.cursor = 'default'; }
+      else if (isActive){ btn.textContent = 'Active'; btn.disabled = true; btn.style.opacity = '.7'; btn.style.cursor = 'default'; }
+      else if (isEnt){ btn.textContent = 'Contact sales →'; btn.addEventListener('click', function(){ location.href = 'contact.html?topic=enterprise'; }); }
+      else { btn.textContent = 'Subscribe →'; btn.addEventListener('click', function(){ subscribe(p.id, btn); }); }
       c.appendChild(btn);
       planGrid.appendChild(c);
     });
   }
-  renderPlans();
+
+  // Best-effort: read the current plan from the authoritative wallet so the
+  // active tier is highlighted; paint immediately either way.
+  if (planBase && planUser && typeof fetch === 'function'){
+    fetch(planBase + '/v1/wallet?user=' + encodeURIComponent(planUser))
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(w){ paintPlans(w && w.plan); })
+      .catch(function(){ paintPlans(null); });
+  } else { paintPlans(null); }
 })();
 </script>
 <script src="nf-consent.js" defer></script>
