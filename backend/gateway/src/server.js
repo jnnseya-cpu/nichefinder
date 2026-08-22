@@ -14,6 +14,7 @@ import { issueChallenge, verifyChallenge } from './human.js';
 import { signup, login, logout, sessionFor, requestReset, resetPassword, listUsers, resolveUserId, emailForUserId, setRole, setDisabled, userByEmail, updateProfile, setMedia, changePassword, deleteAccount } from './auth.js';
 import { sendMail, mailConfigured } from './mailer.js';
 import { publishArticle, unpublishArticle, listArticles, getArticle } from './articles.js';
+import { sendEvent as capiSend } from './meta-capi.js';
 import { startNewsletterScheduler, sendNewsletterOnce, handleUnsubscribe } from './newsletter.js';
 
 const MAX_BODY_BYTES = 2 * 1024 * 1024;
@@ -471,6 +472,13 @@ const server = http.createServer(async (req, res) => {
           text: `From: ${name || '(no name)'} <${email}>\n\n${message || '(no message)'}\n\n— sent ${new Date().toUTCString()}`,
         }).catch((e) => console.error(`[leads] notify email failed: ${e.message}`));
       }
+      // Server-side Lead conversion (deduped with the browser via body.eventId;
+      // fbp/fbc forwarded from the client for match quality).
+      capiSend({
+        eventName: 'Lead', eventId: body.eventId,
+        eventSourceUrl: (process.env.PUBLIC_ORIGIN || 'https://nichefinderhq.com').replace(/\/$/, '') + '/',
+        email, clientIp: ip, userAgent: req.headers['user-agent'], fbp: body.fbp, fbc: body.fbc,
+      });
       return json(res, 200, { received: true });
     } catch (err) { return handleError(res, err); }
   }

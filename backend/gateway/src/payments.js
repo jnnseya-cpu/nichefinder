@@ -13,6 +13,9 @@ import { credit, PACKAGES, PLANS, peekWallet, creditPlanAllotment, endPlan } fro
 import { onPaidPurchase } from './referrals.js';
 import { emailForUserId } from './auth.js';
 import { sendMail } from './mailer.js';
+import { sendEvent as capiSend } from './meta-capi.js';
+
+const CAPI_ORIGIN = () => (process.env.PUBLIC_ORIGIN || 'https://nichefinderhq.com').replace(/\/$/, '');
 
 const KEY = process.env.STRIPE_SECRET_KEY || '';
 const WHSEC = process.env.STRIPE_WEBHOOK_SECRET || '';
@@ -52,7 +55,7 @@ export async function createCheckout({ user, packageId, origin }) {
     'line_items[0][price_data][product_data][name]': `Niche Finder — ${pkg.name} package (${total.toLocaleString('en-US')} ACU)`,
     'metadata[user]': user,
     'metadata[packageId]': packageId,
-    success_url: `${base}/frontend/dashboard.html?payment=success&value=${pkg.priceGBP}&currency=GBP`,
+    success_url: `${base}/frontend/dashboard.html?payment=success&value=${pkg.priceGBP}&currency=GBP&sid={CHECKOUT_SESSION_ID}`,
     cancel_url: `${base}/frontend/dashboard.html?payment=cancelled`,
   });
   const res = await fetch(`${STRIPE_API}/v1/checkout/sessions`, {
@@ -100,7 +103,7 @@ export async function createSubscriptionCheckout({ user, planId, origin }) {
     'metadata[planId]': planId,
     'subscription_data[metadata][user]': user,
     'subscription_data[metadata][planId]': planId,
-    success_url: `${base}/frontend/dashboard.html?payment=success&sub=1&value=${plan.priceGBP}&currency=GBP`,
+    success_url: `${base}/frontend/dashboard.html?payment=success&sub=1&value=${plan.priceGBP}&currency=GBP&sid={CHECKOUT_SESSION_ID}`,
     cancel_url: `${base}/frontend/dashboard.html?payment=cancelled`,
   });
   const res = await fetch(`${STRIPE_API}/v1/checkout/sessions`, {
@@ -214,7 +217,16 @@ export function handleWebhook(rawBody, sigHeader) {
   const obj = event.data?.object || {};
 
   if (event.type === 'checkout.session.completed') {
-    if (obj.mode === 'subscription') return { received: true, ignored: 'subscription_checkout (credited via invoice.paid)' };
+    if (obj.mode === 'subscription') {
+      // Crediting happens on invoice.paid; here we only fire the server-side
+      // Subscribe conversion (deduped with the browser via the session id).
+      const suser = obj.metadata?.user; const splan = obj.metadata?.planId;
+      if (suser && PLANS[splan]) {
+        capiSend({ eventName: 'Subscribe', eventId: obj.id, eventSourceUrl: `${CAPI_ORIGIN()}/dashboard.html`,
+          email: emailForUserId(suser), value: PLANS[splan].priceGBP, currency: 'GBP' });
+      }
+      return { received: true, ignored: 'subscription_checkout (credited via invoice.paid)' };
+    }
     if (obj.payment_status !== 'paid') return { received: true, ignored: 'not_paid' };
     const user = obj.metadata?.user;
     const packageId = obj.metadata?.packageId;
@@ -226,6 +238,9 @@ export function handleWebhook(rawBody, sigHeader) {
       try { onPaidPurchase({ user, gbp: PACKAGES[packageId].priceGBP, purchaseKey: `stripe_${event.id}` }); }
       catch (e) { console.error('[referrals] stripe reward failed:', e.message); }
       sendPurchaseReceipt({ user, packageId, method: 'card' });
+      // Server-side Purchase (deduped with the browser via the checkout session id).
+      capiSend({ eventName: 'Purchase', eventId: obj.id, eventSourceUrl: `${CAPI_ORIGIN()}/dashboard.html`,
+        email: emailForUserId(user), value: PACKAGES[packageId].priceGBP, currency: 'GBP' });
     }
     return { received: true, credited: result.credited, replayed: result.replayed, user };
   }
@@ -247,6 +262,12 @@ export function handleWebhook(rawBody, sigHeader) {
         catch (e) { console.error('[referrals] subscription reward failed:', e.message); }
       }
       sendSubscriptionReceipt({ user, planId, method: 'card', renewal: obj.billing_reason === 'subscription_cycle' });
+      // Renewals have no browser event, so fire the server-side Subscribe here.
+      // The first invoice's Subscribe already fired at checkout.session.completed.
+      if (obj.billing_reason === 'subscription_cycle') {
+        capiSend({ eventName: 'Subscribe', eventId: `inv_${invId}`, eventSourceUrl: `${CAPI_ORIGIN()}/dashboard.html`,
+          email: emailForUserId(user), value: PLANS[planId].priceGBP, currency: 'GBP' });
+      }
     }
     return { received: true, credited: result.credited, replayed: result.replayed, user, plan: planId };
   }

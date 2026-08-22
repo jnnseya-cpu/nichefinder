@@ -362,6 +362,7 @@
         try {
           var val = parseFloat(q.get('value')); var cur = q.get('currency') || 'GBP';
           var p = isFinite(val) ? { value: val, currency: cur } : {};
+          if (q.get('sid')) p.eventId = q.get('sid'); // dedup with the server Conversions API
           if (window.NF_TRACK){ (q.get('sub') ? NF_TRACK.subscribe : NF_TRACK.purchase)(p); }
         } catch (e) {}
         try { history.replaceState(null, '', location.pathname); } catch (e) {}

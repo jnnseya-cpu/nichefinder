@@ -137,15 +137,17 @@
             return;
           }
           // deliver to the platform lead store when a gateway is deployed
+          var eid = window.NF_TRACK ? NF_TRACK.newId() : '';
           try {
             var base = (window.NF_GATEWAY_URL || '').replace(/\/$/, '');
             if (base) {
               var f = form.querySelectorAll('input,textarea');
               fetch(base + '/v1/leads', { method: 'POST', headers: { 'content-type': 'application/json' },
-                body: JSON.stringify({ name: f[0].value, email: f[1].value, message: form.querySelector('textarea').value }) }).catch(function(){});
+                body: JSON.stringify({ name: f[0].value, email: f[1].value, message: form.querySelector('textarea').value,
+                  eventId: eid, fbp: window.NF_TRACK ? NF_TRACK.fbp() : '', fbc: window.NF_TRACK ? NF_TRACK.fbc() : '' }) }).catch(function(){});
             }
           } catch (err) {}
-          try { if (window.NF_TRACK) NF_TRACK.lead({ source: 'contact_form' }); } catch (e) {} // conversion (consent-gated)
+          try { if (window.NF_TRACK) NF_TRACK.lead({ source: 'contact_form', eventId: eid }); } catch (e) {} // conversion (consent-gated), deduped with server CAPI
           form.innerHTML = '<div class="k">MESSAGE QUEUED</div><b>Thank you.</b><p>Your message has been received. We reply within one business day at the address you provided.</p>';
         });
       })();

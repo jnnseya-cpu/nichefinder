@@ -50,20 +50,26 @@
   }
 
   // Fire a Meta standard (track) or custom (trackCustom) event, respecting
-  // consent + load state.
-  function fbTrack(event, params, custom) {
+  // consent + load state. `eventId` (when present) is passed as fbq's eventID so
+  // the server-side Conversions API can deduplicate the same action.
+  function fbTrack(event, params, custom, eventId) {
     var method = custom ? 'trackCustom' : 'track';
-    var args = params ? [method, event, params] : [method, event];
+    var args = [method, event];
+    if (params || eventId) args.push(params || {});
+    if (eventId) args.push({ eventID: eventId });
     if (loaded.fb && window.fbq) { try { window.fbq.apply(null, args); } catch (e) {} return; }
     pixelQueue.push(args);
     if (consent('marketing')) loadPixel(); // flushes the queue
   }
 
   // Unified helper: GTM dataLayer event + optional Meta event (standard or,
-  // when `custom` is true, a Meta custom event).
+  // when `custom` is true, a Meta custom event). A params.eventId is lifted out
+  // as the Meta dedup key (kept out of the reported params).
   function track(gtmEvent, params, fbEvent, custom) {
-    dl(assign({ event: gtmEvent }, params || {}));
-    if (fbEvent) fbTrack(fbEvent, params || undefined, custom);
+    var p = params, eventId;
+    if (p && p.eventId) { eventId = p.eventId; p = assign({}, p); delete p.eventId; }
+    dl(assign({ event: gtmEvent }, p || {}));
+    if (fbEvent) fbTrack(fbEvent, p || undefined, custom, eventId);
   }
   function assign(a, b) { if (b) for (var k in b) if (Object.prototype.hasOwnProperty.call(b, k)) a[k] = b[k]; return a; }
 
@@ -86,8 +92,16 @@
     purchase: function (p) { track('purchase', p, 'Purchase'); },       // {value, currency, ...}
     subscribe: function (p) { track('subscribe', p, 'Subscribe'); },    // {value, currency, ...}
     // escape hatch: NF_TRACK.event('name', {..}, 'MetaEvent', /*custom*/ true)
-    event: function (name, p, fbEvent, custom) { track(name, p, fbEvent, custom); }
+    event: function (name, p, fbEvent, custom) { track(name, p, fbEvent, custom); },
+    // Dedup + match-quality helpers for pairing with the server Conversions API.
+    newId: function () { return 'nfx_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10); },
+    fbp: function () { return cookie('_fbp'); },
+    fbc: function () { return cookie('_fbc'); }
   };
+  function cookie(name) {
+    try { var m = document.cookie.match('(?:^|; )' + name + '=([^;]*)'); return m ? decodeURIComponent(m[1]) : ''; }
+    catch (e) { return ''; }
+  }
 
   function evaluate() {
     if (consent('analytics')) loadGTM();

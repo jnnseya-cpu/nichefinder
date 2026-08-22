@@ -511,9 +511,11 @@
         var em = (document.getElementById('fsEmail').value||'').trim();
         var base = (window.NF_GATEWAY_URL||'').replace(/\/$/,'');
         if (em && /.+@.+\..+/.test(em) && base){
+          var eid = window.NF_TRACK ? NF_TRACK.newId() : '';
           try { fetch(base+'/v1/leads',{method:'POST',headers:{'content-type':'application/json'},
-            body:JSON.stringify({email:em,name:'',message:'Free score: '+i+' / '+c+' = '+overall})}).catch(function(){}); } catch(e){}
-          try { if (window.NF_TRACK) NF_TRACK.lead({ source: 'free_score', country: c }); } catch(e){}
+            body:JSON.stringify({email:em,name:'',message:'Free score: '+i+' / '+c+' = '+overall,
+              eventId:eid, fbp: window.NF_TRACK?NF_TRACK.fbp():'', fbc: window.NF_TRACK?NF_TRACK.fbc():''})}).catch(function(){}); } catch(e){}
+          try { if (window.NF_TRACK) NF_TRACK.lead({ source: 'free_score', country: c, eventId: eid }); } catch(e){}
         }
         try { localStorage.setItem('nf_first_idea', JSON.stringify({idea:i,country:c})); } catch(e){}
       });

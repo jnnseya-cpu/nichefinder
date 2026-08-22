@@ -18,6 +18,8 @@ import { GatewayError } from './errors.js';
 import { credit, PACKAGES } from './wallet.js';
 import { onPaidPurchase } from './referrals.js';
 import { sendPurchaseReceipt } from './payments.js';
+import { emailForUserId } from './auth.js';
+import { sendEvent as capiSend } from './meta-capi.js';
 
 const KEY = process.env.KODA_SECRET_KEY || '';
 const WHSEC = process.env.KODA_WEBHOOK_SECRET || '';
@@ -185,6 +187,12 @@ export function handleKodaWebhook(rawBody, sigHeader) {
     try { onPaidPurchase({ user, gbp: PACKAGES[packageId].priceGBP, purchaseKey: `koda_${evId}` }); }
     catch (e) { console.error('[referrals] koda reward failed:', e.message); }
     sendPurchaseReceipt({ user, packageId, method: 'mobile money' });
+    // Server-side Purchase (mobile-money has no browser pixel event to dedup with).
+    capiSend({
+      eventName: 'Purchase', eventId: `koda_${evId}`,
+      eventSourceUrl: `${(process.env.PUBLIC_ORIGIN || 'https://nichefinderhq.com').replace(/\/$/, '')}/dashboard.html`,
+      email: emailForUserId(user), value: PACKAGES[packageId].priceGBP, currency: 'GBP',
+    });
   }
   return { received: true, credited: result.credited, replayed: result.replayed, user };
 }
