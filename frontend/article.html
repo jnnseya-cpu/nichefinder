@@ -119,92 +119,102 @@
 
   function esc(s){ var d = document.createElement('i'); d.textContent = s; return d.innerHTML; }
   var bodyEl = document.getElementById('artBody');
-  var title, metaDesc, sections, isFeature = !!feature && (!slug || feature.slug === slug);
-
-  if (isFeature){
-    title = feature.title;
-    metaDesc = feature.meta;
-    sections = [['', feature.lead]].concat(feature.s);
-  } else if (adminPost){
-    title = adminPost.title;
-    metaDesc = title;
-    sections = [['Why this matters', title + ' — here is how the Niche Finder operating system turns it into a real, fundable venture, and why founders are choosing evidence over guesswork.'],
-      ['Start from evidence', 'Every serious operator begins with market validation and a deterministic scoring pass before spending a penny. CBI_LINK shows most startups die from no market need.'],
-      ['Build the pack', 'A 3-year financial model, business plan, and pitch deck turn a validated idea into something capital can say yes to — all from one evidence base.'],
-      ['Do it this week', 'Run the free niche score, then one real search with your welcome credits. WB_LINK confirms small, cash-flowing entrants outlast funded generalists.']];
-  } else {
-    // no slug match: show the catalogue index
-    title = 'Niche Finder — the operating system for venture creation';
-    metaDesc = 'Feature guides for discovering, validating, and building your next business.';
-    sections = [['', 'Browse our field guides on every part of the venture operating system.']];
-    NFA.list.forEach(function(a){ sections.push(['→ ' + a.title, a.lead]); });
-  }
+  var isFeature = !!feature && (!slug || feature.slug === slug);
 
   var state = { used: {} };
-  function render(par){
+  function renderPar(par){
     return NFA.autolink(par, state)
       .replace('CBI_LINK', '<a class="ext" href="' + EXT[0][1] + '" rel="noopener nofollow" target="_blank">' + EXT[0][0] + '</a>')
       .replace('WB_LINK', '<a class="ext" href="' + EXT[1][1] + '" rel="noopener nofollow" target="_blank">' + EXT[1][0] + '</a>');
   }
-
-  document.title = 'Niche Finder — ' + title;
-  var md = document.querySelector('meta[name="description"]'); if (md) md.setAttribute('content', metaDesc.slice(0, 155));
-  document.getElementById('artTitle').textContent = title;
-  document.getElementById('artMeta').textContent = (isFeature ? 'FEATURE GUIDE' : (adminPost && adminPost.auto ? 'SEO AUTOPILOT' : 'GUIDE')) +
-    ' · NICHE FINDER · ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-
-  sections.forEach(function(sec){
-    if (sec[0]){ var h = document.createElement('h2'); h.textContent = sec[0]; bodyEl.appendChild(h); }
-    var p = document.createElement('p'); p.innerHTML = render(sec[1]); bodyEl.appendChild(p);
-  });
-
-  // Guaranteed high link density: every guide ends with an explicit tool map
-  // (deep internal links) + external sources — regardless of body phrasing.
-  if (isFeature || adminPost){
-    var tools = document.createElement('p');
-    tools.innerHTML = '<b>Explore the tools in this guide:</b> ' +
-      '<a href="index.html#top">free niche score</a> · ' +
-      '<a href="search.html">Search Canvas</a> · ' +
-      '<a href="project.html">Deep-Dive Build Hub</a> · ' +
-      '<a href="growth.html">AI Growth Engine</a> · ' +
-      '<a href="how-it-works.html">how the scoring works</a> · ' +
-      '<a href="dashboard.html">Command Center</a>.';
-    bodyEl.appendChild(tools);
-    var src = document.createElement('p');
-    src.style.fontSize = '.82rem'; src.style.color = 'var(--muted)';
-    src.innerHTML = '<b>Sources:</b> ' +
-      '<a class="ext" href="' + EXT[0][1] + '" rel="noopener nofollow" target="_blank">' + EXT[0][0] + '</a> · ' +
-      '<a class="ext" href="' + EXT[1][1] + '" rel="noopener nofollow" target="_blank">' + EXT[1][0] + '</a>.';
-    bodyEl.appendChild(src);
+  // A published (non-catalogue) article's body is generated from its title so it
+  // reads as a real, interlinked guide — the engine the SEO Autopilot implies.
+  function seededSections(t){
+    return [['Why this matters', t + ' — here is how the Niche Finder operating system turns it into a real, fundable venture, and why founders are choosing evidence over guesswork.'],
+      ['Start from evidence', 'Every serious operator begins with market validation and a deterministic scoring pass before spending a penny. CBI_LINK shows most startups die from no market need.'],
+      ['Build the pack', 'A 3-year financial model, business plan, and pitch deck turn a validated idea into something capital can say yes to — all from one evidence base.'],
+      ['Do it this week', 'Run the free niche score, then one real search with your welcome credits. WB_LINK confirms small, cash-flowing entrants outlast funded generalists.']];
   }
 
-  // Cross-article backlink mesh — every article links a rotating set of others.
-  var others = NFA.list.filter(function(a){ return !feature || a.slug !== feature.slug; });
-  if (others.length){
-    document.getElementById('related').hidden = false;
-    var list = document.getElementById('relatedList');
-    var start = feature ? NFA.list.indexOf(feature) : 0;
-    for (var k = 1; k <= 6 && k < NFA.list.length; k++){
-      var a = NFA.list[(start + k) % NFA.list.length];
-      var link = document.createElement('a');
-      link.href = 'article.html?s=' + encodeURIComponent(a.slug);
-      link.textContent = '→ ' + a.title;
-      list.appendChild(link);
+  // kind: 'feature' | 'post' | 'index'
+  function paint(kind, ttl, desc, secs, canonSlug){
+    state.used = {};
+    document.title = 'Niche Finder — ' + ttl;
+    var md = document.querySelector('meta[name="description"]'); if (md) md.setAttribute('content', String(desc).slice(0, 155));
+    document.getElementById('artTitle').textContent = ttl;
+    document.getElementById('artMeta').textContent = (kind === 'feature' ? 'FEATURE GUIDE' : kind === 'post' ? 'SEO ARTICLE' : 'GUIDE') +
+      ' · NICHE FINDER · ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+    bodyEl.innerHTML = '';
+    secs.forEach(function(sec){
+      if (sec[0]){ var h = document.createElement('h2'); h.textContent = sec[0]; bodyEl.appendChild(h); }
+      var p = document.createElement('p'); p.innerHTML = renderPar(sec[1]); bodyEl.appendChild(p);
+    });
+    if (kind === 'feature' || kind === 'post'){
+      var tools = document.createElement('p');
+      tools.innerHTML = '<b>Explore the tools in this guide:</b> ' +
+        '<a href="index.html#top">free niche score</a> · <a href="search.html">Search Canvas</a> · ' +
+        '<a href="project.html">Deep-Dive Build Hub</a> · <a href="growth.html">AI Growth Engine</a> · ' +
+        '<a href="how-it-works.html">how the scoring works</a> · <a href="dashboard.html">Command Center</a>.';
+      bodyEl.appendChild(tools);
+      var src = document.createElement('p');
+      src.style.fontSize = '.82rem'; src.style.color = 'var(--muted)';
+      src.innerHTML = '<b>Sources:</b> ' +
+        '<a class="ext" href="' + EXT[0][1] + '" rel="noopener nofollow" target="_blank">' + EXT[0][0] + '</a> · ' +
+        '<a class="ext" href="' + EXT[1][1] + '" rel="noopener nofollow" target="_blank">' + EXT[1][0] + '</a>.';
+      bodyEl.appendChild(src);
     }
+    // Cross-article backlink mesh.
+    if (NFA.list.length){
+      document.getElementById('related').hidden = false;
+      var listEl = document.getElementById('relatedList'); listEl.innerHTML = '';
+      var start = (kind === 'feature' && feature) ? NFA.list.indexOf(feature) : 0;
+      for (var k = 1; k <= 6 && k < NFA.list.length; k++){
+        var a = NFA.list[(start + k) % NFA.list.length];
+        var link = document.createElement('a');
+        link.href = 'article.html?s=' + encodeURIComponent(a.slug);
+        link.textContent = '→ ' + a.title;
+        listEl.appendChild(link);
+      }
+    }
+    // Structured data + canonical.
+    var ld = document.createElement('script');
+    ld.type = 'application/ld+json';
+    ld.textContent = JSON.stringify({ '@context': 'https://schema.org', '@type': 'Article', headline: ttl,
+      description: desc, author: { '@type': 'Organization', name: 'Niche Finder' },
+      publisher: { '@type': 'Organization', name: 'Niche Finder Ltd' },
+      mainEntityOfPage: location.origin + '/article.html?s=' + encodeURIComponent(canonSlug) });
+    document.head.appendChild(ld);
+    var canon = document.createElement('link'); canon.rel = 'canonical';
+    canon.href = location.origin + '/article.html?s=' + encodeURIComponent(canonSlug);
+    document.head.appendChild(canon);
   }
 
-  // Structured data + canonical
-  var canonSlug = feature ? feature.slug : (slug || 'index');
-  var ld = document.createElement('script');
-  ld.type = 'application/ld+json';
-  ld.textContent = JSON.stringify({ '@context': 'https://schema.org', '@type': 'Article', headline: title,
-    description: metaDesc, author: { '@type': 'Organization', name: 'Niche Finder' },
-    publisher: { '@type': 'Organization', name: 'Niche Finder Ltd' },
-    mainEntityOfPage: location.origin + '/article.html?s=' + encodeURIComponent(canonSlug) });
-  document.head.appendChild(ld);
-  var canon = document.createElement('link'); canon.rel = 'canonical';
-  canon.href = location.origin + '/article.html?s=' + encodeURIComponent(canonSlug);
-  document.head.appendChild(canon);
+  function paintIndex(){
+    var secs = [['', 'Browse our field guides on every part of the venture operating system.']];
+    NFA.list.forEach(function(a){ secs.push(['→ ' + a.title, a.lead]); });
+    paint('index', 'Niche Finder — the operating system for venture creation',
+      'Feature guides for discovering, validating, and building your next business.', secs, 'index');
+  }
+
+  if (isFeature){
+    paint('feature', feature.title, feature.meta, [['', feature.lead]].concat(feature.s), feature.slug);
+  } else if (adminPost){
+    paint('post', adminPost.title, adminPost.title, seededSections(adminPost.title), slug);
+  } else if (slug){
+    // Not a static feature or a local post — resolve from the gateway's public
+    // article store (deferred so nf-config.js has set NF_GATEWAY_URL).
+    window.addEventListener('DOMContentLoaded', function(){
+      var base = (window.NF_GATEWAY_URL || '').replace(/\/$/, '');
+      if (base && typeof fetch === 'function'){
+        fetch(base + '/v1/articles?slug=' + encodeURIComponent(slug))
+          .then(function(r){ return r.ok ? r.json() : null; })
+          .then(function(a){ if (a && a.slug){ paint('post', a.title, a.title, seededSections(a.title), a.slug); } else { paintIndex(); } })
+          .catch(paintIndex);
+      } else { paintIndex(); }
+    });
+  } else {
+    paintIndex();
+  }
 })();
 </script>
 

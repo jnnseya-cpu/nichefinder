@@ -13,6 +13,7 @@ import { saveDoc, getDoc, listDocs } from './docstore.js';
 import { issueChallenge, verifyChallenge } from './human.js';
 import { signup, login, logout, sessionFor, requestReset, resetPassword, listUsers, resolveUserId, emailForUserId, setRole, setDisabled, userByEmail, updateProfile, setMedia, changePassword, deleteAccount } from './auth.js';
 import { sendMail, mailConfigured } from './mailer.js';
+import { publishArticle, unpublishArticle, listArticles, getArticle } from './articles.js';
 import { startNewsletterScheduler, sendNewsletterOnce, handleUnsubscribe } from './newsletter.js';
 
 const MAX_BODY_BYTES = 2 * 1024 * 1024;
@@ -438,6 +439,15 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
+  // ---- public: server-published blog articles (SEO). Visible to every visitor. ----
+  if (method === 'GET' && url.pathname === '/v1/articles') {
+    try {
+      const slug = url.searchParams.get('slug');
+      if (slug) { const a = getArticle(slug); return a ? json(res, 200, a) : json(res, 404, { error: 'not_found' }); }
+      return json(res, 200, { articles: listArticles(url.searchParams.get('limit')) });
+    } catch (err) { return handleError(res, err); }
+  }
+
   // ---- leads: waitlist / contact capture (human-paced only; honeypot server-side too) ----
   if (req.method === 'POST' && url.pathname === '/v1/leads') {
     try {
@@ -642,6 +652,24 @@ const server = http.createServer(async (req, res) => {
       const text = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() || 'Test notification from Niche Finder.';
       await sendMail({ to: s.email, subject: `[TEST] ${subject}`, text, html });
       return json(res, 200, { sent: true, to: s.email });
+    } catch (err) { return handleError(res, err); }
+  }
+
+  // Admin: publish / unpublish a blog article to the public server store.
+  if (req.method === 'POST' && url.pathname === '/v1/admin/articles') {
+    try {
+      const s = adminOf();
+      if (!s) return json(res, 403, { error: 'admin_required' });
+      const body = JSON.parse((await readBody(req)) || '{}');
+      return json(res, 200, publishArticle({ title: body.title, category: body.category, format: body.format, slug: body.slug, auto: body.auto }));
+    } catch (err) { return handleError(res, err); }
+  }
+  if (req.method === 'POST' && url.pathname === '/v1/admin/articles/unpublish') {
+    try {
+      const s = adminOf();
+      if (!s) return json(res, 403, { error: 'admin_required' });
+      const body = JSON.parse((await readBody(req)) || '{}');
+      return json(res, 200, unpublishArticle(body.slug));
     } catch (err) { return handleError(res, err); }
   }
 

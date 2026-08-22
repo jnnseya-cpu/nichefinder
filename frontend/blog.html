@@ -114,24 +114,39 @@
     fg.appendChild(card);
   });
 
-  var posts;
-  try { posts = JSON.parse(localStorage.getItem('nf_admin_posts')) || []; } catch (e) { posts = []; }
-  var live = posts.filter(function(p){ return p.status === 'published'; });
-  if (!live.length) return;
-  var grid = document.getElementById('livePostGrid');
-  live.forEach(function(p){
-    var slug = p.slug || (p.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
-    var card = document.createElement('article');
-    card.className = 'card';
-    var link = 'article.html?s=' + encodeURIComponent(slug);
-    card.innerHTML = '<div class="k">PUBLISHED · SEO PIPELINE</div>' +
-      '<b><a href="' + link + '" style="color:inherit;text-decoration:none"></a></b>' +
-      '<p>Field-tested venture intelligence — interlinked, cited, and schema-tagged by the Content Agent.</p>' +
-      '<a class="read" href="' + link + '" style="font-size:.82rem;color:var(--gold-bright)">Read the article →</a>';
-    card.querySelector('b a').textContent = p.title;
-    grid.appendChild(card);
+  // Server-published articles (SEO Autopilot / admin) — fetched from the gateway
+  // so EVERY visitor sees them, not just the browser that published. Falls back
+  // to localStorage only when there is no gateway (offline demo). Deferred to
+  // DOMContentLoaded so nf-config.js (defer) has set NF_GATEWAY_URL.
+  function renderLive(list){
+    if (!list || !list.length) return;
+    var grid = document.getElementById('livePostGrid');
+    list.forEach(function(p){
+      var slug = p.slug || (p.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 70);
+      var card = document.createElement('article');
+      card.className = 'card';
+      var link = 'article.html?s=' + encodeURIComponent(slug);
+      card.innerHTML = '<div class="k"></div>' +
+        '<b><a href="' + link + '" style="color:inherit;text-decoration:none"></a></b>' +
+        '<p>Field-tested venture intelligence — interlinked, cited, and schema-tagged by the Content Agent.</p>' +
+        '<a class="read" href="' + link + '" style="font-size:.82rem;color:var(--gold-bright)">Read the article →</a>';
+      card.querySelector('.k').textContent = (p.category ? p.category + ' · ' : '') + 'PUBLISHED';
+      card.querySelector('b a').textContent = p.title;
+      grid.appendChild(card);
+    });
+    document.getElementById('livePosts').hidden = false;
+  }
+  window.addEventListener('DOMContentLoaded', function(){
+    var base = (window.NF_GATEWAY_URL || '').replace(/\/$/, '');
+    if (base && typeof fetch === 'function'){
+      fetch(base + '/v1/articles').then(function(r){ return r.ok ? r.json() : null; })
+        .then(function(d){ renderLive(d && d.articles); })
+        .catch(function(){});
+    } else {
+      var posts; try { posts = JSON.parse(localStorage.getItem('nf_admin_posts')) || []; } catch (e) { posts = []; }
+      renderLive(posts.filter(function(p){ return p.status === 'published'; }));
+    }
   });
-  document.getElementById('livePosts').hidden = false;
 })();
 </script>
 

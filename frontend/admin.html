@@ -383,11 +383,25 @@
 </footer>
 
 <script src="nf-config.js"></script>
+<script src="nf-auth.js"></script>
 <script src="../shared/nf-economy.js"></script>
 <script src="nf-wallet.js"></script>
 <script>
 (function(){
   var toast = document.getElementById('toast'), toastTimer;
+  // Real publishing: when signed in as an admin against a gateway, articles are
+  // published to the server store (visible to every visitor). Otherwise the SEO
+  // surfaces stay local-only (the prototype banner explains this).
+  var pubBase = (window.NF_GATEWAY_URL || '').replace(/\/$/, '');
+  function adminToken(){ var a = window.NF_AUTH && NF_AUTH.account && NF_AUTH.account(); var t = window.NF_AUTH && NF_AUTH.token && NF_AUTH.token(); return (a && a.role === 'admin' && t) ? t : null; }
+  function serverPublish(title, opts){
+    var token = adminToken();
+    if (!pubBase || !token) return Promise.reject(new Error('no_admin_session'));
+    return fetch(pubBase + '/v1/admin/articles', {
+      method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token },
+      body: JSON.stringify(Object.assign({ title: title }, opts || {}))
+    }).then(function(r){ if (!r.ok) throw new Error('publish_failed'); return r.json(); });
+  }
   function showToast(msg){
     toast.textContent = msg;
     toast.style.opacity = 1; toast.style.transform = 'translateX(-50%) translateY(0)';
@@ -482,9 +496,11 @@
     document.getElementById('seoAction').textContent = drafts ? drafts + ' draft article' + (drafts > 1 ? 's' : '') + ' ready for review and publishing.' : 'Assign a new topic to the Content Agent.';
     tbl.querySelectorAll('[data-publish]').forEach(function(b){
       b.addEventListener('click', function(){
-        posts[Number(b.getAttribute('data-publish'))].status = 'published';
-        savePosts(); renderPosts();
-        showToast('Post published to the blog pipeline.');
+        var post = posts[Number(b.getAttribute('data-publish'))];
+        b.disabled = true; b.textContent = 'Publishing…';
+        serverPublish(post.title, { category: 'SEO PIPELINE', format: 'article' })
+          .then(function(a){ post.status = 'published'; post.slug = a.slug; savePosts(); renderPosts(); showToast('Published LIVE to the blog — visible to every visitor.'); })
+          .catch(function(){ post.status = 'published'; savePosts(); renderPosts(); showToast('Published locally — sign in as an admin to publish live.'); });
       });
     });
   }
@@ -536,12 +552,16 @@
   function apCycle(manual){
     var next = AP_QUEUE.filter(function(t){ return !posts.some(function(p){ return p.title === t; }); })[0];
     if (!next){ document.getElementById('apLog').textContent = 'AUTOPILOT · keyword queue exhausted — add topics via the generator above.'; return; }
-    posts.unshift({ title: next, status: 'published', slug: slugify(next), ts: Date.now(), auto: true });
-    savePosts(); renderPosts(); apRender();
-    document.getElementById('apLog').textContent = 'AUTOPILOT · published “' + next.slice(0, 60) +
-      '” with internal links, cross-backlinks to ' + (posts.filter(function(p){ return p.status === 'published'; }).length - 1) +
-      ' articles, external citations, and Article schema. Live on the blog now.';
-    if (manual) showToast('Autopilot cycle complete — article published and interlinked.');
+    function done(live, slug){
+      posts.unshift({ title: next, status: 'published', slug: slug || slugify(next), ts: Date.now(), auto: true });
+      savePosts(); renderPosts(); apRender();
+      document.getElementById('apLog').textContent = 'AUTOPILOT · published “' + next.slice(0, 60) + '” ' +
+        (live ? 'LIVE to the public blog' : 'locally') + ' with internal links, cross-backlinks, external citations, and Article schema.';
+      if (manual) showToast(live ? 'Autopilot published a live article to the blog.' : 'Autopilot published locally — sign in as an admin for live.');
+    }
+    serverPublish(next, { category: 'SEO AUTOPILOT', format: 'article', auto: true })
+      .then(function(a){ done(true, a.slug); })
+      .catch(function(){ done(false); });
   }
   document.getElementById('apToggle').addEventListener('click', function(){
     localStorage.setItem('nf_seo_autopilot', apOn() ? '0' : '1');

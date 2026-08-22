@@ -117,6 +117,20 @@ check('non-admin cannot send a test email (403)', res.status === 403);
 res = await post('/v1/admin/test-email', { subject: 'Ping', html: '<b>hi</b>' }, { authorization: 'Bearer ' + boss.token });
 check('admin test-email is gated by SMTP config (503 when unconfigured, else 200)', res.status === 503 || res.status === 200, String(res.status));
 
+console.log('— admin article publishing (public SEO store) —');
+res = await post('/v1/admin/articles', { title: 'Test SEO Article' }, { authorization: 'Bearer ' + janeLogin.token });
+check('non-admin cannot publish an article (403)', res.status === 403);
+res = await post('/v1/admin/articles', { title: 'Test SEO Article', category: 'METHOD' }, { authorization: 'Bearer ' + boss.token });
+let art = await res.json();
+check('admin publishes an article with a slug', res.status === 200 && art.slug === 'test-seo-article', JSON.stringify(art));
+res = await getJson('/v1/articles');
+let arts = await res.json();
+check('public list includes the published article', res.status === 200 && arts.articles.some(function (a) { return a.slug === 'test-seo-article'; }));
+res = await getJson('/v1/articles?slug=test-seo-article');
+check('public single-article fetch works', res.status === 200 && (await res.json()).title === 'Test SEO Article');
+res = await post('/v1/admin/articles/unpublish', { slug: 'test-seo-article' }, { authorization: 'Bearer ' + boss.token });
+check('admin can unpublish', res.status === 200 && (await res.json()).removed === true);
+
 console.log('— roles + disable/enable —');
 res = await post('/v1/admin/role', { email: 'jane@example.com', role: 'admin' }, { authorization: 'Bearer ' + boss.token });
 check('admin can promote jane to admin', res.status === 200 && (await res.json()).role === 'admin');
