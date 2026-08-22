@@ -8,7 +8,7 @@ import { route, availableProviders, meterAcu } from './router.js';
 import { getWallet, getLedger, charge, credit, grant, summary, deleteWallet, migratePaid, PACKAGES } from './wallet.js';
 import { createCheckout, createSubscriptionCheckout, handleWebhook, paymentsConfigured } from './payments.js';
 import { createKodaIntent, handleKodaWebhook, kodaConfigured } from './koda.js';
-import { summaryFor as referralSummary } from './referrals.js';
+import { summaryFor as referralSummary, listPartners } from './referrals.js';
 import { saveDoc, getDoc, listDocs } from './docstore.js';
 import { issueChallenge, verifyChallenge } from './human.js';
 import { signup, login, logout, sessionFor, requestReset, resetPassword, listUsers, resolveUserId, emailForUserId, setRole, setDisabled, userByEmail, updateProfile, setMedia, changePassword, deleteAccount } from './auth.js';
@@ -653,6 +653,17 @@ const server = http.createServer(async (req, res) => {
       await sendMail({ to: s.email, subject: `[TEST] ${subject}`, text, html });
       return json(res, 200, { sent: true, to: s.email });
     } catch (err) { return handleError(res, err); }
+  }
+
+  // Admin: Growth Partner overview — real referral/commission data. Commission
+  // is auto-paid as ACU at qualification (no manual payout step), so this is a
+  // read-only reporting surface.
+  if (method === 'GET' && url.pathname === '/v1/admin/referrals') {
+    const s = adminOf();
+    if (!s) return json(res, 403, { error: 'admin_required' });
+    const data = listPartners();
+    data.rows = data.rows.map((r) => ({ ...r, email: emailForUserId(r.userId) || null }));
+    return json(res, 200, data);
   }
 
   // Admin: publish / unpublish a blog article to the public server store.

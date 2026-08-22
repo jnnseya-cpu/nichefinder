@@ -227,38 +227,20 @@
 
       <div class="spane" id="spane-partners">
         <div class="panel" style="margin-top:0">
-          <h3>Growth Partner Admin</h3>
-          <p class="sub">Approve partners, review referrals, and run commission jobs.</p>
-          <div class="frow">
-            <button class="btn" type="button" data-toast="Commission review queued — no pending referral commissions found.">Run commission review</button>
-            <button class="btn" type="button" data-toast="Monthly payout job queued — 0 payouts due.">Run monthly payouts</button>
+          <h3>Growth Partner Programme</h3>
+          <p class="sub">Every account has an invite code. When a referred user makes a real paid purchase, the referrer earns a commission that is <b>paid automatically as spendable ACU</b> — there is no manual payout step or cash rail to run. This is the live reporting view.</p>
+          <div class="kpis" style="margin-top:14px">
+            <div class="kpi" style="--kc:var(--gold)"><div class="k">Partners</div><div class="v" id="pPartners">—</div><div class="d">With referral activity</div></div>
+            <div class="kpi" style="--kc:var(--teal)"><div class="k">Qualified referrals</div><div class="v" id="pQualified">—</div><div class="d">Paid, commission-earning</div></div>
+            <div class="kpi" style="--kc:var(--violet)"><div class="k">Commission paid</div><div class="v" id="pAcu">—</div><div class="d">ACU auto-credited</div></div>
+            <div class="kpi" style="--kc:var(--blue)"><div class="k">Commission rate</div><div class="v" id="pRate">—</div><div class="d">Of paid GBP</div></div>
           </div>
         </div>
         <div class="panel">
-          <h3>Approve partner</h3>
-          <div class="frow">
-            <input class="field" type="text" placeholder="User UID">
-            <input class="field" type="text" placeholder="Custom commission % (optional)">
-          </div>
-          <div class="frow">
-            <button class="chip" type="button" aria-pressed="true">Influencer</button>
-            <button class="chip" type="button" aria-pressed="false">Strategic</button>
-            <button class="btn gold" type="button" data-toast="Partner approval recorded (prototype).">Approve</button>
-          </div>
-        </div>
-        <div class="panel">
-          <h3>Suspend partner</h3>
-          <div class="frow">
-            <input class="field" type="text" placeholder="User UID">
-            <input class="field" type="text" placeholder="Reason">
-            <button class="btn" type="button" data-toast="Partner suspension recorded (prototype).">Suspend</button>
-          </div>
-        </div>
-        <div class="panel">
-          <h3>Referrals</h3>
-          <table class="simple">
-            <tr><th>Referrer</th><th>Referee</th><th>Status</th><th>Commission</th></tr>
-            <tr><td colspan="4" style="color:var(--muted)">No referrals yet.</td></tr>
+          <h3>Partners</h3>
+          <p class="sub" id="partnerNote">Loading live referral data…</p>
+          <table class="simple" id="partnerTable">
+            <tr><th>Partner</th><th>Code</th><th>Referrals</th><th>Qualified</th><th>Commission (ACU)</th></tr>
           </table>
         </div>
       </div>
@@ -505,6 +487,35 @@
     });
   }
   renderPosts();
+
+  /* ---- Growth Partner programme: live referral data (read-only) ---- */
+  function renderPartners(){
+    var token = adminToken();
+    var note = document.getElementById('partnerNote');
+    var tbl = document.getElementById('partnerTable');
+    if (!pubBase || !token){ if (note) note.textContent = 'Sign in as an administrator to view live referral data.'; return; }
+    fetch(pubBase + '/v1/admin/referrals', { headers: { authorization: 'Bearer ' + token } })
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(d){
+        if (!d){ if (note) note.textContent = 'Could not load referral data.'; return; }
+        var set = function(id, v){ var el = document.getElementById(id); if (el) el.textContent = v; };
+        set('pPartners', d.totals.partners);
+        set('pQualified', d.totals.qualified);
+        set('pAcu', (d.totals.acuPaid || 0).toLocaleString('en-US'));
+        set('pRate', d.ratePct + '%');
+        var rows = d.rows || [];
+        tbl.innerHTML = '<tr><th>Partner</th><th>Code</th><th>Referrals</th><th>Qualified</th><th>Commission (ACU)</th></tr>' +
+          (rows.length ? rows.map(function(r){
+            return '<tr><td style="color:var(--text)">' + esc(r.email || (r.userId.slice(0, 14) + '…')) + '</td>' +
+              '<td style="font-family:var(--mono)">' + esc(r.code || '—') + '</td>' +
+              '<td>' + r.totalReferrals + '</td><td>' + r.qualifiedReferrals + '</td>' +
+              '<td>' + (r.acuEarned || 0).toLocaleString('en-US') + '</td></tr>';
+          }).join('') : '<tr><td colspan="5" style="color:var(--muted)">No referral activity yet.</td></tr>');
+        if (note) note.textContent = rows.length + ' partner' + (rows.length === 1 ? '' : 's') + ' with referral activity.';
+      })
+      .catch(function(){ if (note) note.textContent = 'Could not load referral data.'; });
+  }
+  renderPartners();
 
   document.getElementById('genDraft').addEventListener('click', function(){
     var topic = document.getElementById('blogTopic').value.trim();

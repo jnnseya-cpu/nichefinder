@@ -119,6 +119,35 @@ export function onPaidPurchase({ user, gbp, purchaseKey }) {
   return { rewarded: true, referrer, commissionAcu };
 }
 
+/* Admin overview: every account with referral activity, its real stats, and
+   program totals. Commission is auto-paid as ACU at qualification time (see the
+   file header) — so acuEarned is already-paid, not a pending payout. Read-only. */
+export function listPartners() {
+  const ids = new Set([...Object.keys(store.codes), ...Object.keys(store.earned)]);
+  const rows = [];
+  for (const userId of ids) {
+    const e = store.earned[userId] || { referrals: [], qualified: [], acu: 0, gbp: 0 };
+    if (!e.referrals.length && !e.qualified.length && !e.acu) continue; // no activity → not a partner row
+    rows.push({
+      userId,
+      code: store.codes[userId] || null,
+      totalReferrals: e.referrals.length,
+      qualifiedReferrals: e.qualified.length,
+      acuEarned: e.acu || 0,
+      gbpEarned: Math.round((e.gbp || 0) * 100) / 100,
+    });
+  }
+  rows.sort((a, b) => b.acuEarned - a.acuEarned);
+  const totals = rows.reduce((t, r) => ({
+    partners: t.partners + 1,
+    referrals: t.referrals + r.totalReferrals,
+    qualified: t.qualified + r.qualifiedReferrals,
+    acuPaid: t.acuPaid + r.acuEarned,
+    gbpCommission: Math.round((t.gbpCommission + r.gbpEarned) * 100) / 100,
+  }), { partners: 0, referrals: 0, qualified: 0, acuPaid: 0, gbpCommission: 0 });
+  return { rows, totals, ratePct: Math.round(RATE * 100) };
+}
+
 /* Dashboard summary for one account. */
 export function summaryFor(userId) {
   const code = codeFor(userId);

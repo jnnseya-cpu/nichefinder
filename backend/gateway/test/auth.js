@@ -131,6 +131,13 @@ check('public single-article fetch works', res.status === 200 && (await res.json
 res = await post('/v1/admin/articles/unpublish', { slug: 'test-seo-article' }, { authorization: 'Bearer ' + boss.token });
 check('admin can unpublish', res.status === 200 && (await res.json()).removed === true);
 
+console.log('— admin Growth Partner overview —');
+res = await getJson('/v1/admin/referrals', { authorization: 'Bearer ' + janeLogin.token });
+check('non-admin cannot read partner data (403)', res.status === 403);
+res = await getJson('/v1/admin/referrals', { authorization: 'Bearer ' + boss.token });
+let parts = await res.json();
+check('admin partner overview returns totals + rows + rate', res.status === 200 && parts.totals && Array.isArray(parts.rows) && typeof parts.ratePct === 'number', JSON.stringify(parts).slice(0, 200));
+
 console.log('— roles + disable/enable —');
 res = await post('/v1/admin/role', { email: 'jane@example.com', role: 'admin' }, { authorization: 'Bearer ' + boss.token });
 check('admin can promote jane to admin', res.status === 200 && (await res.json()).role === 'admin');
