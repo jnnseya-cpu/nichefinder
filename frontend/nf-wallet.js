@@ -241,6 +241,8 @@
       var errEl = overlay.querySelector('[data-buyerr]');
       if (base && typeof fetch === 'function') {
         btn.style.opacity = '.6'; if (errEl) errEl.textContent = '';
+        // Conversion event (consent-gated via nf-tags.js): InitiateCheckout.
+        try { if (window.NF_TRACK) NF_TRACK.startCheckout({ value: pkg.priceGBP, currency: 'GBP', packageId: pkg.id, method: payMethod }); } catch (e) {}
         var endpoint = payMethod === 'koda' ? '/v1/payments/koda-intent' : '/v1/payments/checkout';
         fetch(base + endpoint, {
           method: 'POST',

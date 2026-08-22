@@ -50,11 +50,15 @@
     var b = e.target.closest('[data-c]');
     if (!b) return;
     var mode = b.getAttribute('data-c');
-    save({
+    var categories = {
       necessary: true,
       analytics: mode === 'all' || mode === 'analytics',
       marketing: mode === 'all'
-    });
+    };
+    save(categories);
+    // Let consent-gated tags (nf-tags.js) load immediately on the user's choice,
+    // with no reload.
+    try { document.dispatchEvent(new CustomEvent('nf:consent', { detail: categories })); } catch (e) {}
     bar.remove(); // disappears immediately — no reload
   });
 

@@ -1,26 +1,10 @@
 <!doctype html>
 <html lang="en">
 <head>
-<!-- GTM:head (managed by scripts/inject-gtm.mjs) -->
-<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-WM23ZCZR');</script>
-<!-- /GTM:head -->
-<!-- FBPX:head (managed by scripts/inject-fbpixel.mjs) -->
-<script>
-!function(f,b,e,v,n,t,s)
-{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-n.queue=[];t=b.createElement(e);t.async=!0;
-t.src=v;s=b.getElementsByTagName(e)[0];
-s.parentNode.insertBefore(t,s)}(window, document,'script',
-'https://connect.facebook.net/en_US/fbevents.js');
-fbq('init', '1322395659736364');
-fbq('track', 'PageView');
-</script>
-<noscript><img height="1" width="1" style="display:none"
-src="https://www.facebook.com/tr?id=1322395659736364&ev=PageView&noscript=1"
-/></noscript>
-<!-- /FBPX:head -->
+<!-- TAGS:head (managed by scripts/inject-tags.mjs) -->
+<script src="nf-tags.js"></script>
+<!-- /TAGS:head -->
+
 
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -175,9 +159,6 @@ src="https://www.facebook.com/tr?id=1322395659736364&ev=PageView&noscript=1"
   <!-- PWA:END -->
 </head>
 <body>
-<!-- GTM:body (managed by scripts/inject-gtm.mjs) -->
-<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-WM23ZCZR" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-<!-- /GTM:body -->
 
 
 <header class="nav">
@@ -377,6 +358,12 @@ src="https://www.facebook.com/tr?id=1322395659736364&ev=PageView&noscript=1"
       if (q.get('payment') === 'success'){
         showToast('Payment received — your ACUs are being credited. Balance updates momentarily.');
         if (window.NF && NF.refresh){ NF.refresh(); setTimeout(NF.refresh, 2500); setTimeout(NF.refresh, 6000); }
+        // Conversion event (consent-gated via nf-tags.js): Purchase / Subscribe.
+        try {
+          var val = parseFloat(q.get('value')); var cur = q.get('currency') || 'GBP';
+          var p = isFinite(val) ? { value: val, currency: cur } : {};
+          if (window.NF_TRACK){ (q.get('sub') ? NF_TRACK.subscribe : NF_TRACK.purchase)(p); }
+        } catch (e) {}
         try { history.replaceState(null, '', location.pathname); } catch (e) {}
       }
     } catch (e) {}
@@ -565,6 +552,7 @@ src="https://www.facebook.com/tr?id=1322395659736364&ev=PageView&noscript=1"
   // aren't configured (offline demo).
   function subscribe(planId, btn){
     if (!planBase || !planUser){ if (window.NF && NF.openTopup) NF.openTopup(0, 'ACU top-up'); return; }
+    try { var pl = PLANS.filter(function(x){ return x.id === planId; })[0]; if (window.NF_TRACK) NF_TRACK.startCheckout({ value: pl ? parseFloat(String(pl.price).replace(/[^0-9.]/g, '')) : undefined, currency: 'GBP', plan: planId }); } catch (e) {}
     btn.disabled = true; var label = btn.textContent; btn.textContent = 'Redirecting…';
     fetch(planBase + '/v1/payments/subscribe', {
       method: 'POST', headers: { 'content-type': 'application/json' },

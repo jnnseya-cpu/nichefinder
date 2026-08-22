@@ -1,0 +1,91 @@
+/* Niche Finder — consent-gated analytics + marketing tags, with a unified
+   conversion API. Nothing loads until the visitor allows it (NFConsent):
+     • Google Tag Manager (GTM-WM23ZCZR) loads only with 'analytics' consent
+     • Meta Pixel (1322395659736364) loads only with 'marketing' consent
+   PageView fires on load (per tag). window.NF_TRACK.* fires conversion events
+   to BOTH — GTM via dataLayer, Meta via fbq — queueing until consent + load.
+
+   Load this AFTER nf-consent.js so NFConsent exists; it also re-checks on the
+   'nf:consent' event (banner choice) and on DOMContentLoaded, so it works for
+   fresh and returning visitors regardless of script order. */
+(function () {
+  'use strict';
+  var GTM_ID = 'GTM-WM23ZCZR';
+  var PIXEL_ID = '1322395659736364';
+  var loaded = { gtm: false, fb: false };
+  var pixelQueue = []; // fbq arg-arrays held until the pixel is live
+
+  function consent(cat) {
+    try { return !!(window.NFConsent && window.NFConsent.allowed && window.NFConsent.allowed(cat)); }
+    catch (e) { return false; }
+  }
+
+  // dataLayer is safe to populate before GTM loads (pushes replay on load).
+  window.dataLayer = window.dataLayer || [];
+  function dl(obj) { try { window.dataLayer.push(obj); } catch (e) {} }
+
+  function loadGTM() {
+    if (loaded.gtm) return; loaded.gtm = true;
+    window.dataLayer.push({ 'gtm.start': Date.now(), event: 'gtm.js' });
+    var f = document.getElementsByTagName('script')[0];
+    var j = document.createElement('script');
+    j.async = true; j.src = 'https://www.googletagmanager.com/gtm.js?id=' + GTM_ID;
+    f.parentNode.insertBefore(j, f);
+  }
+
+  function loadPixel() {
+    if (loaded.fb) return; loaded.fb = true;
+    /* eslint-disable */
+    !function (f, b, e, v, n, t, s) {
+      if (f.fbq) return; n = f.fbq = function () { n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments); };
+      if (!f._fbq) f._fbq = n; n.push = n; n.loaded = !0; n.version = '2.0'; n.queue = [];
+      t = b.createElement(e); t.async = !0; t.src = v; s = b.getElementsByTagName(e)[0]; s.parentNode.insertBefore(t, s);
+    }(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
+    /* eslint-enable */
+    window.fbq('init', PIXEL_ID);
+    window.fbq('track', 'PageView');
+    // Replay any conversion events captured before consent/load.
+    pixelQueue.forEach(function (args) { try { window.fbq.apply(null, args); } catch (e) {} });
+    pixelQueue = [];
+  }
+
+  // Fire a Meta standard/custom event, respecting consent + load state.
+  function fbTrack(event, params) {
+    var args = params ? ['track', event, params] : ['track', event];
+    if (loaded.fb && window.fbq) { try { window.fbq.apply(null, args); } catch (e) {} return; }
+    pixelQueue.push(args);
+    if (consent('marketing')) loadPixel(); // flushes the queue
+  }
+
+  // Unified conversion helper: GTM dataLayer event + optional Meta event.
+  function track(gtmEvent, params, fbEvent) {
+    dl(assign({ event: gtmEvent }, params || {}));
+    if (fbEvent) fbTrack(fbEvent, params || undefined);
+  }
+  function assign(a, b) { for (var k in b) if (Object.prototype.hasOwnProperty.call(b, k)) a[k] = b[k]; return a; }
+
+  window.NF_TRACK = {
+    // p is passed to both GTM (as event params) and Meta (as event params).
+    signup: function (p) { track('sign_up', p, 'CompleteRegistration'); },
+    lead: function (p) { track('lead', p, 'Lead'); },
+    contact: function (p) { track('contact', p, 'Contact'); },
+    search: function (p) { track('search', p, 'Search'); },
+    startCheckout: function (p) { track('begin_checkout', p, 'InitiateCheckout'); },
+    purchase: function (p) { track('purchase', p, 'Purchase'); },       // p: {value, currency, ...}
+    subscribe: function (p) { track('subscribe', p, 'Subscribe'); },    // p: {value, currency, ...}
+    event: function (name, p, fbEvent) { track(name, p, fbEvent); }     // escape hatch
+  };
+
+  function evaluate() {
+    if (consent('analytics')) loadGTM();
+    if (consent('marketing')) loadPixel();
+  }
+  // NFConsent may not exist yet if this runs before nf-consent.js (script order
+  // / defer). evaluate() is idempotent (loaders guard on `loaded`), so fire it on
+  // every signal by which NFConsent could have become available — plus live on
+  // the banner choice. This works for fresh and returning visitors either order.
+  evaluate();
+  document.addEventListener('nf:consent', evaluate);
+  document.addEventListener('DOMContentLoaded', evaluate);
+  window.addEventListener('load', evaluate);
+})();
