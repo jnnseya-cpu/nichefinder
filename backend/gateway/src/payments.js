@@ -55,7 +55,7 @@ export async function createCheckout({ user, packageId, origin }) {
     'line_items[0][price_data][product_data][name]': `Niche Finder — ${pkg.name} package (${total.toLocaleString('en-US')} ACU)`,
     'metadata[user]': user,
     'metadata[packageId]': packageId,
-    success_url: `${base}/frontend/dashboard.html?payment=success&value=${pkg.priceGBP}&currency=GBP&sid={CHECKOUT_SESSION_ID}`,
+    success_url: `${base}/frontend/dashboard.html?payment=success&value=${pkg.priceGBP}&currency=GBP&item=${packageId}&sid={CHECKOUT_SESSION_ID}`,
     cancel_url: `${base}/frontend/dashboard.html?payment=cancelled`,
   });
   const res = await fetch(`${STRIPE_API}/v1/checkout/sessions`, {
@@ -103,7 +103,7 @@ export async function createSubscriptionCheckout({ user, planId, origin }) {
     'metadata[planId]': planId,
     'subscription_data[metadata][user]': user,
     'subscription_data[metadata][planId]': planId,
-    success_url: `${base}/frontend/dashboard.html?payment=success&sub=1&value=${plan.priceGBP}&currency=GBP&sid={CHECKOUT_SESSION_ID}`,
+    success_url: `${base}/frontend/dashboard.html?payment=success&sub=1&value=${plan.priceGBP}&currency=GBP&item=${planId}&sid={CHECKOUT_SESSION_ID}`,
     cancel_url: `${base}/frontend/dashboard.html?payment=cancelled`,
   });
   const res = await fetch(`${STRIPE_API}/v1/checkout/sessions`, {

@@ -362,7 +362,8 @@
         try {
           var val = parseFloat(q.get('value')); var cur = q.get('currency') || 'GBP';
           var p = isFinite(val) ? { value: val, currency: cur } : {};
-          if (q.get('sid')) p.eventId = q.get('sid'); // dedup with the server Conversions API
+          if (q.get('sid')) { p.eventId = q.get('sid'); p.transaction_id = q.get('sid'); } // dedup + GA4 transaction id
+          if (q.get('item')) p.item_id = q.get('item'); // GA4 items[] item_id (package/plan)
           if (window.NF_TRACK){ (q.get('sub') ? NF_TRACK.subscribe : NF_TRACK.purchase)(p); }
         } catch (e) {}
         try { history.replaceState(null, '', location.pathname); } catch (e) {}
