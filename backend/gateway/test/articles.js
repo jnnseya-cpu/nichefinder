@@ -3,7 +3,7 @@ import fs from 'node:fs';
 process.env.ARTICLES_STORE = '/tmp/articles-test.json';
 try { fs.unlinkSync(process.env.ARTICLES_STORE); } catch {}
 
-const { publishArticle, unpublishArticle, listArticles, getArticle, slugify } = await import('../src/articles.js');
+const { publishArticle, unpublishArticle, listArticles, getArticle, slugify, seoScore, recordView, articleStats } = await import('../src/articles.js');
 
 let failures = 0;
 const check = (name, cond, detail = '') => {
@@ -34,6 +34,22 @@ check('list now has two, newest first', listArticles().length === 2 && listArtic
 console.log('— unpublish —');
 check('unpublish removes it', unpublishArticle(a.slug).removed === true && !getArticle(a.slug));
 check('list back to one', listArticles().length === 1);
+
+console.log('— SEO score —');
+const wellFormed = publishArticle({ title: 'How to Validate a Business Niche Before You Spend', category: 'METHOD' });
+check('a well-formed article scores high', seoScore(wellFormed) >= 85, String(seoScore(wellFormed)));
+check('a weak (short, no category) title scores lower', seoScore({ title: 'Hi', slug: 'hi' }) < seoScore(wellFormed));
+check('score is bounded 0-100', seoScore(wellFormed) <= 100 && seoScore({ title: '', slug: '' }) >= 0);
+check('listArticles carries seoScore + views', typeof listArticles()[0].seoScore === 'number' && typeof listArticles()[0].views === 'number');
+
+console.log('— view counting —');
+const vslug = wellFormed.slug;
+check('first view = 1', recordView(vslug).views === 1);
+check('second view = 2', recordView(vslug).views === 2);
+check('getArticle reflects view count', getArticle(vslug).views === 2);
+recordView('a-static-feature-slug'); recordView('a-static-feature-slug');
+check('views tracked for non-store (static) slugs too', articleStats().totalViews >= 4, JSON.stringify(articleStats()));
+check('articleStats reports published + avgSeo', articleStats().published >= 1 && articleStats().avgSeo > 0);
 
 console.log('— validation —');
 let threw = false; try { publishArticle({ title: '' }); } catch { threw = true; }

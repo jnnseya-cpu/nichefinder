@@ -152,12 +152,12 @@
       <div class="kpis">
         <div class="kpi" style="--kc:var(--gold)"><div class="k">Global Operators</div><div class="v" id="kOperators">9</div><div class="d">Registered users</div></div>
         <div class="kpi" style="--kc:var(--teal)"><div class="k">Platform Revenue</div><div class="v" id="kRevenue">£0.00</div><div class="d">Lifetime GBP</div></div>
-        <div class="kpi" style="--kc:var(--violet)"><div class="k">SEO Articles</div><div class="v" id="kArticles">18</div><div class="d" id="kPublished">17 published</div></div>
-        <div class="kpi" style="--kc:var(--blue)"><div class="k">Indexing Rate</div><div class="v">94%</div><div class="d">SEO pipeline</div></div>
+        <div class="kpi" style="--kc:var(--violet)"><div class="k">Published Articles</div><div class="v" id="kArticles">—</div><div class="d" id="kPublished">live on the blog</div></div>
+        <div class="kpi" style="--kc:var(--blue)"><div class="k">Avg SEO Score</div><div class="v" id="kSeoAvg">—</div><div class="d">On-page, out of 100</div></div>
         <div class="kpi" style="--kc:var(--red)"><div class="k">Model Spend</div><div class="v">$22.05</div><div class="d">Provider costs, 30 days</div></div>
         <div class="kpi" style="--kc:var(--red)"><div class="k">Operational Margin</div><div class="v" id="kMargin">-£22.05</div><div class="d">Revenue − cost</div></div>
-        <div class="kpi" style="--kc:var(--muted)"><div class="k">SEO Impressions</div><div class="v">0</div><div class="d">Search console</div></div>
-        <div class="kpi" style="--kc:var(--gold)"><div class="k">Semantic Clusters</div><div class="v">130</div><div class="d">Topic graph</div></div>
+        <div class="kpi" style="--kc:var(--muted)"><div class="k">Total Blog Views</div><div class="v" id="kViews">—</div><div class="d">All articles, all time</div></div>
+        <div class="kpi" style="--kc:var(--gold)"><div class="k">Drafts</div><div class="v" id="kDrafts">—</div><div class="d">awaiting publish</div></div>
       </div>
 
       <div class="panel">
@@ -266,10 +266,18 @@
     <section class="pane" id="pane-seo">
       <p class="sub" style="color:var(--muted);font-size:.85rem;margin-bottom:16px">Content generation and organic visibility</p>
       <div class="kpis">
-        <div class="kpi" style="--kc:var(--gold)"><div class="k">Total Impressions</div><div class="v">0</div><div class="d" id="seoPub">17 PUBLISHED</div></div>
-        <div class="kpi" style="--kc:var(--teal)"><div class="k">Organic Operators</div><div class="v">0</div><div class="d" id="seoArts">18 ARTICLES</div></div>
-        <div class="kpi" style="--kc:var(--blue)"><div class="k">GEO Search Visibility</div><div class="v">50%</div><div class="d">SCHEMA COVERAGE</div></div>
-        <div class="kpi" style="--kc:var(--violet)"><div class="k">Active Semantic Clusters</div><div class="v">130</div><div class="d" id="seoDrafts">1 DRAFTS</div></div>
+        <div class="kpi" style="--kc:var(--gold)"><div class="k">Total Blog Views</div><div class="v" id="seoViews">—</div><div class="d">All articles, all time</div></div>
+        <div class="kpi" style="--kc:var(--teal)"><div class="k">Published Articles</div><div class="v" id="seoPubCount">—</div><div class="d" id="seoPub">live on the blog</div></div>
+        <div class="kpi" style="--kc:var(--blue)"><div class="k">Avg SEO Score</div><div class="v" id="seoAvg">—</div><div class="d">On-page, out of 100</div></div>
+        <div class="kpi" style="--kc:var(--violet)"><div class="k">Drafts</div><div class="v" id="seoDraftCount">—</div><div class="d" id="seoDrafts">awaiting publish</div></div>
+      </div>
+
+      <div class="panel">
+        <h3>Live Articles — Views &amp; SEO</h3>
+        <p class="sub" id="liveArtNote">Real view counts and on-page SEO scores for every published article.</p>
+        <table class="simple" id="liveArtTable">
+          <tr><th>Title</th><th>Views</th><th>SEO</th></tr>
+        </table>
       </div>
 
       <div class="panel">
@@ -474,12 +482,8 @@
           : '<button class="btn gold" data-publish="' + i + '" style="padding:5px 12px;font-size:.74rem">Publish</button>') + '</td></tr>';
     }).join('');
     var drafts = posts.filter(function(p){ return p.status !== 'published'; }).length;
-    var pub = posts.length - drafts;
-    document.getElementById('kArticles').textContent = 16 + posts.length;
-    document.getElementById('kPublished').textContent = (16 + pub) + ' published';
-    document.getElementById('seoPub').textContent = (16 + pub) + ' PUBLISHED';
-    document.getElementById('seoArts').textContent = (16 + posts.length) + ' ARTICLES';
-    document.getElementById('seoDrafts').textContent = drafts + ' DRAFTS';
+    var setTxt = function(id, v){ var el = document.getElementById(id); if (el) el.textContent = v; };
+    setTxt('seoDraftCount', drafts); setTxt('kDrafts', drafts);
     document.getElementById('seoSignal').textContent = drafts ? drafts + ' draft' + (drafts > 1 ? 's' : '') + ' in the production pipeline awaiting publish.' : 'Production pipeline clear — all articles live.';
     document.getElementById('seoAction').textContent = drafts ? drafts + ' draft article' + (drafts > 1 ? 's' : '') + ' ready for review and publishing.' : 'Assign a new topic to the Content Agent.';
     tbl.querySelectorAll('[data-publish]').forEach(function(b){
@@ -487,12 +491,48 @@
         var post = posts[Number(b.getAttribute('data-publish'))];
         b.disabled = true; b.textContent = 'Publishing…';
         serverPublish(post.title, { category: 'SEO PIPELINE', format: 'article' })
-          .then(function(a){ post.status = 'published'; post.slug = a.slug; savePosts(); renderPosts(); showToast('Published LIVE to the blog — visible to every visitor.'); })
+          .then(function(a){ post.status = 'published'; post.slug = a.slug; savePosts(); renderPosts(); renderSeoStats(); showToast('Published LIVE to the blog — visible to every visitor.'); })
           .catch(function(){ post.status = 'published'; savePosts(); renderPosts(); showToast('Published locally — sign in as an admin to publish live.'); });
       });
     });
   }
   renderPosts();
+
+  /* ---- SEO stats: real total views, published count, avg on-page SEO score,
+     and a per-article Views/SEO table (server-backed). ---- */
+  function renderSeoStats(){
+    var token = adminToken();
+    var setTxt = function(id, v){ var el = document.getElementById(id); if (el) el.textContent = v; };
+    if (pubBase && token){
+      fetch(pubBase + '/v1/admin/articles/stats', { headers: { authorization: 'Bearer ' + token } })
+        .then(function(r){ return r.ok ? r.json() : null; })
+        .then(function(d){
+          if (!d) return;
+          var views = (d.totalViews || 0).toLocaleString('en-US');
+          setTxt('seoViews', views); setTxt('kViews', views);
+          setTxt('seoPubCount', d.published || 0); setTxt('kArticles', d.published || 0);
+          setTxt('seoAvg', (d.avgSeo || 0) + '/100'); setTxt('kSeoAvg', (d.avgSeo || 0) + '/100');
+        }).catch(function(){});
+    }
+    if (pubBase){
+      fetch(pubBase + '/v1/articles').then(function(r){ return r.ok ? r.json() : null; }).then(function(d){
+        var tbl = document.getElementById('liveArtTable');
+        var note = document.getElementById('liveArtNote');
+        if (!tbl || !d || !d.articles) return;
+        var rows = d.articles;
+        tbl.innerHTML = '<tr><th>Title</th><th>Views</th><th>SEO</th></tr>' +
+          (rows.length ? rows.map(function(a){
+            var sc = a.seoScore || 0;
+            var col = sc >= 80 ? 'var(--teal)' : sc >= 60 ? 'var(--gold-bright)' : 'var(--red)';
+            return '<tr><td style="color:var(--text)"><a href="article.html?s=' + encodeURIComponent(a.slug) + '" style="color:var(--gold-bright);text-decoration:none">' + esc(a.title) + '</a></td>' +
+              '<td style="font-family:var(--mono)">' + (a.views || 0).toLocaleString('en-US') + '</td>' +
+              '<td style="font-family:var(--mono);color:' + col + '">' + sc + '</td></tr>';
+          }).join('') : '<tr><td colspan="3" style="color:var(--muted)">No published articles yet.</td></tr>');
+        if (note) note.textContent = rows.length + ' published article' + (rows.length === 1 ? '' : 's') + ' · views + on-page SEO score.';
+      }).catch(function(){});
+    }
+  }
+  renderSeoStats();
 
   /* ---- Growth Partner programme: live referral data (read-only) ---- */
   function renderPartners(){
@@ -571,7 +611,7 @@
     if (!next){ document.getElementById('apLog').textContent = 'AUTOPILOT · keyword queue exhausted — add topics via the generator above.'; return; }
     function done(live, slug){
       posts.unshift({ title: next, status: 'published', slug: slug || slugify(next), ts: Date.now(), auto: true });
-      savePosts(); renderPosts(); apRender();
+      savePosts(); renderPosts(); renderSeoStats(); apRender();
       document.getElementById('apLog').textContent = 'AUTOPILOT · published “' + next.slice(0, 60) + '” ' +
         (live ? 'LIVE to the public blog' : 'locally') + ' with internal links, cross-backlinks, external citations, and Article schema.';
       if (manual) showToast(live ? 'Autopilot published a live article to the blog.' : 'Autopilot published locally — sign in as an admin for live.');

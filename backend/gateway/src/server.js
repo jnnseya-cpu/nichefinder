@@ -13,7 +13,7 @@ import { saveDoc, getDoc, listDocs } from './docstore.js';
 import { issueChallenge, verifyChallenge } from './human.js';
 import { signup, login, logout, sessionFor, requestReset, resetPassword, listUsers, resolveUserId, emailForUserId, setRole, setDisabled, userByEmail, updateProfile, setMedia, changePassword, deleteAccount } from './auth.js';
 import { sendMail, mailConfigured } from './mailer.js';
-import { publishArticle, unpublishArticle, listArticles, getArticle } from './articles.js';
+import { publishArticle, unpublishArticle, listArticles, getArticle, recordView, articleStats } from './articles.js';
 import { sendEvent as capiSend } from './meta-capi.js';
 import { startNewsletterScheduler, sendNewsletterOnce, handleUnsubscribe } from './newsletter.js';
 
@@ -449,6 +449,16 @@ const server = http.createServer(async (req, res) => {
     } catch (err) { return handleError(res, err); }
   }
 
+  // Record one blog view (any article slug, static or published). Public; the
+  // client throttles per session so a reload doesn't inflate the count.
+  if (req.method === 'POST' && url.pathname === '/v1/articles/view') {
+    try {
+      const body = JSON.parse((await readBody(req)) || '{}');
+      if (!body.slug) return json(res, 400, { error: 'slug_required' });
+      return json(res, 200, recordView(body.slug));
+    } catch (err) { return handleError(res, err); }
+  }
+
   // ---- leads: waitlist / contact capture (human-paced only; honeypot server-side too) ----
   if (req.method === 'POST' && url.pathname === '/v1/leads') {
     try {
@@ -672,6 +682,13 @@ const server = http.createServer(async (req, res) => {
     const data = listPartners();
     data.rows = data.rows.map((r) => ({ ...r, email: emailForUserId(r.userId) || null }));
     return json(res, 200, data);
+  }
+
+  // Admin: SEO console stats — real published count, total views, avg SEO score.
+  if (method === 'GET' && url.pathname === '/v1/admin/articles/stats') {
+    const s = adminOf();
+    if (!s) return json(res, 403, { error: 'admin_required' });
+    return json(res, 200, articleStats());
   }
 
   // Admin: publish / unpublish a blog article to the public server store.

@@ -15,8 +15,12 @@ let store = load();
 let timer = null;
 
 function load() {
-  try { return JSON.parse(fs.readFileSync(STORE_PATH, 'utf8')); }
-  catch { return { articles: {} }; }
+  try {
+    const s = JSON.parse(fs.readFileSync(STORE_PATH, 'utf8'));
+    if (!s.articles) s.articles = {};
+    if (!s.views) s.views = {};   // slug -> view count (tracks static + published articles)
+    return s;
+  } catch { return { articles: {}, views: {} }; }
 }
 function persist() {
   if (timer) return;
@@ -70,14 +74,60 @@ export function unpublishArticle(slug) {
   return { removed: false, slug: s };
 }
 
-// Public list, newest first, capped.
+// Deterministic on-page SEO score (0-100) from measurable signals: title length
+// + word count, category present, slug quality, plus the schema + internal/
+// external link mesh every article renders. No black box — the same inputs
+// always give the same score.
+export function seoScore(a) {
+  if (!a) return 0;
+  const title = String(a.title || '');
+  const slug = String(a.slug || '');
+  let s = 0;
+  const len = title.length;
+  if (len >= 35 && len <= 65) s += 30; else if (len >= 25 && len <= 75) s += 20; else if (len > 0) s += 8;
+  const words = title.trim().split(/\s+/).filter(Boolean).length;
+  if (words >= 4 && words <= 12) s += 15; else if (words > 0) s += 7;
+  if (a.category) s += 10;
+  const slugWords = slug.split('-').filter(Boolean).length;
+  if (slug.length <= 70 && slugWords >= 3 && slugWords <= 9) s += 15; else if (slug) s += 8;
+  s += 15; // JSON-LD Article schema (every article renders it)
+  s += 15; // internal link mesh + external authority citations
+  return Math.min(100, s);
+}
+
+function decorate(a) {
+  return Object.assign({}, a, { views: store.views[a.slug] || 0, seoScore: seoScore(a) });
+}
+
+// Record one view for a slug (static feature articles included). Client throttles
+// per session so a reload doesn't inflate the count.
+export function recordView(slug) {
+  const s = slugify(slug);
+  if (!s) return { views: 0 };
+  store.views[s] = (store.views[s] || 0) + 1;
+  persist();
+  return { slug: s, views: store.views[s] };
+}
+
+// Public list, newest first, capped — each with live views + SEO score.
 export function listArticles(limit = 200) {
   const n = Math.max(1, Math.min(Number(limit) || 200, 500));
   return Object.values(store.articles)
     .sort((a, b) => (b.publishedAt || 0) - (a.publishedAt || 0))
-    .slice(0, n);
+    .slice(0, n)
+    .map(decorate);
 }
 
 export function getArticle(slug) {
-  return store.articles[slugify(slug)] || null;
+  const a = store.articles[slugify(slug)];
+  return a ? decorate(a) : null;
+}
+
+// Aggregate stats for the admin SEO console. totalViews spans EVERY tracked slug
+// (static + published); avgSeo is over the published store.
+export function articleStats() {
+  const arts = Object.values(store.articles);
+  const totalViews = Object.values(store.views).reduce((t, n) => t + (n || 0), 0);
+  const avgSeo = arts.length ? Math.round(arts.reduce((t, a) => t + seoScore(a), 0) / arts.length) : 0;
+  return { published: arts.length, totalViews, avgSeo };
 }

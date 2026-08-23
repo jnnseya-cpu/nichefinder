@@ -127,6 +127,20 @@
   var bodyEl = document.getElementById('artBody');
   var isFeature = !!feature && (!slug || feature.slug === slug);
 
+  // Record one view per browser session (covers static + published articles).
+  (function recordView(){
+    var s = slug || (feature && feature.slug);
+    if (!s) return;
+    try { if (sessionStorage.getItem('nf_viewed_' + s)) return; sessionStorage.setItem('nf_viewed_' + s, '1'); } catch (e) {}
+    function send(){
+      var base = (window.NF_GATEWAY_URL || '').replace(/\/$/, '');
+      if (base && typeof fetch === 'function'){
+        fetch(base + '/v1/articles/view', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ slug: s }) }).catch(function(){});
+      }
+    }
+    if (window.NF_GATEWAY_URL) send(); else window.addEventListener('DOMContentLoaded', send);
+  })();
+
   var state = { used: {} };
   function renderPar(par){
     return NFA.autolink(par, state)

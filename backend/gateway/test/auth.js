@@ -128,6 +128,13 @@ let arts = await res.json();
 check('public list includes the published article', res.status === 200 && arts.articles.some(function (a) { return a.slug === 'test-seo-article'; }));
 res = await getJson('/v1/articles?slug=test-seo-article');
 check('public single-article fetch works', res.status === 200 && (await res.json()).title === 'Test SEO Article');
+res = await post('/v1/articles/view', { slug: 'test-seo-article' });
+check('public view endpoint increments (returns count)', res.status === 200 && (await res.json()).views >= 1);
+res = await getJson('/v1/admin/articles/stats', { authorization: 'Bearer ' + boss.token });
+let astats = await res.json();
+check('admin article stats: views + published + avgSeo', res.status === 200 && astats.totalViews >= 1 && typeof astats.avgSeo === 'number', JSON.stringify(astats));
+res = await getJson('/v1/admin/articles/stats', { authorization: 'Bearer ' + janeLogin.token });
+check('non-admin cannot read article stats (403)', res.status === 403);
 res = await post('/v1/admin/articles/unpublish', { slug: 'test-seo-article' }, { authorization: 'Bearer ' + boss.token });
 check('admin can unpublish', res.status === 200 && (await res.json()).removed === true);
 
