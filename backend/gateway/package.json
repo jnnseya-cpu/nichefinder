@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "MOCK_AI=1 node src/server.js",
-    "test": "node test/smoke.js && node test/paycycle.js && node test/subscriptions.js && node test/koda.js && node test/auth.js && node test/mailer.js && node test/referrals.js && node test/newsletter.js && node test/migrate.js && node test/articles.js && node test/capi.js"
+    "test": "node test/smoke.js && node test/paycycle.js && node test/subscriptions.js && node test/koda.js && node test/auth.js && node test/mailer.js && node test/referrals.js && node test/newsletter.js && node test/migrate.js && node test/articles.js && node test/capi.js && node test/gsc.js"
   },
   "engines": {
     "node": ">=20"

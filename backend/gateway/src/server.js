@@ -15,6 +15,7 @@ import { signup, login, logout, sessionFor, requestReset, resetPassword, listUse
 import { sendMail, mailConfigured } from './mailer.js';
 import { publishArticle, unpublishArticle, listArticles, getArticle, recordView, articleStats } from './articles.js';
 import { sendEvent as capiSend } from './meta-capi.js';
+import { getSearchConsole, gscConfigured } from './search-console.js';
 import { startNewsletterScheduler, sendNewsletterOnce, handleUnsubscribe } from './newsletter.js';
 
 const MAX_BODY_BYTES = 2 * 1024 * 1024;
@@ -691,6 +692,17 @@ const server = http.createServer(async (req, res) => {
     return json(res, 200, articleStats());
   }
 
+  // Admin: real Google Search Console performance (impressions/clicks/position),
+  // per article + totals. Returns { configured:false } until GSC env is set.
+  if (method === 'GET' && url.pathname === '/v1/admin/search-console') {
+    try {
+      const s = adminOf();
+      if (!s) return json(res, 403, { error: 'admin_required' });
+      const data = await getSearchConsole({ force: url.searchParams.get('force') === '1' });
+      return json(res, 200, data);
+    } catch (err) { return handleError(res, err); }
+  }
+
   // Admin: publish / unpublish a blog article to the public server store.
   if (req.method === 'POST' && url.pathname === '/v1/admin/articles') {
     try {
@@ -777,6 +789,7 @@ const server = http.createServer(async (req, res) => {
       leads: readJsonl(LEADS_PATH, 100000).length,
       payments: paymentsConfigured(),
       mailConfigured: mailConfigured(),
+      searchConsole: gscConfigured(),
       providers: availableProviders(),
       fallbackChain: config.fallbackChain,
       mock: config.mock,

@@ -73,6 +73,16 @@ SMTP_PASS=REPLACE_WITH_MAILBOX_PASSWORD
 SMTP_FROM=Niche Finder <contact@nichefinderhq.com>
 # where contact-form submissions are emailed (defaults to SMTP_USER)
 CONTACT_INBOX=contact@nichefinderhq.com
+# marketing / measurement (all optional — features stay inert until set)
+#   Meta Conversions API (server-side pixel): Events Manager → Conversions API
+META_CAPI_TOKEN=
+#   route CAPI to Test Events while validating, then remove:
+META_TEST_EVENT_CODE=
+#   Google Search Console (real impressions/clicks/position on the SEO console):
+#   add the service-account email as a user in Search Console → Settings → Users.
+GSC_SITE_URL=sc-domain:nichefinderhq.com
+GSC_SA_EMAIL=
+GSC_SA_PRIVATE_KEY=
 # persistent stores (survive restarts)
 WALLET_STORE=/opt/nichefinder/backend/gateway/data/wallets.json
 AUTH_STORE=/opt/nichefinder/backend/gateway/data/auth.json

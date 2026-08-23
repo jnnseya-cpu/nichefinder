@@ -271,13 +271,19 @@
         <div class="kpi" style="--kc:var(--blue)"><div class="k">Avg SEO Score</div><div class="v" id="seoAvg">—</div><div class="d">On-page, out of 100</div></div>
         <div class="kpi" style="--kc:var(--violet)"><div class="k">Drafts</div><div class="v" id="seoDraftCount">—</div><div class="d" id="seoDrafts">awaiting publish</div></div>
       </div>
+      <div class="kpis" style="margin-top:14px">
+        <div class="kpi" style="--kc:var(--teal)"><div class="k">Search Impressions</div><div class="v" id="gscImp">—</div><div class="d">Google, last 28 days</div></div>
+        <div class="kpi" style="--kc:var(--gold)"><div class="k">Search Clicks</div><div class="v" id="gscClk">—</div><div class="d">Google, last 28 days</div></div>
+        <div class="kpi" style="--kc:var(--blue)"><div class="k">Avg Position</div><div class="v" id="gscPos">—</div><div class="d">lower is better</div></div>
+      </div>
 
       <div class="panel">
-        <h3>Live Articles — Views &amp; SEO</h3>
-        <p class="sub" id="liveArtNote">Real view counts and on-page SEO scores for every published article.</p>
+        <h3>Live Articles — Views, SEO &amp; Search</h3>
+        <p class="sub" id="liveArtNote">Real view counts, on-page SEO scores, and Google Search performance for every published article.</p>
         <table class="simple" id="liveArtTable">
-          <tr><th>Title</th><th>Views</th><th>SEO</th></tr>
+          <tr><th>Title</th><th>Views</th><th>SEO</th><th>Impr.</th><th>Clicks</th><th>Pos.</th></tr>
         </table>
+        <p class="sub" id="gscNote" style="margin-top:10px;display:none"></p>
       </div>
 
       <div class="panel">
@@ -515,21 +521,45 @@
         }).catch(function(){});
     }
     if (pubBase){
-      fetch(pubBase + '/v1/articles').then(function(r){ return r.ok ? r.json() : null; }).then(function(d){
+      // Pull articles and Search Console performance together, then merge by slug.
+      var pArts = fetch(pubBase + '/v1/articles').then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; });
+      var pGsc = token ? fetch(pubBase + '/v1/admin/search-console', { headers: { authorization: 'Bearer ' + token } }).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; }) : Promise.resolve(null);
+      Promise.all([pArts, pGsc]).then(function(out){
+        var d = out[0], gsc = out[1] || { configured: false, bySlug: {}, totals: {} };
         var tbl = document.getElementById('liveArtTable');
         var note = document.getElementById('liveArtNote');
+        var gnote = document.getElementById('gscNote');
+        var by = gsc.bySlug || {};
+        // Search Console KPIs
+        if (gsc.configured && gsc.totals){
+          setTxt('gscImp', (gsc.totals.impressions || 0).toLocaleString('en-US'));
+          setTxt('gscClk', (gsc.totals.clicks || 0).toLocaleString('en-US'));
+          setTxt('gscPos', gsc.totals.avgPosition || '—');
+        } else {
+          setTxt('gscImp', '—'); setTxt('gscClk', '—'); setTxt('gscPos', '—');
+        }
+        if (gnote){
+          if (!gsc.configured){ gnote.style.display = ''; gnote.innerHTML = '<b style="color:var(--gold)">Search Console not connected.</b> Set <span style="font-family:var(--mono)">GSC_SITE_URL</span>, <span style="font-family:var(--mono)">GSC_SA_EMAIL</span> and <span style="font-family:var(--mono)">GSC_SA_PRIVATE_KEY</span> on the gateway to show real impressions, clicks and position.'; }
+          else if (gsc.error){ gnote.style.display = ''; gnote.textContent = 'Search Console error: ' + gsc.error; }
+          else { gnote.style.display = 'none'; }
+        }
         if (!tbl || !d || !d.articles) return;
         var rows = d.articles;
-        tbl.innerHTML = '<tr><th>Title</th><th>Views</th><th>SEO</th></tr>' +
+        tbl.innerHTML = '<tr><th>Title</th><th>Views</th><th>SEO</th><th>Impr.</th><th>Clicks</th><th>Pos.</th></tr>' +
           (rows.length ? rows.map(function(a){
             var sc = a.seoScore || 0;
             var col = sc >= 80 ? 'var(--teal)' : sc >= 60 ? 'var(--gold-bright)' : 'var(--red)';
+            var g = by[(a.slug || '').toLowerCase()] || {};
+            var m = function(v){ return (v == null || v === '') ? '<span style="color:var(--muted)">—</span>' : v; };
             return '<tr><td style="color:var(--text)"><a href="article.html?s=' + encodeURIComponent(a.slug) + '" style="color:var(--gold-bright);text-decoration:none">' + esc(a.title) + '</a></td>' +
               '<td style="font-family:var(--mono)">' + (a.views || 0).toLocaleString('en-US') + '</td>' +
-              '<td style="font-family:var(--mono);color:' + col + '">' + sc + '</td></tr>';
-          }).join('') : '<tr><td colspan="3" style="color:var(--muted)">No published articles yet.</td></tr>');
-        if (note) note.textContent = rows.length + ' published article' + (rows.length === 1 ? '' : 's') + ' · views + on-page SEO score.';
-      }).catch(function(){});
+              '<td style="font-family:var(--mono);color:' + col + '">' + sc + '</td>' +
+              '<td style="font-family:var(--mono)">' + m(g.impressions != null ? g.impressions.toLocaleString('en-US') : '') + '</td>' +
+              '<td style="font-family:var(--mono)">' + m(g.clicks != null ? g.clicks : '') + '</td>' +
+              '<td style="font-family:var(--mono)">' + m(g.position != null ? g.position : '') + '</td></tr>';
+          }).join('') : '<tr><td colspan="6" style="color:var(--muted)">No published articles yet.</td></tr>');
+        if (note) note.textContent = rows.length + ' published article' + (rows.length === 1 ? '' : 's') + (gsc.configured ? ' · views, SEO score + Search Console (last 28 days)' : ' · views + on-page SEO score');
+      });
     }
   }
   renderSeoStats();
