@@ -802,7 +802,7 @@
     var controller = new AbortController();
     var timer = setTimeout(function(){ controller.abort(); }, 210000); // deep docs run ~2 min; never hang
     fetch(base + '/v1/document', {
-      method: 'POST', headers: { 'content-type': 'application/json' }, signal: controller.signal,
+      method: 'POST', headers: Object.assign({ 'content-type': 'application/json' }, (window.NF_AUTH ? NF_AUTH.authHeader() : {})), signal: controller.signal,
       body: JSON.stringify({
         user: window.NF_WALLET_USER, docType: a.id, project: P.id, system: sys,
         messages: [{ role: 'user', content: usr }], jsonSchema: (a.id === 'gtm' ? GTM_SCHEMA : DOC_SCHEMA), effort: 'high', maxTokens: (a.id === 'gtm' ? 22000 : 14000),
@@ -875,7 +875,8 @@
   (function restoreServerDocs(){
     var base = (window.NF_GATEWAY_URL || '').replace(/\/$/, ''), user = window.NF_WALLET_USER;
     if (!base || !user || typeof fetch !== 'function') return;
-    fetch(base + '/v1/documents?user=' + encodeURIComponent(user) + '&project=' + encodeURIComponent(project.id))
+    fetch(base + '/v1/documents?user=' + encodeURIComponent(user) + '&project=' + encodeURIComponent(project.id),
+      { headers: (window.NF_AUTH ? NF_AUTH.authHeader() : {}) })
       .then(function(r){ return r.ok ? r.json() : null; })
       .then(function(d){
         if (!d || !d.documents || !d.documents.length) return;

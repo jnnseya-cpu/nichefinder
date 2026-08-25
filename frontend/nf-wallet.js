@@ -280,7 +280,9 @@
     try {
       fetch(base + path, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        // Attach the account session when signed in — the gateway ties an account
+        // wallet to its owner, so a spend/credit must prove it's really them.
+        headers: Object.assign({ 'content-type': 'application/json' }, (window.NF_AUTH ? NF_AUTH.authHeader() : {})),
         body: JSON.stringify(Object.assign({ user: window.NF_WALLET_USER || 'op_anonymous' }, payload))
       }).then(function (r) { return r.ok ? r.json() : null; }).then(function (data) {
         if (data && data.wallet) saveWallet({ paid: data.wallet.paid, free: data.wallet.free });
@@ -291,7 +293,8 @@
     var base = gatewayBase();
     if (!base || typeof fetch !== 'function') return;
     try {
-      fetch(base + '/v1/wallet?user=' + encodeURIComponent(window.NF_WALLET_USER || 'op_anonymous'))
+      fetch(base + '/v1/wallet?user=' + encodeURIComponent(window.NF_WALLET_USER || 'op_anonymous'),
+        { headers: (window.NF_AUTH ? NF_AUTH.authHeader() : {}) })
         .then(function (r) { return r.ok ? r.json() : null; })
         .then(function (w) { if (w && typeof w.paid === 'number') { saveWallet({ paid: w.paid, free: w.free }); try { document.dispatchEvent(new CustomEvent('nf:wallet')); } catch (e) {} } })
         .catch(function () {});

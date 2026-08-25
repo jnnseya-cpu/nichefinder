@@ -853,7 +853,7 @@
     var timer = setTimeout(function(){ controller.abort(); }, 210000);
     return fetch(GATEWAY + '/v1/generate', {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: Object.assign({ 'content-type': 'application/json' }, (window.NF_AUTH ? NF_AUTH.authHeader() : {})),
       signal: controller.signal,
       body: JSON.stringify({
         system: 'You are the Opportunity Discovery Agent of Niche Finder, a venture intelligence OS. Act as a world-class venture analyst. Before answering, reason deeply about the local economy, demand evidence, realistic pricing, capacity constraints, and cost structures — every number you output must be defensible and internally consistent (revenue ramps must respect capacity, costs must reconcile with the gross margin, break-even must follow from the cashflow). Never output round guesses.',

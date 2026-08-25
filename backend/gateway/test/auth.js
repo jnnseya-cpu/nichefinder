@@ -93,7 +93,7 @@ res = await post('/v1/admin/grant', { email: 'jane@example.com', amount: 750, re
 let granted = await res.json();
 check('admin grants 750 usable ACU to jane', res.status === 200 && granted.granted === 750 && granted.wallet.paid === 750, JSON.stringify(granted));
 
-res = await getJson('/v1/wallet?user=' + jane.user.userId);
+res = await getJson('/v1/wallet?user=' + jane.user.userId, { authorization: 'Bearer ' + janeLogin.token });
 check('jane’s wallet reflects the grant (750 paid)', (await res.json()).paid === 750);
 
 console.log('— admin command centre: overview + deduct + ledger —');

@@ -48,7 +48,7 @@ await new Promise((r) => setTimeout(r, 300));
 
 const post = (path, body, headers = {}) =>
   fetch(BASE + path, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(body) });
-const wallet = async (user) => (await fetch(`${BASE}/v1/wallet?user=${encodeURIComponent(user)}`)).json();
+const wallet = async (user, token) => (await fetch(`${BASE}/v1/wallet?user=${encodeURIComponent(user)}`, token ? { headers: { authorization: 'Bearer ' + token } } : {})).json();
 const admin = { 'x-admin-key': process.env.ADMIN_API_KEY };
 function signedWebhook(obj) {
   const event = JSON.stringify(obj);
@@ -146,25 +146,25 @@ check('a frozen wallet is refused at spend time (402 wallet_frozen)', res.status
 // ───────────── F3e + F5: referral reversal and lifetime cap ──────────────
 console.log('— F3e/F5: referral commission reverses on refund, and is capped —');
 res = await post('/v1/auth/signup', { email: 'refr@leak.test', password: 'partnerpass1', ...(await humanProof()) });
-const REFERRER = (await res.json()).user.userId;
+let sj = await res.json(); const REFERRER = sj.user.userId; const REFERRER_TOKEN = sj.token;
 const scode = await (await fetch(`${BASE}/v1/referrals/summary?user=${REFERRER}`)).json();
 res = await post('/v1/auth/signup', { email: 'refe@leak.test', password: 'refereepass1', ref: scode.code, ...(await humanProof()) });
 const REFEREE = (await res.json()).user.userId;
 await signedWebhook({ id: 'evt_ref_buy', type: 'checkout.session.completed',
   data: { object: { id: 'cs_ref', payment_status: 'paid', payment_intent: 'pi_ref', metadata: { user: REFEREE, packageId: 'builder_10' } } } });
-check('referrer earned 100 ACU commission', (await wallet(REFERRER)).paid === 100);
+check('referrer earned 100 ACU commission', (await wallet(REFERRER, REFERRER_TOKEN)).paid === 100);
 // refund the referee's purchase → the referrer's commission must be clawed back
 res = await signedWebhook({ id: 'evt_ref_refund', type: 'charge.refunded',
   data: { object: { id: 'ch_ref', payment_intent: 'pi_ref', amount: 1000, amount_refunded: 1000, metadata: { user: REFEREE, packageId: 'builder_10' }, refunds: { data: [{ id: 're_ref', amount: 1000 }] } } } });
 await res.json();
-check('referrer commission reversed on refund (back to 0)', (await wallet(REFERRER)).paid === 0);
+check('referrer commission reversed on refund (back to 0)', (await wallet(REFERRER, REFERRER_TOKEN)).paid === 0);
 
 // F5 cap: with the £10 purchase reversed, re-buy twice to push past the 150 cap.
 await signedWebhook({ id: 'evt_cap_1', type: 'checkout.session.completed',
   data: { object: { id: 'cs_cap1', payment_status: 'paid', payment_intent: 'pi_cap1', metadata: { user: REFEREE, packageId: 'builder_10' } } } });
 await signedWebhook({ id: 'evt_cap_2', type: 'checkout.session.completed',
   data: { object: { id: 'cs_cap2', payment_status: 'paid', payment_intent: 'pi_cap2', metadata: { user: REFEREE, packageId: 'builder_10' } } } });
-const capped = (await wallet(REFERRER)).paid;
+const capped = (await wallet(REFERRER, REFERRER_TOKEN)).paid;
 check('referral commission is capped at the lifetime limit (150 ACU)', capped === 150, `paid=${capped}`);
 
 // ───────────── F7: concurrency TOCTOU — no over-spend under a burst ─────────
@@ -219,6 +219,34 @@ r = await signedWebhook({ id: 'evt_short', type: 'checkout.session.completed',
 body = await r.json();
 check('underpaid session refused (amount_mismatch)', body.ignored === 'amount_mismatch', JSON.stringify(body));
 check('no ACU credited for the underpayment', ((await wallet(U9)).paid || 0) === 0);
+
+// ───────────── F11: a user can only touch the wallet they own ────────────
+console.log('— F11: account wallets are locked to their owner; guests stay tokenless —');
+res = await post('/v1/auth/signup', { email: 'victim@leak.test', password: 'victimpass1', ...(await humanProof()) });
+sj = await res.json(); const VICTIM = sj.user.userId; const VICTIM_TOKEN = sj.token;
+await post('/v1/wallet/credit', { user: VICTIM, amount: 500 }, admin); // fund the account wallet
+// read without the owner session → refused
+res = await fetch(`${BASE}/v1/wallet?user=${VICTIM}`);
+check('reading an account wallet without its session is refused (403)', res.status === 403 && (await res.json()).error === 'not_wallet_owner', `status=${res.status}`);
+// read with a DIFFERENT account's session → refused
+res = await fetch(`${BASE}/v1/wallet?user=${VICTIM}`, { headers: { authorization: 'Bearer ' + REFERRER_TOKEN } });
+check('reading it with someone else’s session is refused (403)', res.status === 403);
+// read with the owner's own session → allowed
+res = await fetch(`${BASE}/v1/wallet?user=${VICTIM}`, { headers: { authorization: 'Bearer ' + VICTIM_TOKEN } });
+check('the owner reads their own wallet (200, 500 paid)', res.status === 200 && (await res.json()).paid === 500);
+// spend attempts without the owner session → refused, no provider spend
+res = await post('/v1/generate', { user: VICTIM, messages: [{ role: 'user', content: 'drain you' }] });
+check('generating on an account wallet without its session is refused (403)', res.status === 403 && (await res.json()).error === 'not_wallet_owner');
+res = await post('/v1/wallet/charge', { user: VICTIM, amount: 50, label: 'steal' });
+check('charging an account wallet without its session is refused (403)', res.status === 403);
+check('the victim balance is untouched by the attempts', (await wallet(VICTIM, VICTIM_TOKEN)).paid === 500);
+// a GUEST wallet (no account) still works with no token — the pre-signup flow
+const GUEST = 'op_' + 'leakguest0011';
+await post('/v1/wallet/credit', { user: GUEST, amount: 5 }, admin);
+res = await fetch(`${BASE}/v1/wallet?user=${GUEST}`);
+check('a guest wallet is still readable without a token', res.status === 200 && (await res.json()).paid === 5);
+res = await post('/v1/generate', { user: GUEST, messages: [{ role: 'user', content: 'guest run' }] });
+check('a guest can still spend without a token (pre-signup flow intact)', res.status === 200 && res.ok);
 
 stripeMock.close();
 console.log(failures === 0 ? '\nMONEY LEAKS: all checks passed.' : `\n${failures} check(s) FAILED.`);

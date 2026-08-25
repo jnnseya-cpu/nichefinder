@@ -594,7 +594,8 @@
   // Best-effort: read the current plan from the authoritative wallet so the
   // active tier is highlighted; paint immediately either way.
   if (planBase && planUser && typeof fetch === 'function'){
-    fetch(planBase + '/v1/wallet?user=' + encodeURIComponent(planUser))
+    fetch(planBase + '/v1/wallet?user=' + encodeURIComponent(planUser),
+      { headers: (window.NF_AUTH ? NF_AUTH.authHeader() : {}) })
       .then(function(r){ return r.ok ? r.json() : null; })
       .then(function(w){ paintPlans(w && w.plan); })
       .catch(function(){ paintPlans(null); });

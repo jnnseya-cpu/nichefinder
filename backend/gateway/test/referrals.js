@@ -55,6 +55,7 @@ console.log('— referrer signs up and gets a stable invite code —');
 let res = await post('/v1/auth/signup', { email: 'referrer@nf.test', password: 'partnerpass1', ...(await humanProof()) });
 let body = await res.json();
 const REFERRER = body.user.userId;
+const REFERRER_TOKEN = body.token; // account wallets require the owner's session to read/spend
 check('referrer account created with op_ id', res.status === 200 && /^op_[a-z0-9]{10,}$/.test(REFERRER), JSON.stringify(body));
 let s = await summary(REFERRER);
 check('invite code issued (NF-XXXXXXXX)', /^NF-[A-Z0-9]{8}$/.test(s.code), JSON.stringify(s));
@@ -87,7 +88,7 @@ check('referral now qualified (qualified=1)', s.qualifiedReferrals === 1, JSON.s
 check('commission credited: 100 ACU', s.acuEarned === 100, JSON.stringify(s));
 check('commission £ value tracked: £1', s.gbpEarned === 1, JSON.stringify(s));
 
-res = await fetch(`${BASE}/v1/wallet?user=${REFERRER}`);
+res = await fetch(`${BASE}/v1/wallet?user=${REFERRER}`, { headers: { authorization: 'Bearer ' + REFERRER_TOKEN } });
 body = await res.json();
 check('referrer wallet actually received the 100 ACU (spendable)', body.paid === 100, JSON.stringify(body));
 

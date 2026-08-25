@@ -69,6 +69,23 @@ function requireCapabilityId(user) {
   }
 }
 
+/* Ownership gate: a user may only read or spend the wallet they OWN.
+   - Guest / anonymous wallets (no account on file) are bearer capabilities: the
+     high-entropy op_ id itself is the proof, so a valid format is enough. This
+     keeps the pre-signup guest flow (score → buy → spend) working with no login.
+   - The moment a wallet belongs to an ACCOUNT (an email is on file for the id),
+     the request MUST carry that account's bearer session, and the session's
+     userId must equal the wallet id. So knowing someone's id is no longer enough
+     to drain or inspect their account balance — you must be signed in AS them. */
+function requireOwner(req, userId) {
+  requireCapabilityId(userId);
+  if (!emailForUserId(userId)) return; // guest wallet — capability id is the bearer
+  const s = sessionFor(bearer(req));
+  if (!s || s.userId !== userId) {
+    throw new GatewayError('This wallet belongs to an account — sign in to that account to use it.', { status: 403, code: 'not_wallet_owner' });
+  }
+}
+
 /* Hard ceiling on output tokens a single /v1/generate call may produce. Both the
    provider cap AND the reservation basis, so a request can never cost more than
    we reserved against the balance. */
@@ -358,14 +375,14 @@ const server = http.createServer(async (req, res) => {
   if (method === 'GET' && url.pathname === '/v1/documents') {
     try {
       const user = url.searchParams.get('user');
-      requireCapabilityId(user);
+      requireOwner(req, user);
       return json(res, 200, { documents: listDocs({ user, project: url.searchParams.get('project') }) });
     } catch (err) { return handleError(res, err); }
   }
   if (method === 'GET' && url.pathname === '/v1/document') {
     try {
       const user = url.searchParams.get('user');
-      requireCapabilityId(user);
+      requireOwner(req, user);
       const doc = getDoc({ user, project: url.searchParams.get('project'), type: url.searchParams.get('type') });
       if (!doc) return json(res, 404, { error: 'not_found' });
       return json(res, 200, doc);
@@ -398,7 +415,7 @@ const server = http.createServer(async (req, res) => {
 
       let debit = null;
       if (billingEnforced()) {
-        requireCapabilityId(body.user);
+        requireOwner(req, body.user);
         if (isFrozen(body.user)) {
           throw new GatewayError('This wallet is temporarily frozen pending a payment dispute. Contact support.', { status: 402, code: 'wallet_frozen', platformCode: 4002 });
         }
@@ -908,7 +925,7 @@ const server = http.createServer(async (req, res) => {
   // both read a wallet AND mint its welcome grant as a side effect of getWallet.
   if (method === 'GET' && url.pathname === '/v1/wallet') {
     try {
-      requireCapabilityId(url.searchParams.get('user'));
+      requireOwner(req, url.searchParams.get('user'));
       return json(res, 200, getWallet(url.searchParams.get('user')));
     } catch (err) { return handleError(res, err); }
   }
@@ -917,7 +934,7 @@ const server = http.createServer(async (req, res) => {
   // /ledger remains for existing clients. Same enriched entries either way.
   if (method === 'GET' && (url.pathname === '/v1/wallet/ledger' || url.pathname === '/v1/wallet/transactions')) {
     try {
-      requireCapabilityId(url.searchParams.get('user'));
+      requireOwner(req, url.searchParams.get('user'));
       return json(res, 200, { ledger: getLedger(url.searchParams.get('user'), url.searchParams.get('limit')) });
     } catch (err) { return handleError(res, err); }
   }
@@ -970,7 +987,10 @@ const server = http.createServer(async (req, res) => {
             status: 403, code: 'credit_disabled',
           });
         }
-        requireCapabilityId(body.user);
+        // A direct charge spends a wallet — enforce ownership (account wallets
+        // require the matching session). Admin grants are exempt (admin-keyed).
+        if (isGrant && adminOk) requireCapabilityId(body.user);
+        else requireOwner(req, body.user);
       }
       // Namespace any client-supplied idempotency key so it can NEVER collide
       // with an internal settlement/generation key (stripe_/koda_/stripe_inv_/
@@ -1023,7 +1043,7 @@ const server = http.createServer(async (req, res) => {
       const started = Date.now();
       let debit = null;
       if (billingEnforced()) {
-        requireCapabilityId(body.user);
+        requireOwner(req, body.user);
         // RESERVE the worst-case cost up front — an atomic hold, so concurrent
         // requests can't all pass one balance check and make us pay the provider
         // many times for one balance's worth (TOCTOU across the await below).
