@@ -199,6 +199,11 @@ export function charge({ user, amount, label, idempotencyKey, action, bracketFac
   }
   const bf = Number.isFinite(Number(bracketFactor)) && Number(bracketFactor) >= 1 ? Number(bracketFactor) : 1;
   return idempotent(idempotencyKey, () => {
+    if (wallet.frozen) {
+      throw new GatewayError('This wallet is temporarily frozen pending a payment dispute. Contact support.', {
+        status: 402, code: 'wallet_frozen', platformCode: 4002,
+      });
+    }
     if (wallet.paid < cost) {
       // platformCode 4001 = "Insufficient ACUs" in the spec's API error registry (§10.1).
       throw new GatewayError(`Insufficient paid ACU: need ${cost}, have ${wallet.paid}. Welcome ACUs are read-only.`, {
@@ -283,6 +288,54 @@ export function creditPlanAllotment({ user, planId, idempotencyKey }) {
   });
 }
 
+// Reverse a prior credit when the money behind it is taken back — a Stripe
+// refund, a card chargeback/dispute, or a KODA reversal. We debit the ACUs we
+// granted, but a wallet can never go negative, so we claw back only what is
+// still there: `clawedBack` is what we recovered, `shortfall` is the value the
+// user already spent and we cannot recover (a real, recorded loss — surfaced so
+// finance/anti-fraud can see it, not hidden). Idempotent on the settlement id so
+// a webhook replay never double-claws. Optionally freezes the wallet so a
+// disputing/refunded account cannot immediately spend a fresh top-up while the
+// case is open.
+export function clawback({ user, amount, reason, idempotencyKey, freeze = false, referenceId }) {
+  const wallet = requireUser(user);
+  const want = Math.floor(Number(amount));
+  if (!Number.isFinite(want) || want <= 0) {
+    throw new GatewayError('"amount" must be a positive integer of ACUs.', { status: 400, code: 'invalid_amount' });
+  }
+  return idempotent(idempotencyKey, () => {
+    const recovered = Math.min(wallet.paid, want);
+    const shortfall = want - recovered;
+    wallet.paid -= recovered;
+    if (freeze) wallet.frozen = true;
+    ledger(wallet, `REVERSAL · ${String(reason || 'Refund/chargeback').slice(0, 100)}${shortfall ? ` (recovered ${recovered}/${want}; ${shortfall} already spent)` : ''}`, -recovered, {
+      type: 'debit_reversal',
+      pool: 'paid',
+      bracketFactor: 1,
+      reversalRequested: want,
+      shortfall,
+      ...(freeze ? { frozen: true } : {}),
+      ...(referenceId ? { referenceId: String(referenceId).slice(0, 64) } : {}),
+    });
+    persist();
+    return { clawedBack: recovered, shortfall, frozen: Boolean(wallet.frozen), wallet: view(wallet) };
+  });
+}
+
+// Is this wallet frozen (open dispute / refunded)? Spending paths consult this
+// so a bad actor can't refund-then-spend a fresh top-up mid-dispute.
+export function isFrozen(user) {
+  const w = store.wallets[user];
+  return Boolean(w && w.frozen);
+}
+
+// Lift a freeze (admin action once a dispute resolves in our favour).
+export function unfreeze(user) {
+  const w = store.wallets[user];
+  if (w && w.frozen) { delete w.frozen; persist(); return true; }
+  return false;
+}
+
 // Mark a wallet's subscription ended (on Stripe cancellation/deletion). Already-
 // credited ACUs are kept (they were paid for); only the plan status changes.
 export function endPlan({ user }) {
@@ -307,9 +360,17 @@ export function migratePaid({ from, to }) {
   if (!src || src.paid <= 0) {
     return { moved: 0, wallet: view(requireUser(to)) };
   }
+  // One-time claim: a guest wallet can only ever be absorbed into ONE account.
+  // The source is zeroed below (so a re-run moves 0 regardless), but recording
+  // the claimer refuses a second account outright and leaves an audit trail —
+  // guest ids are bearer capabilities, and this bounds what a leaked id can do.
+  if (src.claimedBy && src.claimedBy !== to) {
+    throw new GatewayError('This guest balance has already been claimed by another account.', { status: 409, code: 'already_claimed' });
+  }
   const dst = requireUser(to);
   const moved = src.paid;
   src.paid = 0;
+  src.claimedBy = to;
   dst.paid += moved;
   ledger(src, 'MIGRATED_OUT · balance moved to account', -moved, { type: 'debit_migrate', pool: 'paid', bracketFactor: 1 });
   ledger(dst, `MIGRATED_IN · from guest wallet ${String(from).slice(0, 12)}…`, moved, { type: 'credit_migrate', pool: 'paid', bracketFactor: 1 });

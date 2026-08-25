@@ -155,8 +155,20 @@ sudo systemctl restart nichefinder
 
 ## 7. Stripe webhook + rehearsal (test keys first)
 
-- Stripe → Developers → Webhooks → add `https://app.yourdomain.com/v1/payments/stripe-webhook`, event `checkout.session.completed`. Put the `whsec_` into `/etc/nichefinder.env`, then `sudo systemctl restart nichefinder`.
-- Open the site → free niche score → one real search → Buy ACU → Stripe test card `4242 4242 4242 4242` → confirm ACUs land. That proves checkout → webhook → credit.
+- Stripe → Developers → Webhooks → add `https://app.yourdomain.com/v1/payments/stripe-webhook`. Subscribe to **all of these events** (not just the first — the rest protect you from paying for refunded/charged-back value):
+  - `checkout.session.completed` — credits a one-time package / starts a subscription.
+  - `invoice.paid` (and/or `invoice.payment_succeeded`) — credits each subscription cycle.
+  - `customer.subscription.deleted` — marks a plan ended.
+  - `charge.refunded` — **claws the credited ACU back** when you refund a payment (clamped so the wallet never goes negative; whatever was already spent is recorded as a shortfall in the ledger).
+  - `charge.dispute.created` — a **chargeback**: claws the package back **and freezes the wallet** so the customer can't refund-then-spend a fresh top-up while the case is open. (Optionally also add `charge.dispute.funds_withdrawn`.)
+  - Refund/dispute claw-back reads the buyer's id from the PaymentIntent, so it needs the live secret key set (it already is) — no extra config.
+- Put the `whsec_` into `/etc/nichefinder.env`, then `sudo systemctl restart nichefinder`.
+- Open the site → free niche score → one real search → Buy ACU → Stripe test card `4242 4242 4242 4242` → confirm ACUs land. Then refund that test payment in the Stripe dashboard and confirm the ACUs are removed. That proves checkout → webhook → credit → refund claw-back.
+
+### Money-safety levers (optional env)
+
+- `REFERRAL_LIFETIME_CAP_ACU` — max referral commission any one referrer can ever earn, in ACU (default `50000` = £500 of commission). Bounds a "refer myself with two accounts" scheme. `0` disables the cap.
+- `KODA_MINOR_UNITS=1` — set **only if** your KODA account bills 2-decimal currencies (GBP/USD/EUR) in the smallest unit (pence/cents). Default is whole units. Getting this wrong under/over-charges the payer by 100× — the amount + currency is logged on every intent (`[koda] intent created: … amount=… CUR`), so check the first live payment.
 
 ## 8. Go live
 

@@ -42,6 +42,20 @@ const CURRENCY = process.env.KODA_CURRENCY || 'CDF';
 const FX_PER_GBP = Number(process.env.KODA_FX_PER_GBP || 0);
 const RATE_URL = process.env.KODA_RATE_URL || 'https://open.er-api.com/v6/latest/GBP';
 const RATE_TTL_MS = Number(process.env.KODA_RATE_TTL_MS || 3600000);
+// UNIT CONVENTION — verify against your KODA account before going live. Card
+// processors bill 2-decimal currencies (GBP/USD/EUR) in the SMALLEST unit
+// (pence/cents), and zero-decimal currencies (CDF/XAF/JPY) as whole units.
+// Getting this wrong under- or over-charges the payer by 100×. Default here is
+// WHOLE units for every currency (what the raw package price sends); set
+// KODA_MINOR_UNITS=1 if your KODA account expects the smallest unit for
+// 2-decimal currencies. The final amount+currency is logged at intent time so a
+// misconfiguration is visible on the very first live payment, not weeks later.
+const MINOR_UNITS = process.env.KODA_MINOR_UNITS === '1';
+// Currencies with no minor unit — never multiplied by 100 even in minor mode.
+const ZERO_DECIMAL = new Set(['CDF', 'XAF', 'XOF', 'JPY', 'KRW', 'VND', 'CLP', 'ISK', 'UGX', 'RWF', 'GNF', 'BIF', 'KMF', 'MGA', 'PYG', 'DJF', 'VUV']);
+function toChargeUnits(major, currency) {
+  return (MINOR_UNITS && !ZERO_DECIMAL.has(currency)) ? Math.round(major * 100) : Math.round(major);
+}
 
 export const kodaConfigured = () => Boolean(KEY && WHSEC);
 
@@ -85,8 +99,8 @@ export async function createKodaIntent({ user, packageId, origin }) {
   // conversion (quote in GBP).
   let amount, currency;
   if (CURRENCY === 'GBP') {
-    amount = pkg.priceGBP;
     currency = 'GBP';
+    amount = toChargeUnits(pkg.priceGBP, currency);
   } else {
     const rate = await ratePerGbp(CURRENCY);
     if (!(rate > 0)) {
@@ -95,8 +109,8 @@ export async function createKodaIntent({ user, packageId, origin }) {
         { status: 503, code: 'koda_no_rate' },
       );
     }
-    amount = Math.round(pkg.priceGBP * rate);
     currency = CURRENCY;
+    amount = toChargeUnits(pkg.priceGBP * rate, currency);
   }
   const orderId = `nf_${packageId}_${user.slice(-8)}_${Date.now().toString(36)}`;
   let res;

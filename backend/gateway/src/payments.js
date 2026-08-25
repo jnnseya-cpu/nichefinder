@@ -9,8 +9,8 @@
 // falls back to demo crediting — so the same build runs pre- and post-launch.
 import crypto from 'node:crypto';
 import { GatewayError } from './errors.js';
-import { credit, PACKAGES, PLANS, peekWallet, creditPlanAllotment, endPlan } from './wallet.js';
-import { onPaidPurchase } from './referrals.js';
+import { credit, PACKAGES, PLANS, peekWallet, creditPlanAllotment, endPlan, clawback } from './wallet.js';
+import { onPaidPurchase, onPurchaseReversed } from './referrals.js';
 import { emailForUserId } from './auth.js';
 import { sendMail } from './mailer.js';
 import { sendEvent as capiSend } from './meta-capi.js';
@@ -55,6 +55,12 @@ export async function createCheckout({ user, packageId, origin }) {
     'line_items[0][price_data][product_data][name]': `Niche Finder — ${pkg.name} package (${total.toLocaleString('en-US')} ACU)`,
     'metadata[user]': user,
     'metadata[packageId]': packageId,
+    // Stamp the SAME identity on the PaymentIntent so it flows down to the
+    // Charge. Refund and dispute webhooks carry a charge (not the session), so
+    // without this we could never map a chargeback back to the wallet to claw
+    // the ACU back. This is what makes refund/dispute reversal possible.
+    'payment_intent_data[metadata][user]': user,
+    'payment_intent_data[metadata][packageId]': packageId,
     success_url: `${base}/frontend/dashboard.html?payment=success&value=${pkg.priceGBP}&currency=GBP&item=${packageId}&sid={CHECKOUT_SESSION_ID}`,
     cancel_url: `${base}/frontend/dashboard.html?payment=cancelled`,
   });
@@ -203,7 +209,7 @@ export function sendSubscriptionReceipt({ user, planId, method = 'card', renewal
      • customer.subscription.deleted             → mark the plan ended
    Subscription checkout.session.completed is intentionally NOT credited here —
    its first invoice.paid does the crediting, so we never double-count. */
-export function handleWebhook(rawBody, sigHeader) {
+export async function handleWebhook(rawBody, sigHeader) {
   if (!paymentsConfigured()) {
     throw new GatewayError('Payments not configured.', { status: 503, code: 'payment_not_configured' });
   }
@@ -235,7 +241,12 @@ export function handleWebhook(rawBody, sigHeader) {
     }
     const result = credit({ user, packageId, idempotencyKey: `stripe_${event.id}` });
     if (!result.replayed) {
-      try { onPaidPurchase({ user, gbp: PACKAGES[packageId].priceGBP, purchaseKey: `stripe_${event.id}` }); }
+      // Key the referral on the PaymentIntent (stable across the purchase's whole
+      // lifecycle), NOT the webhook event id — so a later refund/chargeback
+      // webhook (which carries the charge + its payment_intent, never the
+      // original event id) can reverse the exact commission we paid.
+      const pi = obj.payment_intent || obj.id;
+      try { onPaidPurchase({ user, gbp: PACKAGES[packageId].priceGBP, purchaseKey: `pi_${pi}` }); }
       catch (e) { console.error('[referrals] stripe reward failed:', e.message); }
       sendPurchaseReceipt({ user, packageId, method: 'card' });
       // Server-side Purchase (deduped with the browser via the checkout session id).
@@ -279,5 +290,80 @@ export function handleWebhook(rawBody, sigHeader) {
     return { received: true, planEnded: r.ended, user };
   }
 
+  // ---- money taken back: refunds & disputes → claw the ACU back ----
+  // A buyer who tops up, spends, then refunds/charges back would otherwise keep
+  // the value for free. On any reversal we debit the granted ACU (clamped at
+  // what's left — the spent remainder is a recorded loss, not a silent one),
+  // reverse the referral commission, and — for adversarial disputes — freeze the
+  // wallet so they can't refund-then-spend a fresh top-up while the case is open.
+
+  // charge.refunded — full or partial. Each refund object has a stable id, so we
+  // key idempotency on the refund (not the event) and reverse exactly its slice.
+  if (event.type === 'charge.refunded' || event.type === 'refund.created' || event.type === 'refund.updated') {
+    const charge = event.type === 'charge.refunded' ? obj : null;
+    const piId = obj.payment_intent || charge?.payment_intent;
+    // Metadata lives on the PaymentIntent (Stripe does NOT copy it to the
+    // Charge). A test may stamp it on the object directly; production reads it
+    // from the PI. Either way we never clawback without a confirmed mapping.
+    const meta = (obj.metadata && obj.metadata.user) ? obj.metadata : await fetchPaymentIntentMeta(piId);
+    const user = meta?.user, packageId = meta?.packageId;
+    if (!user || !PACKAGES[packageId]) return { received: true, ignored: 'refund_unmapped' };
+    const totalAcu = PACKAGES[packageId].acus + PACKAGES[packageId].bonus;
+    const base = Number(charge?.amount) || Number(meta?.amount) || (PACKAGES[packageId].priceGBP * 100);
+    // Prefer the individual refund slice for a correct partial amount + a stable
+    // idempotency id; fall back to the charge's cumulative amount_refunded.
+    const slice = charge?.refunds?.data?.[charge.refunds.data.length - 1];
+    const refundId = (event.type === 'charge.refunded' ? slice?.id : obj.id) || `${event.id}`;
+    const refundedMinor = (event.type === 'charge.refunded' ? (slice?.amount ?? charge?.amount_refunded) : obj.amount) || 0;
+    const reverseAcu = base > 0 ? Math.round(totalAcu * Math.min(refundedMinor, base) / base) : totalAcu;
+    if (reverseAcu <= 0) return { received: true, ignored: 'zero_refund' };
+    const r = clawback({ user, amount: reverseAcu, reason: `Stripe refund ${packageId}`, idempotencyKey: `stripe_refund_${refundId}` });
+    if (!r.replayed) {
+      if (piId) { try { onPurchaseReversed({ user, purchaseKey: `pi_${piId}` }); } catch (e) { console.error('[referrals] reversal failed:', e.message); } }
+      console.warn(`[payments] refund reversed ${r.clawedBack}/${reverseAcu} ACU user=${String(user).slice(-8)} shortfall=${r.shortfall}`);
+    }
+    return { received: true, reversed: r.clawedBack, shortfall: r.shortfall, replayed: r.replayed, user };
+  }
+
+  // Chargeback/dispute — adversarial. Map via the PaymentIntent, claw the FULL
+  // package back, and FREEZE the wallet until the dispute resolves so they can't
+  // refund-then-spend a fresh top-up while the case is open.
+  if (event.type === 'charge.dispute.created' || event.type === 'charge.dispute.funds_withdrawn') {
+    const piId = obj.payment_intent;
+    const meta = (obj.metadata && obj.metadata.user) ? obj.metadata : await fetchPaymentIntentMeta(piId);
+    const user = meta?.user, packageId = meta?.packageId;
+    if (!user || !PACKAGES[packageId]) return { received: true, ignored: 'dispute_unmapped' };
+    const totalAcu = PACKAGES[packageId].acus + PACKAGES[packageId].bonus;
+    const r = clawback({ user, amount: totalAcu, reason: `Chargeback ${packageId}`, idempotencyKey: `stripe_dispute_${obj.charge || piId}`, freeze: true });
+    if (!r.replayed) {
+      if (piId) { try { onPurchaseReversed({ user, purchaseKey: `pi_${piId}` }); } catch (e) { console.error('[referrals] reversal failed:', e.message); } }
+      console.warn(`[payments] CHARGEBACK reversed ${r.clawedBack}/${totalAcu} ACU + froze wallet user=${String(user).slice(-8)} shortfall=${r.shortfall}`);
+    }
+    return { received: true, reversed: r.clawedBack, shortfall: r.shortfall, frozen: r.frozen, replayed: r.replayed, user };
+  }
+
   return { received: true, ignored: event.type };
+}
+
+/* Read the {user, packageId} we stamped on a PaymentIntent's metadata. Refund
+   and dispute webhooks don't echo our metadata (it lives on the PI, and Stripe
+   never copies it onto the Charge), so we fetch the PI by id. Returns null on
+   any failure — the caller then treats the event as 'unmapped' and does NOTHING,
+   which is the safe default (a wrong clawback would be worse than a missed one,
+   and Stripe retries the webhook so a transient fetch error is recoverable). */
+export async function fetchPaymentIntentMeta(piId) {
+  if (!piId || !KEY) return null;
+  try {
+    const res = await fetch(`${STRIPE_API}/v1/payment_intents/${encodeURIComponent(piId)}`, {
+      headers: { authorization: `Bearer ${KEY}` },
+    });
+    if (!res.ok) { console.error(`[payments] PI fetch ${piId} failed: ${res.status}`); return null; }
+    const pi = await res.json();
+    const m = pi.metadata || {};
+    if (!m.user) return null;
+    return { user: m.user, packageId: m.packageId, amount: pi.amount };
+  } catch (e) {
+    console.error(`[payments] PI fetch ${piId} error: ${e.message}`);
+    return null;
+  }
 }

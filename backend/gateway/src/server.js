@@ -1,11 +1,12 @@
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { config } from './config.js';
 import { GatewayError } from './errors.js';
 import { route, availableProviders, meterAcu } from './router.js';
-import { getWallet, getLedger, charge, credit, grant, summary, deleteWallet, migratePaid, PACKAGES } from './wallet.js';
+import { getWallet, getLedger, charge, credit, grant, summary, deleteWallet, migratePaid, PACKAGES, isFrozen } from './wallet.js';
 import { createCheckout, createSubscriptionCheckout, handleWebhook, paymentsConfigured } from './payments.js';
 import { createKodaIntent, handleKodaWebhook, kodaConfigured } from './koda.js';
 import { summaryFor as referralSummary, listPartners } from './referrals.js';
@@ -68,12 +69,33 @@ function requireCapabilityId(user) {
   }
 }
 
-/* Pre-flight ACU estimate for a generation body (same math as /v1/estimate). */
-function estimateAcuFor(body) {
+/* Hard ceiling on output tokens a single /v1/generate call may produce. Both the
+   provider cap AND the reservation basis, so a request can never cost more than
+   we reserved against the balance. */
+const MAX_GEN_OUTPUT = 8000;
+
+/* How many output tokens this generation is ALLOWED (and therefore RESERVED) to
+   produce. The client's own cap is honoured; absent one we reserve the default.
+   The same number caps the provider (below), so metered cost ≤ reserved cost —
+   a client can't lowball the estimate and make us eat the overrun. */
+export function reservedOutputTokens(body) {
+  let out = Number.isInteger(body.maxTokens) && body.maxTokens > 0 ? body.maxTokens : (Number(body.expectedOutputTokens) || 2000);
+  return Math.min(Math.max(out, 256), MAX_GEN_OUTPUT);
+}
+
+/* Pre-flight ACU estimate for a generation body. Reserves the WORST case: the
+   full allowed output length, priced at the most expensive provider that could
+   serve the request — so neither a long response nor a fail-over to a pricier
+   provider can cost more than we reserved. */
+function estimateAcuFor(body, outTokens) {
   const chars = JSON.stringify(body.messages || '').length + (body.system?.length || 0);
-  const usage = { inputTokens: Math.ceil(chars / 4), outputTokens: body.expectedOutputTokens || 2000 };
-  const provider = body.provider && body.provider !== 'auto' ? body.provider : availableProviders()[0] || 'claude';
-  return meterAcu(provider, usage, body.investorMode === true, body.capitalGBP);
+  const usage = { inputTokens: Math.ceil(chars / 4), outputTokens: Number.isFinite(outTokens) ? outTokens : reservedOutputTokens(body) };
+  const chain = body.provider && body.provider !== 'auto'
+    ? [body.provider]
+    : (availableProviders().length ? availableProviders() : ['claude']);
+  let max = 0;
+  for (const p of chain) max = Math.max(max, meterAcu(p, usage, body.investorMode === true, body.capitalGBP));
+  return max;
 }
 
 /* ============ SENTINEL — anti-hacking AI agent ============
@@ -280,7 +302,7 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'POST' && url.pathname === '/v1/payments/stripe-webhook') {
     try {
       const raw = await readBody(req);
-      return json(res, 200, handleWebhook(raw, req.headers['stripe-signature']));
+      return json(res, 200, await handleWebhook(raw, req.headers['stripe-signature']));
     } catch (err) { return handleError(res, err); }
   }
 
@@ -376,6 +398,9 @@ const server = http.createServer(async (req, res) => {
       let debit = null;
       if (billingEnforced()) {
         requireCapabilityId(body.user);
+        if (isFrozen(body.user)) {
+          throw new GatewayError('This wallet is temporarily frozen pending a payment dispute. Contact support.', { status: 402, code: 'wallet_frozen', platformCode: 4002 });
+        }
         const w = getWallet(body.user);
         if (w.paid < price) {
           throw new GatewayError(`Insufficient paid ACU for this document: needs ${price}, balance ${w.paid}.`, { status: 402, code: 'insufficient_acu', platformCode: 4001 });
@@ -401,7 +426,7 @@ const server = http.createServer(async (req, res) => {
         if (debit) {
           const charged = charge({
             user: debit.user, amount: debit.price, label: 'document · export', action: 'generation',
-            bracketFactor: 1, idempotencyKey: body.idempotencyKey || `doc_export_${started}_${debit.user.slice(-8)}`,
+            bracketFactor: 1, idempotencyKey: `doc_export_${started}_${crypto.randomUUID()}`,
           });
           console.log(`[document] export packaged (no AI) price=${price} user=${debit.user.slice(-8)}`);
           return json(res, 200, { docType: 'export', charged: charged.charged, wallet: charged.wallet });
@@ -430,7 +455,7 @@ const server = http.createServer(async (req, res) => {
         const charged = charge({
           user: debit.user, amount: debit.price, label: `document · ${body.docType}`,
           action: 'generation', bracketFactor: result.bracketFactor || 1,
-          idempotencyKey: body.idempotencyKey || `doc_${body.docType}_${started}_${debit.user.slice(-8)}`,
+          idempotencyKey: `doc_${body.docType}_${started}_${crypto.randomUUID()}`,
         });
         return json(res, 200, { docType: body.docType, content, charged: charged.charged, wallet: charged.wallet, provider: result.provider, latencyMs: Date.now() - started });
       }
@@ -971,10 +996,17 @@ const server = http.createServer(async (req, res) => {
       // Production billing law: with payments live (or REQUIRE_WALLET=1), the
       // SERVER meters and debits every generation — the client never bills
       // itself and anonymous calls can't burn provider spend.
+      // Bound the provider's output to what we reserve, so a prompt engineered to
+      // elicit a huge response can't run up a bill beyond the reserved estimate.
+      const reservedOut = reservedOutputTokens(body);
+      const genBody = { ...body, maxTokens: reservedOut };
       let debit = null;
       if (billingEnforced()) {
         requireCapabilityId(body.user);
-        const est = estimateAcuFor(body);
+        if (isFrozen(body.user)) {
+          throw new GatewayError('This wallet is temporarily frozen pending a payment dispute. Contact support.', { status: 402, code: 'wallet_frozen', platformCode: 4002 });
+        }
+        const est = estimateAcuFor(body, reservedOut);
         const w = getWallet(body.user);
         if (w.paid < est) {
           throw new GatewayError(`Insufficient paid ACU for this generation: estimated ${est}, balance ${w.paid}.`, {
@@ -984,8 +1016,8 @@ const server = http.createServer(async (req, res) => {
         debit = { user: body.user, estimate: est };
       }
       const started = Date.now();
-      console.log(`[generate] start effort=${body.effort || 'default'} schema=${body.jsonSchema ? 'yes' : 'no'} billed=${!!debit}`);
-      const result = await route(body);
+      console.log(`[generate] start effort=${body.effort || 'default'} schema=${body.jsonSchema ? 'yes' : 'no'} maxOut=${reservedOut} billed=${!!debit}`);
+      const result = await route(genBody);
       console.log(`[generate] ok provider=${result.provider} latencyMs=${Date.now() - started} acu=${result.acu ?? 0} textLen=${(result.text || '').length}`);
       if (clientGone) {
         console.log('[generate] client disconnected before result — skipping charge (no delivery, no bill)');
@@ -993,11 +1025,19 @@ const server = http.createServer(async (req, res) => {
       }
       if (debit) {
         const metered = Math.max(config.acu.minimumCharge, Math.min(result.acu || 0, getWallet(debit.user).paid));
+        // SETTLEMENT KEY IS SERVER-MINTED AND UNIQUE PER CALL — never the client's
+        // idempotencyKey. A metered charge bills work already done (we've already
+        // paid the provider); if a replayed client key short-circuited the debit,
+        // a caller could pin one key and generate forever for the price of one
+        // call. Uniqueness guarantees every generation is billed exactly once.
         const charged = charge({
           user: debit.user, amount: metered, label: `generation · ${result.provider}`,
           action: 'generation', bracketFactor: result.bracketFactor || 1,
-          idempotencyKey: body.idempotencyKey || `gen_${started}_${debit.user.slice(-8)}`,
+          idempotencyKey: `gen_${started}_${crypto.randomUUID()}`,
         });
+        if ((result.acu || 0) > debit.estimate) {
+          console.warn(`[generate] cost overrun: metered ${result.acu} > reserved ${debit.estimate} user=${debit.user.slice(-8)} — collected ${charged.charged}`);
+        }
         return json(res, 200, { ...result, latencyMs: Date.now() - started, charged: charged.charged, wallet: charged.wallet });
       }
       return json(res, 200, { ...result, latencyMs: Date.now() - started });

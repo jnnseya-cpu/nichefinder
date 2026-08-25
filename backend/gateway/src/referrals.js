@@ -16,10 +16,23 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { GatewayError } from './errors.js';
-import { grant } from './wallet.js';
+import { grant, clawback } from './wallet.js';
 
 const STORE_PATH = process.env.REFERRALS_STORE || path.join(process.cwd(), 'data', 'referrals.json');
 const RATE = Number(process.env.REFERRAL_RATE || 0.1); // commission as a fraction of paid GBP
+// Anti-abuse cap: the most referral commission any one referrer can ever earn
+// (ACU). A two-account "refer myself" scheme is inherent to any referral
+// programme; this bounds the loss it can create. 0 = uncapped. Default 50,000
+// ACU (£500 of commission ≈ £5,000 of referred spend) — generous for a real
+// partner, ruinous for nobody.
+const LIFETIME_CAP_ACU = Number(process.env.REFERRAL_LIFETIME_CAP_ACU || 50000);
+
+// Clawback a referrer's commission ACU (refund/chargeback of the referred
+// purchase). Clamped inside wallet.clawback so the wallet never goes negative.
+function clawbackRef(referrer, amount, reason, idemKey) {
+  try { clawback({ user: referrer, amount, reason, idempotencyKey: idemKey }); }
+  catch (e) { console.error('[referrals] clawback failed:', e.message); }
+}
 const PUBLIC_ORIGIN = () => (process.env.PUBLIC_ORIGIN || 'https://nichefinderhq.com').replace(/\/$/, '');
 const CAP_RE = /^op_[a-z0-9]{10,}$/;
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no ambiguous 0/O/1/I
@@ -106,17 +119,56 @@ export function onPaidPurchase({ user, gbp, purchaseKey }) {
   if (!referrer) return { rewarded: false, reason: 'no_referrer' };
   const key = `ref_${purchaseKey}`;
   if (store.awarded[key]) return { rewarded: false, reason: 'already_awarded' };
-  const commissionAcu = Math.round(Number(gbp || 0) * RATE * 100); // £1 = 100 ACU
+  let commissionAcu = Math.round(Number(gbp || 0) * RATE * 100); // £1 = 100 ACU
   if (commissionAcu <= 0) return { rewarded: false, reason: 'zero_commission' };
+  const e = earnedFor(referrer);
+  // Anti-abuse: cap lifetime commission per referrer. Award only up to the
+  // remaining headroom; past the cap, referrals still track but pay nothing —
+  // bounding what a self-referral ("two accounts") scheme can extract.
+  if (LIFETIME_CAP_ACU > 0) {
+    const remaining = Math.max(0, LIFETIME_CAP_ACU - (e.acu || 0));
+    if (remaining <= 0) {
+      store.awarded[key] = true; (store.awardAmount ||= {})[key] = 0;
+      if (!e.qualified.includes(user)) e.qualified.push(user);
+      persist();
+      return { rewarded: false, reason: 'lifetime_cap_reached' };
+    }
+    commissionAcu = Math.min(commissionAcu, remaining);
+  }
   // Credit the referrer's spendable wallet; grant() is itself idempotent on key.
   grant({ user: referrer, amount: commissionAcu, reason: `Referral commission · ${String(user).slice(-6)}`, idempotencyKey: key });
   store.awarded[key] = true;
-  const e = earnedFor(referrer);
+  (store.awardAmount ||= {})[key] = commissionAcu; // remembered so a refund can reverse exactly this much
   if (!e.qualified.includes(user)) e.qualified.push(user);
   e.acu += commissionAcu;
   e.gbp = Math.round((e.gbp + Number(gbp || 0) * RATE) * 100) / 100;
   persist();
   return { rewarded: true, referrer, commissionAcu };
+}
+
+/* Reverse a referral commission when the underlying purchase is refunded or
+   charged back. Claws the commission ACU back from the referrer (clamped at
+   their balance — never negative) and reverses the recorded earnings, so a
+   refund fraud can't mint permanent referral value. Idempotent: only reverses a
+   commission that was actually awarded, and only once. */
+export function onPurchaseReversed({ user, purchaseKey }) {
+  const key = `ref_${purchaseKey}`;
+  if (!store.awarded[key] || store.reversed?.[key]) return { reversed: false, reason: 'nothing_to_reverse' };
+  const referrer = store.links[user];
+  if (!referrer) return { reversed: false, reason: 'no_referrer' };
+  const e = earnedFor(referrer);
+  // The commission for THIS purchase isn't stored line-by-line, so recompute it
+  // from the recorded award. We stored the ACU on the aggregate; reverse the
+  // same amount we would have granted. Re-derive from the grant idempotency
+  // replay is not possible, so we recompute from the purchase is not available
+  // here — instead we clawback using the aggregate delta captured at award time.
+  const amount = store.awardAmount?.[key] || 0;
+  if (amount <= 0) { (store.reversed ||= {})[key] = true; persist(); return { reversed: false, reason: 'zero_amount' }; }
+  clawbackRef(referrer, amount, `Referral reversal · ${String(user).slice(-6)}`, `${key}_rev`);
+  e.acu = Math.max(0, (e.acu || 0) - amount);
+  (store.reversed ||= {})[key] = true;
+  persist();
+  return { reversed: true, referrer, amount };
 }
 
 /* Admin overview: every account with referral activity, its real stats, and
