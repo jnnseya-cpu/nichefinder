@@ -18,11 +18,17 @@ import { sendEvent as capiSend } from './meta-capi.js';
 const CAPI_ORIGIN = () => (process.env.PUBLIC_ORIGIN || 'https://nichefinderhq.com').replace(/\/$/, '');
 
 const KEY = process.env.STRIPE_SECRET_KEY || '';
-const WHSEC = process.env.STRIPE_WEBHOOK_SECRET || '';
+// One OR MORE webhook signing secrets, comma-separated. Each Stripe endpoint has
+// its own whsec_…; supporting several means multiple endpoints can hit this same
+// URL (e.g. during a secret rotation, or a snapshot + a spare endpoint) and a
+// delivery signed by ANY configured secret verifies — instead of 100% failing
+// just because it came from the "other" endpoint.
+const WHSECS = (process.env.STRIPE_WEBHOOK_SECRET || '').split(',').map((s) => s.trim()).filter(Boolean);
+const WHSEC = WHSECS[0] || ''; // primary (kept for back-compat with callers/tests)
 // Overridable for the full-cycle payment test (points at a local Stripe mock).
 const STRIPE_API = process.env.STRIPE_API_BASE || 'https://api.stripe.com';
 
-export const paymentsConfigured = () => Boolean(KEY && WHSEC);
+export const paymentsConfigured = () => Boolean(KEY && WHSECS.length);
 
 function form(data) {
   return Object.entries(data)
@@ -128,8 +134,12 @@ export async function createSubscriptionCheckout({ user, planId, origin }) {
 }
 
 /* Verify Stripe's signature scheme: header "t=...,v1=..." where
-   v1 = HMAC-SHA256(whsec, `${t}.${rawBody}`). 5-minute replay tolerance. */
-export function verifySignature(rawBody, sigHeader, secret = WHSEC, toleranceSec = 300) {
+   v1 = HMAC-SHA256(whsec, `${t}.${rawBody}`). 5-minute replay tolerance. A
+   delivery verifies if it matches ANY configured signing secret (see WHSECS),
+   so multiple endpoints / a secret rotation don't cause 100% failures. */
+export function verifySignature(rawBody, sigHeader, secret, toleranceSec = 300) {
+  const secrets = secret != null ? [secret] : WHSECS;
+  if (!secrets.length) return false;
   const parts = Object.fromEntries(
     String(sigHeader || '')
       .split(',')
@@ -139,10 +149,16 @@ export function verifySignature(rawBody, sigHeader, secret = WHSEC, toleranceSec
   if (!parts.t || !parts.v1) return false;
   const age = Math.abs(Date.now() / 1000 - Number(parts.t));
   if (!Number.isFinite(age) || age > toleranceSec) return false;
-  const expected = crypto.createHmac('sha256', secret).update(`${parts.t}.${rawBody}`).digest('hex');
-  const a = Buffer.from(expected);
   const b = Buffer.from(parts.v1);
-  return a.length === b.length && crypto.timingSafeEqual(a, b);
+  let ok = false;
+  for (const sec of secrets) {
+    const expected = crypto.createHmac('sha256', sec).update(`${parts.t}.${rawBody}`).digest('hex');
+    const a = Buffer.from(expected);
+    // Compare every candidate (no early return) so timing doesn't reveal which
+    // secret, if any, was the near-match.
+    if (a.length === b.length && crypto.timingSafeEqual(a, b)) ok = true;
+  }
+  return ok;
 }
 
 /* Email a receipt after a settled purchase/renewal. Fire-and-forget: never let a
@@ -211,10 +227,14 @@ export function sendSubscriptionReceipt({ user, planId, method = 'card', renewal
    its first invoice.paid does the crediting, so we never double-count. */
 export async function handleWebhook(rawBody, sigHeader) {
   if (!paymentsConfigured()) {
-    throw new GatewayError('Payments not configured.', { status: 503, code: 'payment_not_configured' });
+    // Loud + specific so a misconfigured box is diagnosable from Stripe's
+    // delivery view AND the server log, without leaking secret values.
+    console.error(`[payments] webhook refused: not configured (STRIPE_SECRET_KEY ${KEY ? 'set' : 'MISSING'}, STRIPE_WEBHOOK_SECRET ${WHSECS.length ? WHSECS.length + ' set' : 'MISSING'})`);
+    throw new GatewayError('Payments not configured on this deployment: set STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET.', { status: 503, code: 'payment_not_configured' });
   }
   if (!verifySignature(rawBody, sigHeader)) {
-    throw new GatewayError('Invalid webhook signature.', { status: 400, code: 'invalid_signature' });
+    console.error(`[payments] webhook signature rejected — the endpoint's signing secret does not match STRIPE_WEBHOOK_SECRET (${WHSECS.length} secret(s) configured). Copy this endpoint's whsec_ into the env and restart.`);
+    throw new GatewayError('Invalid webhook signature — the endpoint signing secret does not match this server.', { status: 400, code: 'invalid_signature' });
   }
   let event;
   try { event = JSON.parse(rawBody); } catch {

@@ -248,6 +248,23 @@ check('a guest wallet is still readable without a token', res.status === 200 && 
 res = await post('/v1/generate', { user: GUEST, messages: [{ role: 'user', content: 'guest run' }] });
 check('a guest can still spend without a token (pre-signup flow intact)', res.status === 200 && res.ok);
 
+// ───────────── F12: webhook signature verification is correct ────────────
+console.log('— F12: webhook signatures verify against the right secret only —');
+const { verifySignature } = await import('../src/payments.js'); // after env is set
+function signWith(secret, bodyStr) {
+  const t = Math.floor(Date.now() / 1000);
+  return `t=${t},v1=${crypto.createHmac('sha256', secret).update(`${t}.${bodyStr}`).digest('hex')}`;
+}
+const wbBody = JSON.stringify({ id: 'evt_sig', type: 'ping' });
+check('a signature made with the endpoint secret verifies', verifySignature(wbBody, signWith('whsec_A', wbBody), 'whsec_A') === true);
+check('a signature made with a DIFFERENT secret is rejected', verifySignature(wbBody, signWith('whsec_B', wbBody), 'whsec_A') === false);
+check('a stale timestamp (>5 min) is rejected', (() => {
+  const t = Math.floor(Date.now() / 1000) - 400;
+  const sig = `t=${t},v1=${crypto.createHmac('sha256', 'whsec_A').update(`${t}.${wbBody}`).digest('hex')}`;
+  return verifySignature(wbBody, sig, 'whsec_A') === false;
+})());
+check('a garbage signature header is rejected', verifySignature(wbBody, 'not-a-signature', 'whsec_A') === false);
+
 stripeMock.close();
 console.log(failures === 0 ? '\nMONEY LEAKS: all checks passed.' : `\n${failures} check(s) FAILED.`);
 process.exit(failures ? 1 : 0);
