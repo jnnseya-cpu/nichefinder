@@ -167,6 +167,59 @@ await signedWebhook({ id: 'evt_cap_2', type: 'checkout.session.completed',
 const capped = (await wallet(REFERRER)).paid;
 check('referral commission is capped at the lifetime limit (150 ACU)', capped === 150, `paid=${capped}`);
 
+// ───────────── F7: concurrency TOCTOU — no over-spend under a burst ─────────
+console.log('— F7: N concurrent generations cannot out-spend one balance —');
+const U6 = 'op_' + 'leakf7aaaa0006';
+await post('/v1/wallet/credit', { user: U6, amount: 3 }, admin); // only 3 ACU → 3 generations max
+// Fire 12 concurrent generations at a 3-ACU wallet. Each costs the 1-ACU floor.
+const burst = await Promise.all(Array.from({ length: 12 }, (_, i) =>
+  post('/v1/generate', { user: U6, messages: [{ role: 'user', content: 'burst ' + i }] }).then((r) => r.status)));
+const ok = burst.filter((s) => s === 200).length;
+const refused = burst.filter((s) => s === 402).length;
+const endBal = (await wallet(U6)).paid;
+check('at most 3 of the 12 concurrent calls succeeded', ok <= 3, `ok=${ok} refused=${refused}`);
+check('the rest were refused (402), not served free', ok + refused === 12, `ok=${ok} refused=${refused}`);
+check('wallet never went negative (held-based reservation held the line)', endBal >= 0 && endBal === 3 - ok, `endBal=${endBal} ok=${ok}`);
+
+// ───────────── F8: subscription proration is not credited ────────────────
+console.log('— F8: a plan-change proration invoice does not mint a full allotment —');
+const U7 = 'op_' + 'leakf8aaaa0007';
+// first real cycle credits the plan allotment (starter = 200 ACU/mo)
+await signedWebhook({ id: 'evt_sub_create', type: 'invoice.paid',
+  data: { object: { id: 'in_create', billing_reason: 'subscription_create', subscription: 'sub_1', subscription_details: { metadata: { user: U7, planId: 'starter' } } } } });
+check('first cycle credited the 200-ACU allotment', (await wallet(U7)).paid === 200);
+// a proration invoice from an upgrade must NOT credit again
+let r = await signedWebhook({ id: 'evt_sub_proration', type: 'invoice.paid',
+  data: { object: { id: 'in_proration', billing_reason: 'subscription_update', subscription: 'sub_1', subscription_details: { metadata: { user: U7, planId: 'pro' } } } } });
+body = await r.json();
+check('proration invoice ignored (not credited)', body.ignored && body.ignored.startsWith('non_period_invoice'), JSON.stringify(body));
+check('balance unchanged after proration', (await wallet(U7)).paid === 200);
+// the next genuine renewal cycle DOES credit
+await signedWebhook({ id: 'evt_sub_cycle', type: 'invoice.paid',
+  data: { object: { id: 'in_cycle', billing_reason: 'subscription_cycle', subscription: 'sub_1', subscription_details: { metadata: { user: U7, planId: 'pro' } } } } });
+check('genuine renewal credits the new plan allotment (+600)', (await wallet(U7)).paid === 800);
+
+// ───────────── F9: client idempotency key can't poison a settlement key ──
+console.log('— F9: a client-chosen idempotency key cannot pre-occupy a settlement key —');
+const U8 = 'op_' + 'leakf9aaaa0008';
+await post('/v1/wallet/credit', { user: U8, amount: 100 }, admin);
+// attacker tries to pre-seed the exact settlement key a future webhook will use
+await post('/v1/wallet/charge', { user: U8, amount: 1, label: 'poison', idempotencyKey: 'stripe_evt_poison_1' }, admin);
+// the webhook for that event id must still credit (its key was namespaced away)
+r = await signedWebhook({ id: 'evt_poison_1', type: 'checkout.session.completed',
+  data: { object: { id: 'cs_poison', payment_status: 'paid', payment_intent: 'pi_poison', metadata: { user: U8, packageId: 'starter_5' } } } });
+body = await r.json();
+check('the real settlement still credited despite the pre-seeded key', body.credited === 500 && !body.replayed, JSON.stringify(body));
+
+// ───────────── F10: amount mismatch is refused ───────────────────────────
+console.log('— F10: a settlement whose amount is short is not credited —');
+const U9 = 'op_' + 'leakf10aaa0009';
+r = await signedWebhook({ id: 'evt_short', type: 'checkout.session.completed',
+  data: { object: { id: 'cs_short', payment_status: 'paid', payment_intent: 'pi_short', amount_total: 1, currency: 'gbp', metadata: { user: U9, packageId: 'investor_50' } } } });
+body = await r.json();
+check('underpaid session refused (amount_mismatch)', body.ignored === 'amount_mismatch', JSON.stringify(body));
+check('no ACU credited for the underpayment', ((await wallet(U9)).paid || 0) === 0);
+
 stripeMock.close();
 console.log(failures === 0 ? '\nMONEY LEAKS: all checks passed.' : `\n${failures} check(s) FAILED.`);
 process.exit(failures ? 1 : 0);

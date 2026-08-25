@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { config } from './config.js';
 import { GatewayError } from './errors.js';
 import { route, availableProviders, meterAcu } from './router.js';
-import { getWallet, getLedger, charge, credit, grant, summary, deleteWallet, migratePaid, PACKAGES, isFrozen } from './wallet.js';
+import { getWallet, getLedger, charge, credit, grant, summary, deleteWallet, migratePaid, PACKAGES, isFrozen, reserve, settleHold, releaseHold } from './wallet.js';
 import { createCheckout, createSubscriptionCheckout, handleWebhook, paymentsConfigured } from './payments.js';
 import { createKodaIntent, handleKodaWebhook, kodaConfigured } from './koda.js';
 import { summaryFor as referralSummary, listPartners } from './referrals.js';
@@ -377,6 +377,7 @@ const server = http.createServer(async (req, res) => {
   // catalogue price (shared/nf-economy.js), adjusted for capital bracket and
   // Investor Mode. Price is resolved server-side so the client can never set it.
   if (req.method === 'POST' && url.pathname === '/v1/document') {
+    let hold = null; // outstanding ACU reservation — released on any failure path (catch-visible)
     try {
       if (maintenanceOn) {
         return json(res, 503, { error: 'maintenance', message: 'Niche Finder is briefly paused for maintenance. Please try again shortly.' });
@@ -401,10 +402,6 @@ const server = http.createServer(async (req, res) => {
         if (isFrozen(body.user)) {
           throw new GatewayError('This wallet is temporarily frozen pending a payment dispute. Contact support.', { status: 402, code: 'wallet_frozen', platformCode: 4002 });
         }
-        const w = getWallet(body.user);
-        if (w.paid < price) {
-          throw new GatewayError(`Insufficient paid ACU for this document: needs ${price}, balance ${w.paid}.`, { status: 402, code: 'insufficient_acu', platformCode: 4001 });
-        }
         debit = { user: body.user, price };
       }
       // Fixed price → bound provider spend, AND keep generation inside a live
@@ -422,6 +419,8 @@ const server = http.createServer(async (req, res) => {
       // persist. Previously this ran a full deep generation whose "overview"
       // output the export page never rendered: pure wasted spend every click.
       if (body.docType === 'export') {
+        // No AI, no await → a direct charge is already atomic (no TOCTOU). It
+        // still checks spendable, so it respects any other in-flight hold.
         if (clientGone) { console.log('[document] export: client disconnected — no charge'); return; }
         if (debit) {
           const charged = charge({
@@ -434,15 +433,25 @@ const server = http.createServer(async (req, res) => {
         return json(res, 200, { docType: 'export', charged: 0 });
       }
 
-      console.log(`[document] start type=${body.docType} price=${price} effort=${body.effort || 'high'} billed=${!!debit}`);
+      // RESERVE the fixed price before the provider call (atomic hold → no TOCTOU
+      // across the await). Released on malformed output, client-gone, or error;
+      // settled at the fixed price on a delivered document.
+      if (debit) {
+        const holdKey = `doc_${body.docType}_${started}_${crypto.randomUUID()}`;
+        reserve({ user: debit.user, amount: debit.price, key: holdKey });
+        hold = { user: debit.user, price: debit.price, key: holdKey };
+      }
+      console.log(`[document] start type=${body.docType} price=${price} effort=${body.effort || 'high'} billed=${!!hold}`);
       const result = await route(genBody);
       let content;
       try { content = JSON.parse(result.text); } catch {
+        if (hold) releaseHold({ user: hold.user, key: hold.key }); // malformed → not charged
         throw new GatewayError('The document engine returned malformed content — you were not charged. Please try again.', { status: 502, code: 'bad_document' });
       }
       console.log(`[document] ok type=${body.docType} provider=${result.provider} latencyMs=${Date.now() - started} sections=${(content.sections || []).length}`);
       if (clientGone) {
-        console.log('[document] client disconnected before result — skipping charge (no delivery, no bill)');
+        if (hold) releaseHold({ user: hold.user, key: hold.key });
+        console.log('[document] client disconnected before result — hold released, no bill');
         return;
       }
       // Persist the generated document server-side so it survives cache clears /
@@ -451,16 +460,16 @@ const server = http.createServer(async (req, res) => {
         try { saveDoc({ user: body.user, project: body.project, type: body.docType, content, version: body.version || 1, title: content.title || '' }); }
         catch (e) { console.error('[document] persist failed:', e.message); }
       }
-      if (debit) {
-        const charged = charge({
-          user: debit.user, amount: debit.price, label: `document · ${body.docType}`,
-          action: 'generation', bracketFactor: result.bracketFactor || 1,
-          idempotencyKey: `doc_${body.docType}_${started}_${crypto.randomUUID()}`,
+      if (hold) {
+        const s = settleHold({
+          user: hold.user, key: hold.key, actual: hold.price,
+          label: `document · ${body.docType}`, action: 'generation', bracketFactor: result.bracketFactor || 1,
         });
-        return json(res, 200, { docType: body.docType, content, charged: charged.charged, wallet: charged.wallet, provider: result.provider, latencyMs: Date.now() - started });
+        return json(res, 200, { docType: body.docType, content, charged: s.charged, wallet: s.wallet, provider: result.provider, latencyMs: Date.now() - started });
       }
       return json(res, 200, { docType: body.docType, content, provider: result.provider, latencyMs: Date.now() - started });
     } catch (err) {
+      if (hold) { try { releaseHold({ user: hold.user, key: hold.key }); } catch {} } // never strand a reservation
       console.error(`[document] failed: code=${err?.code || '?'} status=${err?.status ?? '?'} :: ${err?.message || err}`);
       return handleError(res, err);
     }
@@ -963,7 +972,17 @@ const server = http.createServer(async (req, res) => {
         }
         requireCapabilityId(body.user);
       }
-      body.idempotencyKey = body.idempotencyKey || req.headers['idempotency-key'];
+      // Namespace any client-supplied idempotency key so it can NEVER collide
+      // with an internal settlement/generation key (stripe_/koda_/stripe_inv_/
+      // ref_/gen_/doc_). Without this, a client could pre-occupy a settlement
+      // key and make a real payment's webhook replay-skip its credit — the
+      // customer pays, no ACU lands. Admin grants keep their own explicit key.
+      const rawKey = body.idempotencyKey || req.headers['idempotency-key'];
+      if (rawKey && !(isGrant && adminOk)) {
+        body.idempotencyKey = `client_${String(rawKey).replace(/[^a-zA-Z0-9_.:-]/g, '').slice(0, 100)}`;
+      } else {
+        body.idempotencyKey = rawKey;
+      }
       const result = url.pathname.endsWith('charge') ? charge(body)
         : isGrant ? grant(body) : credit(body);
       return json(res, 200, result);
@@ -971,6 +990,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (req.method === 'POST' && url.pathname === '/v1/generate') {
+    let hold = null; // outstanding ACU reservation — released on any failure path (catch-visible)
     try {
       // If the browser gives up (its request timeout) before the model returns,
       // don't bill the wallet for a result the user never received.
@@ -1000,48 +1020,45 @@ const server = http.createServer(async (req, res) => {
       // elicit a huge response can't run up a bill beyond the reserved estimate.
       const reservedOut = reservedOutputTokens(body);
       const genBody = { ...body, maxTokens: reservedOut };
+      const started = Date.now();
       let debit = null;
       if (billingEnforced()) {
         requireCapabilityId(body.user);
-        if (isFrozen(body.user)) {
-          throw new GatewayError('This wallet is temporarily frozen pending a payment dispute. Contact support.', { status: 402, code: 'wallet_frozen', platformCode: 4002 });
-        }
-        const est = estimateAcuFor(body, reservedOut);
-        const w = getWallet(body.user);
-        if (w.paid < est) {
-          throw new GatewayError(`Insufficient paid ACU for this generation: estimated ${est}, balance ${w.paid}.`, {
-            status: 402, code: 'insufficient_acu', platformCode: 4001,
-          });
-        }
-        debit = { user: body.user, estimate: est };
+        // RESERVE the worst-case cost up front — an atomic hold, so concurrent
+        // requests can't all pass one balance check and make us pay the provider
+        // many times for one balance's worth (TOCTOU across the await below).
+        // reserve() throws 402 (insufficient / frozen); the hold is released on
+        // every failure path and settled to the real cost on success.
+        const est = Math.max(config.acu.minimumCharge, estimateAcuFor(body, reservedOut));
+        const holdKey = `gen_${started}_${crypto.randomUUID()}`;
+        reserve({ user: body.user, amount: est, key: holdKey });
+        hold = { user: body.user, estimate: est, key: holdKey };
       }
-      const started = Date.now();
-      console.log(`[generate] start effort=${body.effort || 'default'} schema=${body.jsonSchema ? 'yes' : 'no'} maxOut=${reservedOut} billed=${!!debit}`);
+      console.log(`[generate] start effort=${body.effort || 'default'} schema=${body.jsonSchema ? 'yes' : 'no'} maxOut=${reservedOut} billed=${!!hold}`);
       const result = await route(genBody);
       console.log(`[generate] ok provider=${result.provider} latencyMs=${Date.now() - started} acu=${result.acu ?? 0} textLen=${(result.text || '').length}`);
       if (clientGone) {
-        console.log('[generate] client disconnected before result — skipping charge (no delivery, no bill)');
+        if (hold) releaseHold({ user: hold.user, key: hold.key });
+        console.log('[generate] client disconnected before result — hold released, no bill');
         return; // socket already closed; do not bill undelivered work
       }
-      if (debit) {
-        const metered = Math.max(config.acu.minimumCharge, Math.min(result.acu || 0, getWallet(debit.user).paid));
-        // SETTLEMENT KEY IS SERVER-MINTED AND UNIQUE PER CALL — never the client's
-        // idempotencyKey. A metered charge bills work already done (we've already
-        // paid the provider); if a replayed client key short-circuited the debit,
-        // a caller could pin one key and generate forever for the price of one
-        // call. Uniqueness guarantees every generation is billed exactly once.
-        const charged = charge({
-          user: debit.user, amount: metered, label: `generation · ${result.provider}`,
-          action: 'generation', bracketFactor: result.bracketFactor || 1,
-          idempotencyKey: `gen_${started}_${crypto.randomUUID()}`,
+      if (hold) {
+        // Settle the hold at the metered cost (bounded ≤ reserved by the output
+        // cap), releasing any unused reservation back to the balance.
+        const metered = Math.max(config.acu.minimumCharge, Math.min(result.acu || 0, hold.estimate));
+        const s = settleHold({
+          user: hold.user, key: hold.key, actual: metered,
+          label: `generation · ${result.provider}`, action: 'generation', bracketFactor: result.bracketFactor || 1,
         });
-        if ((result.acu || 0) > debit.estimate) {
-          console.warn(`[generate] cost overrun: metered ${result.acu} > reserved ${debit.estimate} user=${debit.user.slice(-8)} — collected ${charged.charged}`);
+        if ((result.acu || 0) > hold.estimate) {
+          console.warn(`[generate] cost overrun capped: metered ${result.acu} > reserved ${hold.estimate} user=${hold.user.slice(-8)} — collected ${s.charged}`);
         }
-        return json(res, 200, { ...result, latencyMs: Date.now() - started, charged: charged.charged, wallet: charged.wallet });
+        return json(res, 200, { ...result, latencyMs: Date.now() - started, charged: s.charged, wallet: s.wallet });
       }
       return json(res, 200, { ...result, latencyMs: Date.now() - started });
     } catch (err) {
+      if (hold) { try { releaseHold({ user: hold.user, key: hold.key }); } catch {} } // never strand a reservation
+
       // Every generation failure is logged with its full reason — including
       // GatewayErrors (no_provider, insufficient_acu, provider 4xx) that
       // handleError does not log — so live discovery failures are never silent.

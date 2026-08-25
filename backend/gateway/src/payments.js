@@ -239,6 +239,17 @@ export async function handleWebhook(rawBody, sigHeader) {
     if (!user || !PACKAGES[packageId]) {
       throw new GatewayError('Webhook session missing user/package metadata.', { status: 400, code: 'bad_metadata' });
     }
+    // Defence in depth: only credit if the amount actually collected matches the
+    // package price. Price + metadata are both set server-side at checkout, so
+    // this should always hold — but if it ever drifts (tampering, a mispriced
+    // Stripe object, a currency mismatch), we refuse rather than over-credit.
+    const expectedMinor = PACKAGES[packageId].priceGBP * 100;
+    const paidMinor = Number(obj.amount_total);
+    const cur = String(obj.currency || 'gbp').toLowerCase();
+    if (Number.isFinite(paidMinor) && (paidMinor < expectedMinor || cur !== 'gbp')) {
+      console.error(`[payments] amount/currency mismatch for ${packageId}: paid ${paidMinor} ${cur}, expected ${expectedMinor} gbp — NOT crediting`);
+      return { received: true, ignored: 'amount_mismatch' };
+    }
     const result = credit({ user, packageId, idempotencyKey: `stripe_${event.id}` });
     if (!result.replayed) {
       // Key the referral on the PaymentIntent (stable across the purchase's whole
@@ -263,6 +274,15 @@ export async function handleWebhook(rawBody, sigHeader) {
     const user = meta.user;
     const planId = meta.planId;
     if (!user || !PLANS[planId]) return { received: true, ignored: 'non_plan_invoice' };
+    // Credit ONLY the genuine full-period invoices: the first one and each
+    // renewal. A plan change ('subscription_update') emits a PRORATION invoice —
+    // crediting the full monthly allotment for a small prorated charge would let
+    // a user farm ACU by repeatedly up/downgrading. Those are acknowledged and
+    // NOT credited; the next real cycle grants the (new) plan's allotment.
+    const reason = obj.billing_reason;
+    if (reason && reason !== 'subscription_create' && reason !== 'subscription_cycle') {
+      return { received: true, ignored: `non_period_invoice_${reason}` };
+    }
     const invId = obj.id || `${obj.subscription}_${obj.period_end || obj.created || event.id}`;
     const result = creditPlanAllotment({ user, planId, idempotencyKey: `stripe_inv_${invId}` });
     if (!result.replayed) {

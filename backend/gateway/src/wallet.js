@@ -113,8 +113,20 @@ function ledger(wallet, label, amt, extra = {}) {
   if (wallet.ledger.length > LEDGER_CAP) wallet.ledger.length = LEDGER_CAP;
 }
 
+// Spendable = owned paid balance minus funds currently HELD by in-flight
+// reservations. Every path that spends must check this, not raw `paid`, or two
+// concurrent requests could both pass a balance check and make us pay a provider
+// twice for one balance's worth of ACU (a TOCTOU between check and charge).
+function spendable(wallet) {
+  return wallet.paid - (wallet.held || 0);
+}
+
 function view(wallet) {
-  return { paid: wallet.paid, free: wallet.free, total: wallet.paid + wallet.free, plan: wallet.plan || null };
+  return {
+    paid: wallet.paid, free: wallet.free, total: wallet.paid + wallet.free,
+    held: wallet.held || 0, spendable: spendable(wallet) + wallet.free,
+    plan: wallet.plan || null,
+  };
 }
 
 function idempotent(key, fn) {
@@ -204,9 +216,9 @@ export function charge({ user, amount, label, idempotencyKey, action, bracketFac
         status: 402, code: 'wallet_frozen', platformCode: 4002,
       });
     }
-    if (wallet.paid < cost) {
+    if (spendable(wallet) < cost) {
       // platformCode 4001 = "Insufficient ACUs" in the spec's API error registry (§10.1).
-      throw new GatewayError(`Insufficient paid ACU: need ${cost}, have ${wallet.paid}. Welcome ACUs are read-only.`, {
+      throw new GatewayError(`Insufficient paid ACU: need ${cost}, have ${spendable(wallet)}. Welcome ACUs are read-only.`, {
         status: 402,
         code: 'insufficient_acu',
         platformCode: 4001,
@@ -222,6 +234,70 @@ export function charge({ user, amount, label, idempotencyKey, action, bracketFac
     persist();
     return { charged: cost, bracketFactor: bf, wallet: view(wallet) };
   });
+}
+
+/* ---- reserve → settle: atomic spend for async work (the TOCTOU seal) ----
+   A generation/document runs an `await` between "do you have the funds?" and
+   "take the funds". Without a hold, N concurrent requests all see the same
+   balance, all pass, and we pay the provider N times for one balance's worth.
+   reserve() debits nothing but PLACES A HOLD synchronously (atomic in Node's
+   single thread), so the next concurrent request sees reduced spendable and is
+   refused. After the work completes we settle() the real cost (≤ the hold) and
+   release the rest, or release() the whole hold on failure/cancel — the caller
+   is never billed for work it didn't deliver. */
+export function reserve({ user, amount, key }) {
+  const wallet = requireUser(user);
+  const hold = Math.ceil(Number(amount));
+  if (!Number.isFinite(hold) || hold <= 0) {
+    throw new GatewayError('"amount" must be a positive integer of ACUs.', { status: 400, code: 'invalid_amount' });
+  }
+  if (wallet.frozen) {
+    throw new GatewayError('This wallet is temporarily frozen pending a payment dispute. Contact support.', { status: 402, code: 'wallet_frozen', platformCode: 4002 });
+  }
+  wallet.holds = wallet.holds || {};
+  if (wallet.holds[key] != null) return { held: wallet.holds[key], key, replayed: true }; // idempotent re-reserve
+  if (spendable(wallet) < hold) {
+    throw new GatewayError(`Insufficient paid ACU: need ${hold}, have ${spendable(wallet)}. Welcome ACUs are read-only.`, {
+      status: 402, code: 'insufficient_acu', platformCode: 4001,
+    });
+  }
+  wallet.held = (wallet.held || 0) + hold;
+  wallet.holds[key] = hold;
+  persist();
+  return { held: hold, key };
+}
+
+// Convert a hold into a real debit of `actual` (clamped to the hold), releasing
+// any unused remainder back to the spendable balance. Idempotent: once the hold
+// is gone, a repeat call is a no-op. One clean ledger line per settled action.
+export function settleHold({ user, key, actual, label, action, bracketFactor, referenceId }) {
+  const wallet = requireUser(user);
+  const hold = wallet.holds && wallet.holds[key];
+  if (hold == null) return { charged: 0, settled: false, wallet: view(wallet) };
+  const cost = Math.min(Math.max(0, Math.floor(Number(actual) || 0)), hold);
+  const bf = Number.isFinite(Number(bracketFactor)) && Number(bracketFactor) >= 1 ? Number(bracketFactor) : 1;
+  wallet.held -= hold;
+  delete wallet.holds[key];
+  wallet.paid -= cost;
+  ledger(wallet, `OPERATIONAL_TASK · ${String(label || 'action').slice(0, 120)}`, -cost, {
+    type: action ? `debit_${String(action).slice(0, 40)}` : 'debit_action',
+    pool: 'paid', bracketFactor: bf,
+    ...(referenceId ? { referenceId: String(referenceId).slice(0, 64) } : {}),
+  });
+  persist();
+  return { charged: cost, settled: true, wallet: view(wallet) };
+}
+
+// Cancel a hold without charging (generation failed, client vanished, malformed
+// output). The reserved funds return to spendable; the user is not billed.
+export function releaseHold({ user, key }) {
+  const wallet = store.wallets[user];
+  if (!wallet || !wallet.holds || wallet.holds[key] == null) return { released: 0 };
+  const hold = wallet.holds[key];
+  wallet.held -= hold;
+  delete wallet.holds[key];
+  persist();
+  return { released: hold, wallet: view(wallet) };
 }
 
 // Admin comp: credit an arbitrary amount of USABLE (paid-pool) ACUs to a user.
@@ -307,6 +383,9 @@ export function clawback({ user, amount, reason, idempotencyKey, freeze = false,
     const recovered = Math.min(wallet.paid, want);
     const shortfall = want - recovered;
     wallet.paid -= recovered;
+    // A dispute can land while a generation holds funds; never let held exceed
+    // what's actually owned, or a later settle would drive paid negative.
+    if ((wallet.held || 0) > wallet.paid) wallet.held = wallet.paid;
     if (freeze) wallet.frozen = true;
     ledger(wallet, `REVERSAL · ${String(reason || 'Refund/chargeback').slice(0, 100)}${shortfall ? ` (recovered ${recovered}/${want}; ${shortfall} already spent)` : ''}`, -recovered, {
       type: 'debit_reversal',
