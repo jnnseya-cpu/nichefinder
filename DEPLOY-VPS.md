@@ -168,6 +168,42 @@ until it logs "certificate obtained". Once `https://yourdomain.com` loads with a
 padlock, hit **Resend** on a failed Stripe/KODA event — it returns 200 and goes
 green. Webhooks CANNOT work until HTTPS does.
 
+### Running behind an existing Dockerized Caddy (multi-site host)
+
+If this VPS already serves other sites through a **Caddy container** that owns
+80/443 (common when one box hosts several apps), do NOT run a second host Caddy —
+it can't bind the ports and will fail with "address already in use". Instead add
+Niche Finder as a site block in the *Docker* Caddy's Caddyfile and point it at
+the gateway, which runs on the host at `:8080`:
+
+```
+nichefinderhq.com {
+    encode zstd gzip
+    reverse_proxy host.docker.internal:8080
+}
+```
+
+**Use `host.docker.internal`, not a hardcoded bridge IP** (e.g. `172.19.0.1`): the
+IP is the Docker network's gateway and can change if the compose network is ever
+recreated (`docker compose down && up`), silently breaking the site. For the
+container to resolve `host.docker.internal` on Linux, the Caddy service needs a
+host-gateway mapping. Add it **without editing the base compose** via an override
+file next to it (`compose.override.yaml` or `docker-compose.override.yml`):
+
+```yaml
+services:
+  caddy:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+```
+
+Then `docker compose up -d caddy` (recreates only Caddy, ~2s blip), confirm the
+app is reachable — `docker exec <caddy> wget -qO- http://host.docker.internal:8080/v1/health`
+should print `{"status":"ok",...}` — and `docker exec <caddy> caddy reload
+--config /etc/caddy/Caddyfile`. The gateway itself must keep listening on all
+interfaces (`0.0.0.0:8080`) so the container can reach it; firewall port 8080
+from the public internet so only the proxy talks to it.
+
 ## 6. Point the front end at itself
 
 Since the gateway serves the frontend, its API is same-origin — set the switch
