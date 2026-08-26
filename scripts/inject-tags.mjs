@@ -10,7 +10,10 @@ import { fileURLToPath } from 'node:url';
 const DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'frontend');
 const S = '<!-- TAGS:head (managed by scripts/inject-tags.mjs) -->';
 const E = '<!-- /TAGS:head -->';
-const block = `${S}\n<script src="nf-tags.js"></script>\n${E}\n`;
+// `defer` so the tag loader never blocks first paint (it sets Consent Mode
+// defaults then loads GTM/Pixel in order, after parse — all NF_TRACK calls are
+// in event handlers, so nothing needs it synchronously).
+const block = `${S}\n<script src="nf-tags.js" defer></script>\n${E}\n`;
 
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const stripPair = (html, a, b) => html.replace(new RegExp(esc(a) + '[\\s\\S]*?' + esc(b) + '\\n?', 'g'), '');
