@@ -143,6 +143,31 @@ sudo systemctl reload caddy
 Caddy fetches a TLS certificate automatically once DNS points at the VPS. Your
 site is now live at `https://app.yourdomain.com`.
 
+### If the site shows `ERR_SSL_PROTOCOL_ERROR` (and webhooks fail 100%)
+
+Something is answering on 443 but not with valid HTTPS — so browsers, Stripe, and
+KODA all fail at the TLS handshake before reaching the app. Work through this:
+
+```bash
+sudo systemctl status caddy                 # is Caddy running?
+cat /etc/caddy/Caddyfile                     # does it list your REAL domain, not app.yourdomain.com?
+sudo journalctl -u caddy -n 60 --no-pager    # cert / Let's Encrypt errors show here
+sudo ss -tlnp | grep -E ':(80|443|8080)\b'   # Caddy should own 80+443; the app is on 8080
+dig +short yourdomain.com; curl -s ifconfig.me  # DNS must resolve to THIS box's IP
+```
+
+Caddy can only obtain a cert when ALL of these hold:
+1. **DNS** A-record for the domain points at the VPS public IP.
+2. **Ports 80 AND 443 open** to the internet (VPS firewall + cloud security group).
+   Port 80 is required — Let's Encrypt validates the domain over it.
+3. **Nothing else on 443** — stop any stale nginx (`sudo systemctl stop nginx`);
+   Caddy must own 80/443 and the gateway stays on 8080 (never bind the app to 443).
+
+Fix, then `sudo systemctl reload caddy` and watch `sudo journalctl -u caddy -f`
+until it logs "certificate obtained". Once `https://yourdomain.com` loads with a
+padlock, hit **Resend** on a failed Stripe/KODA event — it returns 200 and goes
+green. Webhooks CANNOT work until HTTPS does.
+
 ## 6. Point the front end at itself
 
 Since the gateway serves the frontend, its API is same-origin — set the switch
