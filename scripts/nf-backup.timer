@@ -1,0 +1,12 @@
+# Runs the data backup hourly (with a catch-up if the box was off). Pair with a
+# 168-archive retention (~7 days hourly). Adjust OnCalendar for your RPO.
+[Unit]
+Description=Niche Finder hourly data backup
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+RandomizedDelaySec=120
+
+[Install]
+WantedBy=timers.target

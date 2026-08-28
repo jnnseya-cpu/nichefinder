@@ -1,0 +1,14 @@
+# Niche Finder — data backup (oneshot, driven by nf-backup.timer).
+# Install: sudo cp scripts/nf-backup.{service,timer} /etc/systemd/system/
+#          sudo systemctl enable --now nf-backup.timer
+# Configure via /etc/nichefinder.env (NF_DATA_DIR, NF_BACKUP_DIR, NF_BACKUP_KEY_FILE, ...).
+[Unit]
+Description=Niche Finder data backup
+After=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/nichefinder.env
+ExecStart=/srv/nichefinder/scripts/nf-backup.sh
+Nice=10
+IOSchedulingClass=idle

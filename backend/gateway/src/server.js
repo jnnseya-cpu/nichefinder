@@ -45,6 +45,23 @@ function setMaintenance(on) {
    public deployment from scripted abuse (human-only access law). */
 const RATE_LIMIT = Number(process.env.RATE_LIMIT_PER_MIN || 120);
 const hits = new Map();
+
+/* Lightweight in-process counters so failures are observable, not silent. Read
+   via the admin-gated GET /v1/admin/metrics; the health watchdog (scripts/
+   nf-monitor.sh) polls it to catch error/webhook spikes that a plain uptime
+   check would miss. Resets on restart — a running total, not a time series. */
+const metrics = { startedAt: Date.now(), requests: 0, errors5xx: 0, generationFailures: 0, webhookFailures: 0 };
+function metricsView() {
+  const total = metrics.requests || 1;
+  return {
+    upSeconds: Math.round((Date.now() - metrics.startedAt) / 1000),
+    requests: metrics.requests,
+    errors5xx: metrics.errors5xx,
+    errorRatePct: Math.round((metrics.errors5xx / total) * 1000) / 10,
+    generationFailures: metrics.generationFailures,
+    webhookFailures: metrics.webhookFailures,
+  };
+}
 function rateLimited(ip) {
   const now = Date.now();
   const slot = hits.get(ip);
@@ -266,6 +283,7 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
 
   if (req.method === 'OPTIONS') return json(res, 204, {});
+  if (url.pathname.startsWith('/v1/')) metrics.requests += 1;
 
   // HEAD is a bodyless GET: uptime monitors and health-checkers use it. Node's
   // HTTP server strips the body from HEAD responses automatically, so routing
@@ -329,7 +347,7 @@ const server = http.createServer(async (req, res) => {
     try {
       const raw = await readBody(req);
       return json(res, 200, await handleWebhook(raw, req.headers['stripe-signature']));
-    } catch (err) { return handleError(res, err); }
+    } catch (err) { metrics.webhookFailures += 1; return handleError(res, err); }
   }
 
   // ---- payments: KODA mobile-money door (hosted intent + settlement webhook) ----
@@ -348,7 +366,7 @@ const server = http.createServer(async (req, res) => {
     try {
       const raw = await readBody(req);
       return json(res, 200, handleKodaWebhook(raw, req.headers['x-koda-signature']));
-    } catch (err) { return handleError(res, err); }
+    } catch (err) { metrics.webhookFailures += 1; return handleError(res, err); }
   }
 
   // ---- newsletter: one-click unsubscribe (public; signed token, no login) ----
@@ -833,6 +851,25 @@ const server = http.createServer(async (req, res) => {
     } catch (err) { return handleError(res, err); }
   }
 
+  // Machine-readable health/error metrics for the uptime watchdog (scripts/
+   // nf-monitor.sh). Admin-gated by session OR the admin key (so an unattended
+   // monitor can poll with x-admin-key without a login). Never public — it
+   // reveals failure counts and revenue.
+  if (method === 'GET' && url.pathname === '/v1/admin/metrics') {
+    const keyOk = req.headers['x-admin-key'] === process.env.ADMIN_API_KEY && Boolean(process.env.ADMIN_API_KEY);
+    if (!adminOf() && !keyOk) return json(res, 403, { error: 'admin_required' });
+    const sum = summary();
+    return json(res, 200, {
+      ...metricsView(),
+      payments: paymentsConfigured(),
+      koda: kodaConfigured(),
+      providers: availableProviders(),
+      maintenance: maintenanceOn,
+      walletCount: sum.walletCount,
+      revenueGBP: sum.revenueGBP,
+    });
+  }
+
   if (method === 'GET' && url.pathname === '/v1/admin/overview') {
     if (!adminOf()) return json(res, 403, { error: 'admin_required' });
     const sum = summary();
@@ -1092,6 +1129,10 @@ const server = http.createServer(async (req, res) => {
       // GatewayErrors (no_provider, insufficient_acu, provider 4xx) that
       // handleError does not log — so live discovery failures are never silent.
       const attempts = err && err.attempts ? JSON.stringify(err.attempts) : '';
+      // Count server/provider-side failures (5xx / no-provider), not normal
+      // business rejections (402 insufficient, 403 auth) — so the metric tracks
+      // real breakage the watchdog should alert on.
+      if (!(err instanceof GatewayError) || (err.status ?? 500) >= 500) metrics.generationFailures += 1;
       console.error(`[generate] failed: code=${err?.code || err?.name || '?'} status=${err?.status ?? '?'} :: ${err?.message || err} ${attempts}`);
       return handleError(res, err);
     }
@@ -1102,8 +1143,11 @@ const server = http.createServer(async (req, res) => {
 
 function handleError(res, err) {
   if (err instanceof GatewayError) {
-    return json(res, err.status >= 400 && err.status < 600 ? err.status : 502, { ...err.toJSON(), attempts: err.attempts });
+    const status = err.status >= 400 && err.status < 600 ? err.status : 502;
+    if (status >= 500) metrics.errors5xx += 1;
+    return json(res, status, { ...err.toJSON(), attempts: err.attempts });
   }
+  metrics.errors5xx += 1;
   console.error('[gateway] unhandled error:', err);
   return json(res, 500, { error: 'internal_error', message: 'Unexpected gateway error.' });
 }

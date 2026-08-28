@@ -301,3 +301,58 @@ cat /var/log/nf-deploy-test.log            # test output from the last deploy
 ```
 From now on, every push to the deploy branch goes live automatically within a
 couple of minutes — only if it's green.
+
+## Backups (data survival) and monitoring (outage detection)
+
+The system of record is flat JSON in `data/` (wallets, accounts, documents,
+articles, referrals). These two subsystems make it survivable and observable.
+Both are zero-dependency (bash + systemd) and configured from `/etc/nichefinder.env`.
+
+### Backups — `scripts/nf-backup.*`
+
+```bash
+sudo cp scripts/nf-backup.service scripts/nf-backup.timer /etc/systemd/system/
+# In /etc/nichefinder.env:
+#   NF_DATA_DIR=/srv/nichefinder/data          # where wallets.json etc. live
+#   NF_BACKUP_DIR=/var/backups/nichefinder
+#   NF_BACKUP_KEEP=168                          # ~7 days hourly
+#   NF_BACKUP_KEY_FILE=/etc/nf-backup.key       # 1 line passphrase; chmod 600. AES-256.
+#   NF_BACKUP_REMOTE=user@backup-host:/nf       # optional off-box copy (rsync/scp)
+sudo systemctl daemon-reload && sudo systemctl enable --now nf-backup.timer
+```
+
+Encrypt (money + auth must never sit unencrypted off-box) and copy off the
+machine — a backup on the same disk as the data does not survive a disk loss.
+
+**Prove the restore** (an untested backup is not a backup):
+```bash
+NF_BACKUP_KEY_FILE=/etc/nf-backup.key \
+  ./scripts/nf-restore.sh /var/backups/nichefinder/nf-data-<latest>.tar.gz.enc /tmp/nf-verify
+# extracts into an ISOLATED dir and validates every store parses + prints record counts.
+```
+The round-trip (backup → restore → verify, plaintext and encrypted) is covered by
+`test/backup.js` in the gateway suite.
+
+### Monitoring — `scripts/nf-monitor.*`
+
+An external watchdog so an outage is caught by an alert, not a customer (both the
+recent TLS outage and a generation failure were found by hand — this closes that).
+
+```bash
+sudo cp scripts/nf-monitor.service scripts/nf-monitor.timer /etc/systemd/system/
+# In /etc/nichefinder.env:
+#   NF_HEALTH_URL=https://nichefinderhq.com/v1/health
+#   NF_ALERT_WEBHOOK=https://hooks.slack.com/services/...   # Slack/Discord/Teams incoming webhook
+#   NF_METRICS_URL=https://nichefinderhq.com/v1/admin/metrics   # optional (silent-failure detection)
+#   NF_ADMIN_KEY=<ADMIN_API_KEY>                                # required for the metrics check
+sudo systemctl daemon-reload && sudo systemctl enable --now nf-monitor.timer
+```
+
+Checks every 2 minutes: health is `200 status:ok`, and (if the metrics vars are
+set) the 5xx rate and webhook-failure count. It alerts only on a **state change**
+(up→down, down→up recovery, or degraded), so it never spams. Test it by stopping
+the gateway briefly — you should get a DOWN alert, then a RECOVERED alert.
+
+`GET /v1/admin/metrics` (admin session or `x-admin-key`) returns uptime, request
+count, 5xx rate, generation failures, webhook failures, provider/payments status
+and revenue — the machine-readable health the watchdog polls.

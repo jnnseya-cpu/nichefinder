@@ -1,0 +1,12 @@
+# Niche Finder — uptime/health watchdog (oneshot, driven by nf-monitor.timer).
+# Install: sudo cp scripts/nf-monitor.{service,timer} /etc/systemd/system/
+#          sudo systemctl enable --now nf-monitor.timer
+# Set NF_ALERT_WEBHOOK (Slack/Discord) in /etc/nichefinder.env to get notified.
+[Unit]
+Description=Niche Finder uptime/health watchdog
+After=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/nichefinder.env
+ExecStart=/srv/nichefinder/scripts/nf-monitor.sh
