@@ -302,6 +302,25 @@ cat /var/log/nf-deploy-test.log            # test output from the last deploy
 From now on, every push to the deploy branch goes live automatically within a
 couple of minutes — only if it's green.
 
+### Two deploy gates + auto-rollback
+
+`vps-autodeploy.sh` protects the live service with two gates, so a bad push can
+never stay live:
+
+1. **Tests (pre-restart).** The full suite runs under MOCK_AI on isolated ports.
+   Fail → the working tree is reset to the last good commit, the running service
+   is never touched, and you get an alert.
+2. **Smoke (post-restart).** After restarting onto the new code it runs
+   `scripts/nf-smoke.sh` against the REAL service (`/v1/health`). Unit tests can
+   pass while the live service is broken (bad env, crash-loop, a runtime-only
+   regression) — this catches that. If the live service doesn't come up healthy,
+   it **auto-rolls-back** to the previous commit, restarts, re-smokes, and alerts.
+   If even the rollback won't come up, it fires a 🆘 "manual intervention" alert.
+
+Set `NF_ALERT_WEBHOOK` in `/etc/nichefinder.env` (same Slack/Discord webhook as
+the watchdog) to receive DEPLOYED / BLOCKED / ROLLED-BACK notifications. The
+smoke and rollback logic is covered by `test/smoke-gate.js`.
+
 ## Backups (data survival) and monitoring (outage detection)
 
 The system of record is flat JSON in `data/` (wallets, accounts, documents,
