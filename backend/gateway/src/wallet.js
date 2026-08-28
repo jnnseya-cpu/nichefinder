@@ -54,7 +54,6 @@ export const PLANS = Object.fromEntries(
 );
 
 let store = load();
-let persistTimer = null;
 
 function load() {
   try {
@@ -71,15 +70,19 @@ function load() {
 }
 
 function persist() {
-  // Debounced atomic write: tmp file + rename so a crash never truncates the store.
-  clearTimeout(persistTimer);
-  persistTimer = setTimeout(() => {
-    fs.mkdirSync(path.dirname(STORE_PATH), { recursive: true });
-    const tmp = `${STORE_PATH}.tmp`;
-    const json = JSON.stringify(store);
-    fs.writeFileSync(tmp, STORE_KEY ? encryptStore(json) : json);
-    fs.renameSync(tmp, STORE_PATH);
-  }, 50);
+  // SYNCHRONOUS durable write — money must survive a crash. The store is the
+  // system of record for real balances, so we do NOT debounce: the previous
+  // 50 ms setTimeout window could lose a just-committed charge/credit if the
+  // process died before it flushed. Write to a tmp file, fsync it to disk, then
+  // atomically rename over the store (so a reader never sees a truncated file).
+  // (Superseded at scale by the SQLite/WAL backend — docs/DB-MIGRATION.md.)
+  fs.mkdirSync(path.dirname(STORE_PATH), { recursive: true });
+  const tmp = `${STORE_PATH}.tmp`;
+  const json = JSON.stringify(store);
+  const fd = fs.openSync(tmp, 'w');
+  try { fs.writeSync(fd, STORE_KEY ? encryptStore(json) : json); fs.fsyncSync(fd); }
+  finally { fs.closeSync(fd); }
+  fs.renameSync(tmp, STORE_PATH);
 }
 
 function requireUser(userId) {
