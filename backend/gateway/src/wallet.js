@@ -2,10 +2,10 @@
 // the server. File-persisted JSON store (swap for Postgres in P1 — the handler
 // contract below is the stable surface). Single-process writes are serialized
 // through an in-memory queue, so balances never race.
-import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { GatewayError } from './errors.js';
+import { makeStoreBackend } from './store/backend.js';
 import '../../../shared/nf-economy.js'; // canonical economy → globalThis.NF_ECONOMY
 
 const ECONOMY = globalThis.NF_ECONOMY;
@@ -53,37 +53,20 @@ export const PLANS = Object.fromEntries(
   (ECONOMY.PLANS || []).map((p) => [p.id, { name: p.name, priceGBP: p.priceGBP, acusPerMonth: p.acusPerMonth, selfServe: p.selfServe }])
 );
 
-let store = load();
-
-function load() {
-  try {
-    const raw = fs.readFileSync(STORE_PATH, 'utf8');
-    if (raw.startsWith('NFE1:')) {
-      if (!STORE_KEY) throw new Error('store is encrypted but WALLET_STORE_KEY is not set');
-      return JSON.parse(decryptStore(raw));
-    }
-    return JSON.parse(raw);
-  } catch (err) {
-    if (String(err.message).includes('WALLET_STORE_KEY')) throw err; // loud: never silently reset an encrypted store
-    return { wallets: {}, idempotency: {} };
-  }
-}
-
-function persist() {
-  // SYNCHRONOUS durable write — money must survive a crash. The store is the
-  // system of record for real balances, so we do NOT debounce: the previous
-  // 50 ms setTimeout window could lose a just-committed charge/credit if the
-  // process died before it flushed. Write to a tmp file, fsync it to disk, then
-  // atomically rename over the store (so a reader never sees a truncated file).
-  // (Superseded at scale by the SQLite/WAL backend — docs/DB-MIGRATION.md.)
-  fs.mkdirSync(path.dirname(STORE_PATH), { recursive: true });
-  const tmp = `${STORE_PATH}.tmp`;
-  const json = JSON.stringify(store);
-  const fd = fs.openSync(tmp, 'w');
-  try { fs.writeSync(fd, STORE_KEY ? encryptStore(json) : json); fs.fsyncSync(fd); }
-  finally { fs.closeSync(fd); }
-  fs.renameSync(tmp, STORE_PATH);
-}
+/* Persistence backend, selected by STORE_BACKEND (file | sqlite). The file
+   backend is the durable, fsync'd, whole-store atomic write; the sqlite backend
+   does transactional per-wallet upserts against an ACID DB. All the money LOGIC
+   below is backend-agnostic — only these save/drop helpers differ. */
+const backend = makeStoreBackend({
+  storePath: STORE_PATH, storeKey: STORE_KEY, encryptStore, decryptStore,
+  dbPath: process.env.WALLET_DB || path.join(process.cwd(), 'data', 'money.db'),
+});
+let store = backend.load();
+const saveWallet = (user) => backend.saveWallet(store, user);
+const saveWallets = (users) => backend.saveWallets(store, users);
+const dropWallet = (user) => backend.dropWallet(store, user);
+const saveIdem = (key) => backend.saveIdem(store, key);
+const dropIdem = (key) => backend.dropIdem(store, key);
 
 function requireUser(userId) {
   if (!userId || typeof userId !== 'string' || userId.length > 128) {
@@ -99,7 +82,7 @@ function requireUser(userId) {
       }],
       createdAt: Date.now(),
     };
-    persist();
+    saveWallet(userId);
   }
   return store.wallets[userId];
 }
@@ -137,20 +120,27 @@ function idempotent(key, fn) {
     const prior = store.idempotency[key];
     if (prior) return { replayed: true, ...prior };
   }
-  const result = fn();
-  if (key) {
-    store.idempotency[key] = result;
-    const keys = Object.keys(store.idempotency);
-    if (keys.length > 20000) {
-      // Evict the oldest NON-settlement key. Payment settlement keys
-      // (stripe_/koda_) must NEVER be evicted — a late webhook replay after
-      // eviction would double-credit real money. Transient generation keys are
-      // safe to drop.
-      const victim = keys.find((k) => !/^(stripe_|koda_)/.test(k));
-      if (victim) delete store.idempotency[victim];
+  // Run the mutation AND record the idempotency key in ONE transaction, so a
+  // settlement's wallet change and its exactly-once marker commit together (on
+  // sqlite; the file backend coalesces to a single durable write). fn()'s inner
+  // saveWallet joins this transaction rather than opening its own.
+  return backend.txn(() => {
+    const result = fn();
+    if (key) {
+      store.idempotency[key] = result;
+      saveIdem(key);
+      const keys = Object.keys(store.idempotency);
+      if (keys.length > 20000) {
+        // Evict the oldest NON-settlement key. Payment settlement keys
+        // (stripe_/koda_) must NEVER be evicted — a late webhook replay after
+        // eviction would double-credit real money. Transient generation keys are
+        // safe to drop.
+        const victim = keys.find((k) => !/^(stripe_|koda_)/.test(k));
+        if (victim) { delete store.idempotency[victim]; dropIdem(victim); }
+      }
     }
-  }
-  return { replayed: false, ...result };
+    return { replayed: false, ...result };
+  });
 }
 
 export function getWallet(userId) {
@@ -160,7 +150,7 @@ export function getWallet(userId) {
 // Remove a wallet entirely (account deletion). Money records are the user's own
 // data; deletion is explicit and password-confirmed at the auth layer.
 export function deleteWallet(userId) {
-  if (store.wallets[userId]) { delete store.wallets[userId]; persist(); return true; }
+  if (store.wallets[userId]) { delete store.wallets[userId]; dropWallet(userId); return true; }
   return false;
 }
 
@@ -234,7 +224,7 @@ export function charge({ user, amount, label, idempotencyKey, action, bracketFac
       bracketFactor: bf,
       ...(referenceId ? { referenceId: String(referenceId).slice(0, 64) } : {}),
     });
-    persist();
+    saveWallet(user);
     return { charged: cost, bracketFactor: bf, wallet: view(wallet) };
   });
 }
@@ -266,7 +256,7 @@ export function reserve({ user, amount, key }) {
   }
   wallet.held = (wallet.held || 0) + hold;
   wallet.holds[key] = hold;
-  persist();
+  saveWallet(user);
   return { held: hold, key };
 }
 
@@ -287,7 +277,7 @@ export function settleHold({ user, key, actual, label, action, bracketFactor, re
     pool: 'paid', bracketFactor: bf,
     ...(referenceId ? { referenceId: String(referenceId).slice(0, 64) } : {}),
   });
-  persist();
+  saveWallet(user);
   return { charged: cost, settled: true, wallet: view(wallet) };
 }
 
@@ -299,7 +289,7 @@ export function releaseHold({ user, key }) {
   const hold = wallet.holds[key];
   wallet.held -= hold;
   delete wallet.holds[key];
-  persist();
+  saveWallet(user);
   return { released: hold, wallet: view(wallet) };
 }
 
@@ -320,7 +310,7 @@ export function grant({ user, amount, reason, idempotencyKey }) {
       pool: 'paid',
       bracketFactor: 1,
     });
-    persist();
+    saveWallet(user);
     return { granted: acus, wallet: view(wallet) };
   });
 }
@@ -339,7 +329,7 @@ export function credit({ user, packageId, idempotencyKey }) {
       pool: 'paid',
       bracketFactor: 1,
     });
-    persist();
+    saveWallet(user);
     return { credited: total, package: packageId, wallet: view(wallet) };
   });
 }
@@ -362,7 +352,7 @@ export function creditPlanAllotment({ user, planId, idempotencyKey }) {
       pool: 'paid',
       bracketFactor: 1,
     });
-    persist();
+    saveWallet(user);
     return { credited: plan.acusPerMonth, plan: planId, wallet: view(wallet) };
   });
 }
@@ -399,7 +389,7 @@ export function clawback({ user, amount, reason, idempotencyKey, freeze = false,
       ...(freeze ? { frozen: true } : {}),
       ...(referenceId ? { referenceId: String(referenceId).slice(0, 64) } : {}),
     });
-    persist();
+    saveWallet(user);
     return { clawedBack: recovered, shortfall, frozen: Boolean(wallet.frozen), wallet: view(wallet) };
   });
 }
@@ -414,7 +404,7 @@ export function isFrozen(user) {
 // Lift a freeze (admin action once a dispute resolves in our favour).
 export function unfreeze(user) {
   const w = store.wallets[user];
-  if (w && w.frozen) { delete w.frozen; persist(); return true; }
+  if (w && w.frozen) { delete w.frozen; saveWallet(user); return true; }
   return false;
 }
 
@@ -424,7 +414,7 @@ export function endPlan({ user }) {
   const wallet = store.wallets[user];
   if (!wallet || !wallet.plan) return { ended: false };
   wallet.plan = { ...wallet.plan, status: 'canceled', canceledAt: Date.now() };
-  persist();
+  saveWallet(user);
   return { ended: true, wallet: view(wallet) };
 }
 
@@ -456,6 +446,6 @@ export function migratePaid({ from, to }) {
   dst.paid += moved;
   ledger(src, 'MIGRATED_OUT · balance moved to account', -moved, { type: 'debit_migrate', pool: 'paid', bracketFactor: 1 });
   ledger(dst, `MIGRATED_IN · from guest wallet ${String(from).slice(0, 12)}…`, moved, { type: 'credit_migrate', pool: 'paid', bracketFactor: 1 });
-  persist();
+  saveWallets([from, to]); // both wallets in one transaction — the move is atomic
   return { moved, wallet: view(dst) };
 }

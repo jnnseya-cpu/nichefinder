@@ -1,6 +1,10 @@
 # Money store: flat-file → SQLite migration design
 
-**Status:** design + verified migration tool landed. Adapter cutover is phase 2.
+**Status:** design + verified migration tool + **the storage adapter (phase 2) landed and tested**.
+`wallet.js` now runs on either backend via `STORE_BACKEND` (default `file`,
+unchanged); `sqlite` gives ACID transactions + durable commits + DB-enforced
+invariants. Remaining before a production flip: the operational cutover (Node 22
+upgrade, backfill, dual-run) and migrating auth/referrals (phase 3).
 **Owner:** platform/eng. **Blocker addressed:** B2 (money on unbacked, non-transactional flat files).
 
 ## Why
@@ -80,10 +84,17 @@ curl -s localhost:8080/v1/health                            # 200 ok
 JSON, no money is lost. (After cutover, take a fresh JSON export before deleting
 the file, so the rollback window stays open for a defined period.)
 
-## Phase 2 — the storage adapter (the code cutover)
+## Phase 2 — the storage adapter (LANDED)
 
-Introduce `backend/gateway/src/store/index.js` exposing the operations the money
-modules already use, with two implementations selected by `STORE_BACKEND`:
+`backend/gateway/src/store/backend.js` (`makeStoreBackend`) is the persistence
+seam, selected by `STORE_BACKEND`. `wallet.js` keeps ALL its money logic and only
+calls the backend to save/drop wallets + idempotency entries — so the two
+implementations can never diverge on business rules. Proven by `test/wallet-sqlite.js`
+(operations, restart durability incl. exactly-once keys, DB constraints) and by
+running the full paycycle HTTP flow with `STORE_BACKEND=sqlite` — every money
+assertion passes identically on both backends.
+
+The original sketch below is what was built:
 
 ```
 getWallet, charge, grant, credit, creditPlanAllotment, clawback,
