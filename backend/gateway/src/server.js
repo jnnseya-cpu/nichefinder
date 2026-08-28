@@ -69,17 +69,26 @@ function requireCapabilityId(user) {
   }
 }
 
-/* Ownership gate: a user may only read or spend the wallet they OWN.
-   - Guest / anonymous wallets (no account on file) are bearer capabilities: the
-     high-entropy op_ id itself is the proof, so a valid format is enough. This
-     keeps the pre-signup guest flow (score → buy → spend) working with no login.
-   - The moment a wallet belongs to an ACCOUNT (an email is on file for the id),
-     the request MUST carry that account's bearer session, and the session's
-     userId must equal the wallet id. So knowing someone's id is no longer enough
-     to drain or inspect their account balance — you must be signed in AS them. */
+/* Bind account wallets to their owner's session — OPT-IN via REQUIRE_WALLET_SESSION=1.
+
+   Default OFF (capability-only, the historical behaviour): the high-entropy op_
+   id is the bearer credential, exactly as for guests. This is a deliberately
+   SAFE default — turning the session requirement on is a backward-incompatible
+   tightening (every client must send its bearer token on billed calls, and no
+   stale cached page or expired session may be in flight), so it must be a
+   conscious operator action AFTER confirming the frontend that sends the token
+   is deployed everywhere. Enabling it too early hard-fails real users' billed
+   calls with 403 — which reads to them as "temporarily unavailable".
+
+   When ON: guest wallets stay capability-only (pre-signup flow intact), but a
+   wallet that belongs to an ACCOUNT (an email is on file) requires that account's
+   bearer session, and the session's userId must equal the wallet id — so knowing
+   the id is no longer enough to read or drain an account balance. */
+const requireWalletSession = () => process.env.REQUIRE_WALLET_SESSION === '1';
 function requireOwner(req, userId) {
   requireCapabilityId(userId);
-  if (!emailForUserId(userId)) return; // guest wallet — capability id is the bearer
+  if (!requireWalletSession()) return;  // opt-in; default = capability-only (no client breakage)
+  if (!emailForUserId(userId)) return;  // guest wallet — capability id is the bearer
   const s = sessionFor(bearer(req));
   if (!s || s.userId !== userId) {
     throw new GatewayError('This wallet belongs to an account — sign in to that account to use it.', { status: 403, code: 'not_wallet_owner' });

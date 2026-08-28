@@ -232,6 +232,7 @@ sudo systemctl restart nichefinder
 ### Money-safety levers (optional env)
 
 - `REFERRAL_LIFETIME_CAP_ACU` — max referral commission any one referrer can ever earn, in ACU (default `50000` = £500 of commission). Bounds a "refer myself with two accounts" scheme. `0` disables the cap.
+- `REQUIRE_WALLET_SESSION` — set to `1` to bind account wallets to their owner's login session: reading or spending an account wallet then requires that account's bearer token, not just its id. **Default OFF** (the id is the bearer credential, like a guest wallet). Turn it on ONLY after confirming the token-sending frontend is deployed to all clients and old service-worker caches have cycled — enabling it while a stale page is in flight hard-fails real users' billed calls with `403 not_wallet_owner` (which shows as "temporarily unavailable"). Guests are unaffected either way.
 - `KODA_MINOR_UNITS=1` — set **only if** your KODA account bills 2-decimal currencies (GBP/USD/EUR) in the smallest unit (pence/cents). Default is whole units. Getting this wrong under/over-charges the payer by 100× — the amount + currency is logged on every intent (`[koda] intent created: … amount=… CUR`), so check the first live payment.
 
 ## 8. Go live

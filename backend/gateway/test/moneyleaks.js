@@ -27,6 +27,7 @@ process.env.DOCS_STORE = '/tmp/leak-docs.json';
 process.env.ADMIN_API_KEY = 'adm_leak';
 process.env.REFERRAL_RATE = '0.1';
 process.env.REFERRAL_LIFETIME_CAP_ACU = '150'; // small, so the cap is exercised
+process.env.REQUIRE_WALLET_SESSION = '1';      // exercise the opt-in wallet-ownership binding (F11)
 for (const f of [process.env.WALLET_STORE, process.env.AUTH_STORE, process.env.REFERRALS_STORE, process.env.DOCS_STORE]) { try { fs.unlinkSync(f); } catch {} }
 
 const BASE = `http://127.0.0.1:${process.env.PORT}`;
