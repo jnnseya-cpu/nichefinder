@@ -62,6 +62,9 @@ export function publishArticle({ title, category, format, slug, auto }) {
     format: clean(format, 40) || 'article',
     auto: !!auto,
     publishedAt: existing ? existing.publishedAt : Date.now(),
+    // Monotonic publish sequence: a deterministic tie-breaker so two articles
+    // published in the same millisecond still order newest-first, stably.
+    seq: existing ? existing.seq : (store.seq = (store.seq || 0) + 1),
     updatedAt: Date.now(),
   };
   persist();
@@ -113,7 +116,7 @@ export function recordView(slug) {
 export function listArticles(limit = 200) {
   const n = Math.max(1, Math.min(Number(limit) || 200, 500));
   return Object.values(store.articles)
-    .sort((a, b) => (b.publishedAt || 0) - (a.publishedAt || 0))
+    .sort((a, b) => (b.publishedAt || 0) - (a.publishedAt || 0) || (b.seq || 0) - (a.seq || 0))
     .slice(0, n)
     .map(decorate);
 }
