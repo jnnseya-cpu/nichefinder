@@ -68,18 +68,20 @@ The tool is `scripts/nf-migrate-store.mjs` (`migrateWalletStore(...)`), covered 
    rollback: set `STORE_BACKEND=file` and restart.
 4. **Refuses a non-empty target** so a re-run can't double-load.
 
-### Cutover runbook (per box, brief maintenance)
+### Cutover runbook (one script)
+`scripts/nf-db-cutover.sh` runs the whole thing: checks Node 22, backs up, freezes
+writes, migrates + verifies **all three** stores (wallets, auth, referrals), then
+prints the flag to flip. With `NF_AUTO_FLIP=1` it flips `/etc/nichefinder.env`,
+restarts, smoke-tests, and **auto-rolls-back to the file backend if the live
+service isn't healthy**.
 ```bash
 # 0. Node 22 (one time): curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - && sudo apt-get install -y nodejs
-sudo systemctl stop nichefinder                              # freeze writes
-sudo -E node scripts/nf-migrate-store.mjs \
-     backend/gateway/data/wallets.json backend/gateway/data/money.db   # backfill + verify
-# add to /etc/nichefinder.env:  STORE_BACKEND=sqlite   WALLET_DB=/opt/.../data/money.db
-sudo systemctl start nichefinder
-curl -s localhost:8080/v1/health                            # 200 ok
-# smoke a read (GET /v1/wallet with a known id) and a metered action; reconcile
-# /v1/admin/metrics revenue against Stripe. Keep wallets.json as the rollback.
+sudo bash scripts/nf-db-cutover.sh                 # migrate + verify, print the flags
+# review, then either add the printed flags to /etc/nichefinder.env + restart, or:
+sudo NF_AUTO_FLIP=1 bash scripts/nf-db-cutover.sh  # flip + smoke + auto-rollback
 ```
+Reconcile `/v1/admin/metrics` revenue against Stripe after cutover; keep the JSON
+files as the rollback for a defined window.
 **Rollback:** `STORE_BACKEND=file` + restart. Because migration never wrote to the
 JSON, no money is lost. (After cutover, take a fresh JSON export before deleting
 the file, so the rollback window stays open for a defined period.)

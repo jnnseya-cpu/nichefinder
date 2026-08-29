@@ -213,16 +213,32 @@ function serveStatic(req, res, url) {
   const ext = path.extname(file);
   try {
     const body = fs.readFileSync(file);
-    res.writeHead(200, { 'content-type': MIME[ext] || 'application/octet-stream', 'cache-control': ext === '.html' ? 'no-cache' : 'public, max-age=300' });
+    res.writeHead(200, { ...SEC_HEADERS, 'content-type': MIME[ext] || 'application/octet-stream', 'cache-control': ext === '.html' ? 'no-cache' : 'public, max-age=300' });
     return res.end(body);
   } catch {
     return json(res, 404, { error: 'not_found', message: `No file at ${p}` });
   }
 }
 
+/* Security response headers applied to every response. Deliberately safe for a
+   site with inline scripts/styles + third-party tags (GTM, Meta Pixel, Google
+   Fonts): the CSP restricts only framing, <base>, and plugins — it does NOT
+   constrain script/style/connect sources, so nothing breaks — while HSTS,
+   nosniff, frame-options, referrer and permissions close the common holes. */
+const SEC_HEADERS = {
+  'strict-transport-security': 'max-age=31536000; includeSubDomains',
+  'x-content-type-options': 'nosniff',
+  'referrer-policy': 'strict-origin-when-cross-origin',
+  'x-frame-options': 'SAMEORIGIN',
+  'content-security-policy': "frame-ancestors 'self'; base-uri 'self'; object-src 'none'",
+  'permissions-policy': 'geolocation=(), microphone=(), camera=()',
+  'cross-origin-opener-policy': 'same-origin-allow-popups',
+};
+
 function json(res, status, body) {
   const payload = JSON.stringify(body);
   res.writeHead(status, {
+    ...SEC_HEADERS,
     'content-type': 'application/json',
     'access-control-allow-origin': '*',
     'access-control-allow-headers': 'content-type, authorization',
@@ -306,7 +322,7 @@ const server = http.createServer(async (req, res) => {
       let src = fs.readFileSync(path.join(REPO_ROOT, 'frontend', 'nf-config.js'), 'utf8');
       const origin = (process.env.PUBLIC_ORIGIN || '').replace(/\/$/, '');
       if (origin) src = src.replace(/window\.NF_GATEWAY_URL\s*=\s*['"][^'"]*['"];/, `window.NF_GATEWAY_URL = '${origin}';`);
-      res.writeHead(200, { 'content-type': 'text/javascript', 'cache-control': 'no-cache' });
+      res.writeHead(200, { ...SEC_HEADERS, 'content-type': 'text/javascript', 'cache-control': 'no-cache' });
       return res.end(src);
     } catch { /* fall through to normal static handling / 404 */ }
   }

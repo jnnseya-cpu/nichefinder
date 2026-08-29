@@ -375,3 +375,25 @@ the gateway briefly — you should get a DOWN alert, then a RECOVERED alert.
 `GET /v1/admin/metrics` (admin session or `x-admin-key`) returns uptime, request
 count, 5xx rate, generation failures, webhook failures, provider/payments status
 and revenue — the machine-readable health the watchdog polls.
+
+## Security headers
+
+The gateway sets hardening headers on every response (API + static): HSTS,
+`X-Content-Type-Options: nosniff`, `Referrer-Policy`, `X-Frame-Options`, a
+non-breaking `Content-Security-Policy` (`frame-ancestors 'self'; base-uri 'self';
+object-src 'none'` — restricts framing/`<base>`/plugins only, so inline scripts,
+Google Fonts, GTM and the Meta Pixel keep working), `Permissions-Policy`, and
+`Cross-Origin-Opener-Policy`. Covered by `test/headers.js`. No Caddy change is
+needed; if you prefer to manage headers at the proxy, remove `SEC_HEADERS` from
+`server.js` first to avoid duplicates. Verify live with:
+`curl -sI https://nichefinderhq.com/ | grep -iE 'strict-transport|content-security|x-frame|x-content-type|referrer-policy|permissions-policy'`.
+
+## Cutting over to the SQLite backend
+
+One script does the whole migration safely — see `docs/DB-MIGRATION.md` (needs
+Node 22): `sudo bash scripts/nf-db-cutover.sh` migrates + verifies wallets, auth
+and referrals and prints the env flags; `sudo NF_AUTO_FLIP=1 bash
+scripts/nf-db-cutover.sh` also flips the flag, restarts, smoke-tests and
+auto-rolls-back if unhealthy. The JSON files are never mutated, so the file
+backend stays as an instant rollback. Under SQLite, put the data volume on an
+encrypted disk (LUKS) — node:sqlite has no at-rest encryption.
