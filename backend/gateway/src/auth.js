@@ -7,12 +7,12 @@
 //     invalidates every existing session for that account.
 // The store is encrypted at rest with WALLET_STORE_KEY (same AES-256-GCM
 // envelope as the wallet store), and admin is a role, never a client claim.
-import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { GatewayError } from './errors.js';
 import { encryptStore, decryptStore, peekWallet, deleteWallet } from './wallet.js';
 import { attachReferral } from './referrals.js';
+import { makeDocStore } from './store/docstore-backend.js';
 
 const STORE_PATH = process.env.AUTH_STORE || path.join(process.cwd(), 'data', 'auth.json');
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
@@ -25,31 +25,17 @@ const STORE_KEY = (() => {
   return /^[0-9a-fA-F]{64}$/.test(hex) ? Buffer.from(hex, 'hex') : null;
 })();
 
-let store = load();
-
-function load() {
-  try {
-    const raw = fs.readFileSync(STORE_PATH, 'utf8');
-    if (raw.startsWith('NFE1:')) {
-      if (!STORE_KEY) throw new Error('auth store is encrypted but WALLET_STORE_KEY is not set');
-      return JSON.parse(decryptStore(raw, STORE_KEY));
-    }
-    return JSON.parse(raw);
-  } catch (err) {
-    if (String(err.message).includes('WALLET_STORE_KEY')) throw err; // loud: never silently reset an encrypted store
-    return { users: {}, sessions: {} };
-  }
-}
-
-// Synchronous atomic write (tmp + rename): auth mutations are infrequent and
-// must be durable before a token is handed back, so no debounce here.
-function persist() {
-  fs.mkdirSync(path.dirname(STORE_PATH), { recursive: true });
-  const tmp = `${STORE_PATH}.tmp`;
-  const json = JSON.stringify(store);
-  fs.writeFileSync(tmp, STORE_KEY ? encryptStore(json, STORE_KEY) : json);
-  fs.renameSync(tmp, STORE_PATH);
-}
+// Persistence via the shared document backend (STORE_BACKEND=file|sqlite). Auth
+// mutations are infrequent and must be durable before a token is handed back —
+// the file backend does a synchronous fsync'd atomic write; sqlite a transactional
+// full-replace. All the call sites below still just call persist().
+const doc = makeDocStore({
+  storePath: STORE_PATH, storeKey: STORE_KEY, encryptStore, decryptStore,
+  dbPath: process.env.AUTH_DB || path.join(process.cwd(), 'data', 'auth.db'),
+  defaultStore: { users: {}, sessions: {} },
+});
+let store = doc.load();
+function persist() { doc.persist(store); }
 
 const normEmail = (email) => String(email || '').trim().toLowerCase();
 const hashPassword = (password, salt) => crypto.scryptSync(String(password), salt, SCRYPT_KEYLEN).toString('hex');

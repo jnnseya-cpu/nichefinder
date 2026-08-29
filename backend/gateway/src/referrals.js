@@ -12,11 +12,11 @@
 // Commission is paid in-platform as ACU (£1 = 100 ACU), so there is no cash
 // payout rail to build or secure. Awards are idempotent on the purchase id, so
 // webhook retries never double-pay.
-import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { GatewayError } from './errors.js';
 import { grant, clawback } from './wallet.js';
+import { makeDocStore } from './store/docstore-backend.js';
 
 const STORE_PATH = process.env.REFERRALS_STORE || path.join(process.cwd(), 'data', 'referrals.json');
 const RATE = Number(process.env.REFERRAL_RATE || 0.1); // commission as a fraction of paid GBP
@@ -37,40 +37,20 @@ const PUBLIC_ORIGIN = () => (process.env.PUBLIC_ORIGIN || 'https://nichefinderhq
 const CAP_RE = /^op_[a-z0-9]{10,}$/;
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no ambiguous 0/O/1/I
 
-let store = load();
-let timer = null;
-
-function load() {
-  try {
-    return JSON.parse(fs.readFileSync(STORE_PATH, 'utf8'));
-  } catch {
-    return { codes: {}, byCode: {}, links: {}, earned: {}, awarded: {} };
-  }
-}
-
-function persist() {
-  if (timer) return;
-  timer = setTimeout(() => {
-    timer = null;
-    try {
-      fs.mkdirSync(path.dirname(STORE_PATH), { recursive: true });
-      const tmp = `${STORE_PATH}.tmp`;
-      fs.writeFileSync(tmp, JSON.stringify(store));
-      fs.renameSync(tmp, STORE_PATH); // atomic swap
-    } catch (err) {
-      console.error('[referrals] persist failed:', err.message);
-    }
-  }, 50);
-}
-
-// Persist synchronously in tests / shutdown paths so assertions see fresh state.
-export function flush() {
-  if (timer) { clearTimeout(timer); timer = null; }
-  try {
-    fs.mkdirSync(path.dirname(STORE_PATH), { recursive: true });
-    fs.writeFileSync(STORE_PATH, JSON.stringify(store));
-  } catch { /* best effort */ }
-}
+// Persistence via the shared document backend (STORE_BACKEND=file|sqlite).
+// Referral awards are money (commissions), so writes are now durable — the
+// previous 50 ms debounce could lose a just-recorded award on a crash. The file
+// backend does a synchronous fsync'd atomic write; sqlite a transactional
+// full-replace. Plaintext at rest (no secrets; ids + relationships only).
+const doc = makeDocStore({
+  storePath: STORE_PATH, storeKey: null,
+  dbPath: process.env.REFERRALS_DB || path.join(process.cwd(), 'data', 'referrals.db'),
+  defaultStore: { codes: {}, byCode: {}, links: {}, earned: {}, awarded: {}, awardAmount: {}, reversed: {} },
+});
+let store = doc.load();
+function persist() { doc.persist(store); }
+// flush() stays for existing callers; persistence is already synchronous.
+export function flush() { doc.persist(store); }
 
 function earnedFor(userId) {
   if (!store.earned[userId]) store.earned[userId] = { referrals: [], qualified: [], acu: 0, gbp: 0 };

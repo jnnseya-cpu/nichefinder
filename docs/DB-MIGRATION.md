@@ -114,6 +114,27 @@ getLedger, summary, idempotent(key, fn)
 run the `sqlite` adapter in shadow — mirror each write to both backends and log
 any divergence for a week — so the cutover is evidence-based, not hopeful.
 
+## Phase 3 — auth + referrals (LANDED)
+
+`auth.js` and `referrals.js` now persist through a shared **keyed-document
+backend** (`src/store/docstore-backend.js`, `makeDocStore`): each record is a row
+`(collection, key, JSON)` — the nested store shapes (`{users, sessions}` /
+`{codes, byCode, links, earned, awarded, …}`) are preserved exactly, no lossy
+relational mapping. File backend = synchronous fsync'd whole-store write (this
+also removes referrals' old 50 ms debounce, so a just-recorded commission can't
+be lost on a crash); sqlite backend = a transactional full-replace of the small
+stores. Selected by the same `STORE_BACKEND` flag; separate DBs (`AUTH_DB`,
+`REFERRALS_DB`). Proven by `test/auth-referrals-sqlite.js` (signup/login/session
++ referral commission surviving a restart) and by the auth/referrals HTTP suites
+passing on `STORE_BACKEND=sqlite`.
+
+**At-rest encryption caveat:** `node:sqlite` has no built-in encryption, so under
+`STORE_BACKEND=sqlite` the AES-GCM envelope no longer applies to auth/wallet at
+rest. Put the data volume on an **encrypted disk (LUKS)**. Passwords are
+scrypt-hashed and session tokens are stored only as SHA-256, so the DB holds no
+plaintext secret — the envelope was defence-in-depth, and disk encryption
+restores it.
+
 ## Immediate stop-gap (independent of the DB)
 
 Until cutover, the 50 ms durability window (defect #1) can be closed by making the
