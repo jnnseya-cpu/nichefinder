@@ -9,8 +9,8 @@ import { route, availableProviders, meterAcu } from './router.js';
 import { getWallet, getLedger, charge, credit, grant, summary, deleteWallet, migratePaid, PACKAGES, isFrozen, reserve, settleHold, releaseHold } from './wallet.js';
 import { createCheckout, createSubscriptionCheckout, handleWebhook, paymentsConfigured } from './payments.js';
 import { createKodaIntent, handleKodaWebhook, kodaConfigured } from './koda.js';
-import { summaryFor as referralSummary, listPartners } from './referrals.js';
-import { saveDoc, getDoc, listDocs } from './docstore.js';
+import { summaryFor as referralSummary, listPartners, deleteUserData as deleteReferralData } from './referrals.js';
+import { saveDoc, getDoc, listDocs, deleteUserDocs } from './docstore.js';
 import { issueChallenge, verifyChallenge } from './human.js';
 import { signup, login, logout, sessionFor, requestReset, resetPassword, listUsers, resolveUserId, emailForUserId, setRole, setDisabled, userByEmail, updateProfile, setMedia, changePassword, deleteAccount } from './auth.js';
 import { sendMail, mailConfigured } from './mailer.js';
@@ -694,7 +694,13 @@ const server = http.createServer(async (req, res) => {
       if (!s) return json(res, 401, { error: 'unauthorized' });
       const body = JSON.parse((await readBody(req)) || '{}');
       const r = deleteAccount(s.email, body.currentPassword);
-      try { deleteWallet(r.userId); } catch { /* wallet may not exist */ }
+      // Right-to-erasure cascade: remove the user's data from EVERY store, not
+      // just auth — wallet + ledger, generated documents, and referral records.
+      // (Newsletter recipients are derived from the auth store, so deleting the
+      // account removes them there too.)
+      try { deleteWallet(r.userId); } catch (e) { console.error('[delete] wallet:', e.message); }
+      try { deleteUserDocs(r.userId); } catch (e) { console.error('[delete] docs:', e.message); }
+      try { deleteReferralData(r.userId); } catch (e) { console.error('[delete] referrals:', e.message); }
       return json(res, 200, { ok: true });
     } catch (err) { return handleError(res, err); }
   }

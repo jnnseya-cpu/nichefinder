@@ -61,3 +61,14 @@ export function listDocs({ user, project }) {
     .filter((k) => k.startsWith(prefix))
     .map((k) => ({ type: k.slice(prefix.length), version: store.docs[k].version, ts: store.docs[k].ts, title: store.docs[k].title }));
 }
+
+// Right-to-erasure: remove every stored document belonging to a user (called on
+// account deletion). Keys are `${user}|${project}|${type}`, so a `${user}|`
+// prefix match finds them all. Returns how many were removed.
+export function deleteUserDocs(user) {
+  const prefix = `${user}|`;
+  let n = 0;
+  for (const k of Object.keys(store.docs)) if (k.startsWith(prefix)) { delete store.docs[k]; n++; }
+  if (n) persist();
+  return n;
+}

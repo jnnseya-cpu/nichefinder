@@ -180,6 +180,29 @@ export function listPartners() {
   return { rows, totals, ratePct: Math.round(RATE * 100) };
 }
 
+/* Right-to-erasure: remove all referral personal data for a deleted account —
+   their invite code, their referral links (as referee AND as referrer), their
+   earnings record, and any mention of them in other referrers' referral lists.
+   Purchase-keyed `awarded`/`awardAmount` flags are retained (they are opaque
+   payment ids, not personal data, and guard against a re-award on a late webhook).
+   Returns how many of the user's own records were removed. */
+export function deleteUserData(userId) {
+  let removed = 0;
+  const code = store.codes[userId];
+  if (code) { delete store.codes[userId]; delete store.byCode[code]; removed++; }
+  if (store.earned[userId]) { delete store.earned[userId]; removed++; }
+  if (store.links[userId]) { delete store.links[userId]; removed++; }              // this user was referred by someone
+  for (const [referee, referrer] of Object.entries(store.links)) {
+    if (referrer === userId) { delete store.links[referee]; removed++; }           // this user referred others
+  }
+  for (const e of Object.values(store.earned)) {                                    // scrub mentions in others' lists
+    if (Array.isArray(e.referrals)) e.referrals = e.referrals.filter((r) => r !== userId);
+    if (Array.isArray(e.qualified)) e.qualified = e.qualified.filter((r) => r !== userId);
+  }
+  persist();
+  return removed;
+}
+
 /* Dashboard summary for one account. */
 export function summaryFor(userId) {
   const code = codeFor(userId);
