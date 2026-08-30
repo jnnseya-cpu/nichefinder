@@ -114,15 +114,30 @@ function requireOwner(req, userId) {
 
 /* Hard ceiling on output tokens a single /v1/generate call may produce. Both the
    provider cap AND the reservation basis, so a request can never cost more than
-   we reserved against the balance. */
-const MAX_GEN_OUTPUT = 8000;
+   we reserved against the balance. Sized to the flagship workload: adaptive
+   thinking at high effort PLUS 3 richly-structured niche reports (scores, 3-year
+   financials, risks, roadmap, an 11-field brief each) — because thinking tokens
+   count toward max_tokens, an under-sized ceiling truncates the JSON and the
+   client's parse fails. 16000 matches config.defaults.maxTokens, which was
+   documented for exactly this. */
+const MAX_GEN_OUTPUT = Number(process.env.MAX_GEN_OUTPUT || 16000);
+
+/* Default reserve when the caller gives no budget. A structured request
+   (jsonSchema present) is a large venture report and needs real room for
+   thinking + JSON; a plain chat reply is small. Under-reserving a structured
+   call is what silently truncated discovery output and made "0 results" the
+   norm. */
+const STRUCTURED_DEFAULT_OUTPUT = Number(process.env.STRUCTURED_DEFAULT_OUTPUT || 12000);
+const PLAIN_DEFAULT_OUTPUT = 2000;
 
 /* How many output tokens this generation is ALLOWED (and therefore RESERVED) to
-   produce. The client's own cap is honoured; absent one we reserve the default.
-   The same number caps the provider (below), so metered cost ≤ reserved cost —
-   a client can't lowball the estimate and make us eat the overrun. */
+   produce. The client's own cap is honoured; absent one we reserve a default
+   sized to the request shape. The same number caps the provider (below), so
+   metered cost ≤ reserved cost — a client can't lowball the estimate and make
+   us eat the overrun. */
 export function reservedOutputTokens(body) {
-  let out = Number.isInteger(body.maxTokens) && body.maxTokens > 0 ? body.maxTokens : (Number(body.expectedOutputTokens) || 2000);
+  const dflt = body && body.jsonSchema ? STRUCTURED_DEFAULT_OUTPUT : PLAIN_DEFAULT_OUTPUT;
+  let out = Number.isInteger(body.maxTokens) && body.maxTokens > 0 ? body.maxTokens : (Number(body.expectedOutputTokens) || dflt);
   return Math.min(Math.max(out, 256), MAX_GEN_OUTPUT);
 }
 
@@ -916,7 +931,7 @@ const server = http.createServer(async (req, res) => {
     return json(res, 200, {
       status: problems.length ? 'attention' : 'ready',
       time: { serverIso: new Date().toISOString(), serverUnix: Math.floor(Date.now() / 1000), note: 'compare serverUnix to real UTC now; a skew > 300s breaks Stripe webhook signatures' },
-      generation: { mock: config.mock, providerKeys: providers, fallbackChain: config.fallbackChain, active: config.mock ? ['mock'] : availableProviders() },
+      generation: { mock: config.mock, providerKeys: providers, fallbackChain: config.fallbackChain, active: config.mock ? ['mock'] : availableProviders(), model: config.providers.claude.model, maxOutputTokens: MAX_GEN_OUTPUT, structuredDefaultTokens: STRUCTURED_DEFAULT_OUTPUT },
       payments: { configured: paymentsConfigured(), stripeSecretKey: present(process.env.STRIPE_SECRET_KEY), webhookSecrets: whsecs.length, webhookToleranceSec: Math.max(30, Number(process.env.STRIPE_WEBHOOK_TOLERANCE_SEC || 300)), webhookPath: '/v1/payments/stripe-webhook' },
       koda: { configured: kodaConfigured(), webhookPath: '/v1/payments/koda-webhook' },
       mail: { configured: mailConfigured() },

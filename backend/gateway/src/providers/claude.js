@@ -97,6 +97,12 @@ export async function generate(req) {
 }
 
 function finish(response) {
+  if (response.stop_reason === 'max_tokens') {
+    // The output hit the token ceiling. For a structured (JSON-schema) request
+    // this usually means the JSON is truncated and the caller's parse will fail
+    // — the classic silent "0 results". Loud so it's caught in the logs/diag.
+    console.warn(`[claude] OUTPUT TRUNCATED at max_tokens (outTokens=${response.usage?.output_tokens ?? '?'}). Raise MAX_GEN_OUTPUT / the request's maxTokens, or reduce thinking effort.`);
+  }
   if (response.stop_reason === 'refusal') {
     throw new GatewayError('The model declined this request for safety reasons.', {
       provider: 'claude',

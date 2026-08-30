@@ -84,10 +84,12 @@ check('each same-key call debited exactly once (monotonic drain)', (after1 - aft
 
 // ───────────────────────── F2: reservation clamp ────────────────────────
 console.log('— F2: reserved output length is driven by maxTokens, floored + capped —');
-check('default (no hint) reserves 2000 output tokens', srv.reservedOutputTokens({}) === 2000);
+check('plain default (no schema, no hint) reserves 2000 output tokens', srv.reservedOutputTokens({}) === 2000);
+check('structured default (jsonSchema, no hint) reserves 12000 — room for 3 rich niches + thinking', srv.reservedOutputTokens({ jsonSchema: { type: 'object' } }) === 12000);
 check('client maxTokens honoured as the reservation basis', srv.reservedOutputTokens({ maxTokens: 500 }) === 500);
+check('client maxTokens overrides the structured default too', srv.reservedOutputTokens({ jsonSchema: {}, maxTokens: 500 }) === 500);
 check('reservation floored at 256 (a lowball of 1 cannot underprice)', srv.reservedOutputTokens({ maxTokens: 1 }) === 256);
-check('reservation hard-capped at 8000 (no runaway bill)', srv.reservedOutputTokens({ maxTokens: 50000 }) === 8000);
+check('reservation hard-capped at 16000 (no runaway bill)', srv.reservedOutputTokens({ maxTokens: 50000 }) === 16000);
 check('expectedOutputTokens no longer sets the reservation when maxTokens is present', srv.reservedOutputTokens({ maxTokens: 3000, expectedOutputTokens: 1 }) === 3000);
 
 // ───────────────────── F3: refund / chargeback claw-back ────────────────

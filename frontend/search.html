@@ -864,6 +864,11 @@
         // extreme tiers (xhigh/max) can generate for 5-10 minutes — too long for
         // a live search — so we use high here and keep the token budget bounded.
         effort: 'high',
+        // Explicit output budget: 3 richly-structured niches + adaptive thinking
+        // need real room. Thinking tokens count toward this, so an under-sized
+        // cap truncates the JSON and the parse below fails ("0 results"). The
+        // server clamps to its own ceiling, so this can't inflate the bill.
+        maxTokens: 16000,
         // Wallet capability id: the server meters and debits this wallet. Without
         // it, billing rejects the request with 403 before any provider is called.
         user: window.NF_WALLET_USER,
@@ -872,13 +877,34 @@
       })
     }).then(function(r){
       clearTimeout(timer);
-      if (!r.ok) throw new Error('gateway ' + r.status);
+      // Surface the server's real reason (message/code) so a failure is
+      // diagnosable in the console instead of a blank "unavailable". Preserve the
+      // status in the thrown message so the 402 top-up path still triggers.
+      if (!r.ok) {
+        return r.json().catch(function(){ return {}; }).then(function(e){
+          throw new Error('gateway ' + r.status + (e && (e.message || e.error) ? ' — ' + (e.message || e.error) : ''));
+        });
+      }
       return r.json();
     }).then(function(data){
       // Adopt the server's authoritative balance after its metered charge, so the
       // on-screen ACU reflects the real deduction (the client no longer self-bills).
       if (data && data.wallet) { try { NF.syncWallet(data.wallet); } catch (e) {} }
-      var parsed = JSON.parse(data.text);
+      // Robust parse: a truncated/max_tokens response yields invalid JSON. Try a
+      // straight parse, then a best-effort extraction of the outermost {...}, so
+      // a slightly-wrapped or trailing-token response still renders rather than
+      // failing the whole search.
+      var text = (data && data.text) || '';
+      var parsed;
+      try { parsed = JSON.parse(text); }
+      catch (e1) {
+        var a = text.indexOf('{'), b = text.lastIndexOf('}');
+        if (a >= 0 && b > a) { try { parsed = JSON.parse(text.slice(a, b + 1)); } catch (e2) {} }
+      }
+      if (!parsed || !Array.isArray(parsed.niches) || !parsed.niches.length) {
+        console.error('[discovery] unparseable/empty model output', { len: text.length, head: text.slice(0, 200), stop: data && data.stopReason });
+        throw new Error('empty_result');
+      }
       try { if (window.NF_TRACK) NF_TRACK.search({ country: (document.getElementById('country') || {}).value, results: (parsed.niches || []).length }); } catch (e) {} // conversion (consent-gated)
       return parsed.niches.map(function(n){
         return {
