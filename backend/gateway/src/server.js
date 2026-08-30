@@ -913,8 +913,11 @@ const server = http.createServer(async (req, res) => {
   // session OR x-admin-key so it can be scripted. This is the answer to "why is
   // it failing in production" when you don't have shell access to the box.
   if (method === 'GET' && url.pathname === '/v1/admin/diag') {
-    const keyOk = req.headers['x-admin-key'] === process.env.ADMIN_API_KEY && Boolean(process.env.ADMIN_API_KEY);
-    if (!adminOf() && !keyOk) return json(res, 403, { error: 'admin_required' });
+    // Header OR ?key= query param (diag reports only presence/counts, never a
+    // secret value, so a plain browser URL on a phone is an acceptable way in).
+    const givenKey = req.headers['x-admin-key'] || url.searchParams.get('key');
+    const keyOk = Boolean(process.env.ADMIN_API_KEY) && givenKey === process.env.ADMIN_API_KEY;
+    if (!adminOf() && !keyOk) return json(res, 403, { error: 'admin_required', message: 'Open /v1/admin/diag?key=YOUR_ADMIN_API_KEY' });
     const present = (v) => Boolean(v && String(v).trim());
     const providers = {
       claude: present(process.env.ANTHROPIC_API_KEY),
