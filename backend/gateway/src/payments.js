@@ -133,32 +133,49 @@ export async function createSubscriptionCheckout({ user, planId, origin }) {
   return { url: session.url, sessionId: session.id };
 }
 
+// Replay tolerance (seconds). Configurable because a VPS with a drifting clock
+// (no NTP) will reject perfectly valid signatures — the single most confusing
+// "webhook not working" failure mode. Widen it as a stop-gap while you fix the
+// clock: STRIPE_WEBHOOK_TOLERANCE_SEC.
+const WEBHOOK_TOLERANCE_SEC = Math.max(30, Number(process.env.STRIPE_WEBHOOK_TOLERANCE_SEC || 300));
+
 /* Verify Stripe's signature scheme: header "t=...,v1=..." where
-   v1 = HMAC-SHA256(whsec, `${t}.${rawBody}`). 5-minute replay tolerance. A
-   delivery verifies if it matches ANY configured signing secret (see WHSECS),
-   so multiple endpoints / a secret rotation don't cause 100% failures. */
-export function verifySignature(rawBody, sigHeader, secret, toleranceSec = 300) {
+   v1 = HMAC-SHA256(whsec, `${t}.${rawBody}`). A delivery verifies if it matches
+   ANY configured signing secret (see WHSECS), so multiple endpoints / a secret
+   rotation don't cause 100% failures. Returns {ok, reason} so a rejection is
+   diagnosable — distinguishing a clock-skew rejection (valid signature, wrong
+   time) from a genuine secret mismatch. */
+export function verifySignatureDetailed(rawBody, sigHeader, secret, toleranceSec = WEBHOOK_TOLERANCE_SEC) {
   const secrets = secret != null ? [secret] : WHSECS;
-  if (!secrets.length) return false;
+  if (!secrets.length) return { ok: false, reason: 'no_secret_configured' };
   const parts = Object.fromEntries(
     String(sigHeader || '')
       .split(',')
       .map((p) => p.split('=').map((s) => s.trim()))
       .filter((p) => p.length === 2),
   );
-  if (!parts.t || !parts.v1) return false;
-  const age = Math.abs(Date.now() / 1000 - Number(parts.t));
-  if (!Number.isFinite(age) || age > toleranceSec) return false;
+  if (!parts.t || !parts.v1) return { ok: false, reason: 'malformed_header' };
+  const age = Date.now() / 1000 - Number(parts.t);
+  if (!Number.isFinite(age)) return { ok: false, reason: 'malformed_timestamp' };
   const b = Buffer.from(parts.v1);
-  let ok = false;
+  // Check the HMAC first, independent of the clock, so we can tell a stale-but-
+  // authentic delivery (fix the clock / NTP) from a forged one (wrong secret).
+  let sigMatch = false;
   for (const sec of secrets) {
     const expected = crypto.createHmac('sha256', sec).update(`${parts.t}.${rawBody}`).digest('hex');
     const a = Buffer.from(expected);
     // Compare every candidate (no early return) so timing doesn't reveal which
     // secret, if any, was the near-match.
-    if (a.length === b.length && crypto.timingSafeEqual(a, b)) ok = true;
+    if (a.length === b.length && crypto.timingSafeEqual(a, b)) sigMatch = true;
   }
-  return ok;
+  if (!sigMatch) return { ok: false, reason: 'signature_mismatch' };
+  if (Math.abs(age) > toleranceSec) return { ok: false, reason: 'stale_timestamp', ageSec: Math.round(age) };
+  return { ok: true, reason: 'ok' };
+}
+
+// Boolean form, kept for callers/tests that only need pass/fail.
+export function verifySignature(rawBody, sigHeader, secret, toleranceSec = WEBHOOK_TOLERANCE_SEC) {
+  return verifySignatureDetailed(rawBody, sigHeader, secret, toleranceSec).ok;
 }
 
 /* Email a receipt after a settled purchase/renewal. Fire-and-forget: never let a
@@ -232,8 +249,17 @@ export async function handleWebhook(rawBody, sigHeader) {
     console.error(`[payments] webhook refused: not configured (STRIPE_SECRET_KEY ${KEY ? 'set' : 'MISSING'}, STRIPE_WEBHOOK_SECRET ${WHSECS.length ? WHSECS.length + ' set' : 'MISSING'})`);
     throw new GatewayError('Payments not configured on this deployment: set STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET.', { status: 503, code: 'payment_not_configured' });
   }
-  if (!verifySignature(rawBody, sigHeader)) {
-    console.error(`[payments] webhook signature rejected — the endpoint's signing secret does not match STRIPE_WEBHOOK_SECRET (${WHSECS.length} secret(s) configured). Copy this endpoint's whsec_ into the env and restart.`);
+  const sig = verifySignatureDetailed(rawBody, sigHeader);
+  if (!sig.ok) {
+    // Reason-specific guidance so a live failure is fixable from one log line.
+    const hint = {
+      no_secret_configured: 'STRIPE_WEBHOOK_SECRET is empty — set the endpoint\'s whsec_ and restart.',
+      malformed_header: 'the Stripe-Signature header is missing/garbled — check the proxy is forwarding it and the raw body is intact.',
+      malformed_timestamp: 'the signature timestamp is unreadable — check the proxy is not rewriting the header.',
+      signature_mismatch: `the signing secret does not match STRIPE_WEBHOOK_SECRET (${WHSECS.length} secret(s) configured). Copy THIS endpoint's whsec_ into the env and restart.`,
+      stale_timestamp: `the signature is AUTHENTIC but ${sig.ageSec}s out of tolerance — the SERVER CLOCK is skewed. Run 'timedatectl set-ntp true' / sync NTP, or raise STRIPE_WEBHOOK_TOLERANCE_SEC as a stop-gap.`,
+    }[sig.reason] || 'unknown verification failure.';
+    console.error(`[payments] webhook rejected (${sig.reason}): ${hint}`);
     throw new GatewayError('Invalid webhook signature — the endpoint signing secret does not match this server.', { status: 400, code: 'invalid_signature' });
   }
   let event;

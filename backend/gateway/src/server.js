@@ -892,6 +892,39 @@ const server = http.createServer(async (req, res) => {
     });
   }
 
+  // Launch-readiness self-diagnosis. One curl tells you exactly what is or
+  // isn't wired for real money + generation, WITHOUT reading server logs and
+  // WITHOUT leaking any secret value (only presence + counts). Admin-gated by
+  // session OR x-admin-key so it can be scripted. This is the answer to "why is
+  // it failing in production" when you don't have shell access to the box.
+  if (method === 'GET' && url.pathname === '/v1/admin/diag') {
+    const keyOk = req.headers['x-admin-key'] === process.env.ADMIN_API_KEY && Boolean(process.env.ADMIN_API_KEY);
+    if (!adminOf() && !keyOk) return json(res, 403, { error: 'admin_required' });
+    const present = (v) => Boolean(v && String(v).trim());
+    const providers = {
+      claude: present(process.env.ANTHROPIC_API_KEY),
+      gemini: present(process.env.GEMINI_API_KEY),
+      openai: present(process.env.OPENAI_API_KEY),
+    };
+    const whsecs = (process.env.STRIPE_WEBHOOK_SECRET || '').split(',').map((s) => s.trim()).filter(Boolean);
+    const problems = [];
+    if (!config.mock && !Object.values(providers).some(Boolean)) problems.push('NO AI PROVIDER KEY set — every /v1/generate will fail. Set ANTHROPIC_API_KEY (or GEMINI/OPENAI), or MOCK_AI=1 for a demo.');
+    if (!present(process.env.STRIPE_SECRET_KEY)) problems.push('STRIPE_SECRET_KEY missing — Checkout cannot be created.');
+    if (!whsecs.length) problems.push('STRIPE_WEBHOOK_SECRET missing — every Stripe webhook will be rejected (no crediting).');
+    if (!kodaConfigured()) problems.push('KODA not fully configured — mobile-money door is off (this is fine if you only take card).');
+    if (!mailConfigured()) problems.push('SMTP not configured — receipts, password resets and lead notifications will not send.');
+    return json(res, 200, {
+      status: problems.length ? 'attention' : 'ready',
+      time: { serverIso: new Date().toISOString(), serverUnix: Math.floor(Date.now() / 1000), note: 'compare serverUnix to real UTC now; a skew > 300s breaks Stripe webhook signatures' },
+      generation: { mock: config.mock, providerKeys: providers, fallbackChain: config.fallbackChain, active: config.mock ? ['mock'] : availableProviders() },
+      payments: { configured: paymentsConfigured(), stripeSecretKey: present(process.env.STRIPE_SECRET_KEY), webhookSecrets: whsecs.length, webhookToleranceSec: Math.max(30, Number(process.env.STRIPE_WEBHOOK_TOLERANCE_SEC || 300)), webhookPath: '/v1/payments/stripe-webhook' },
+      koda: { configured: kodaConfigured(), webhookPath: '/v1/payments/koda-webhook' },
+      mail: { configured: mailConfigured() },
+      maintenance: maintenanceOn,
+      problems,
+    });
+  }
+
   if (method === 'GET' && url.pathname === '/v1/admin/overview') {
     if (!adminOf()) return json(res, 403, { error: 'admin_required' });
     const sum = summary();

@@ -397,3 +397,53 @@ scripts/nf-db-cutover.sh` also flips the flag, restarts, smoke-tests and
 auto-rolls-back if unhealthy. The JSON files are never mutated, so the file
 backend stays as an instant rollback. Under SQLite, put the data volume on an
 encrypted disk (LUKS) — node:sqlite has no at-rest encryption.
+
+---
+
+## Production self-diagnosis — "why is it failing?" without shell access
+
+Two live blockers — generation and the Stripe webhook — are now diagnosable and
+self-healing from the code, so you never have to read `journalctl` to find the
+cause.
+
+### `GET /v1/admin/diag` — one curl, full readiness
+
+Admin-gated (session **or** `x-admin-key: $ADMIN_API_KEY`). Reports, without ever
+printing a secret value:
+
+```
+curl -s https://nichefinderhq.com/v1/admin/diag -H "x-admin-key: $ADMIN_API_KEY" | jq
+```
+
+- `generation.providerKeys` — which of ANTHROPIC/GEMINI/OPENAI keys are present.
+  If all three are `false` (and `mock:false`), **every `/v1/generate` fails** —
+  this is the #1 cause of a live generation outage. Set `ANTHROPIC_API_KEY` and
+  restart.
+- `payments` — `stripeSecretKey` present?, `webhookSecrets` count, the exact
+  `webhookPath` to register in Stripe, and the active `webhookToleranceSec`.
+- `time.serverUnix` — compare to real UTC now. A skew **> 300 s breaks every
+  Stripe webhook signature** even with the correct secret.
+- `problems[]` — a plain-English list of exactly what to fix.
+
+### Generation is self-healing
+
+`providers/claude.js` now degrades on a 400: if the live API or the configured
+model rejects an advanced parameter (adaptive thinking, effort, or a structured-
+output schema), it strips that one param and retries rather than failing the
+user's paid run. Only a genuine failure (auth, connection, 5xx, refusal, or an
+irreducible 400) falls through to the provider failover chain. A failed run
+always releases its ACU hold — the user is never charged for a failure.
+
+### Stripe webhook rejections now name the cause
+
+The log line tells you which of these it is:
+
+- `signature_mismatch` → the endpoint's `whsec_` doesn't match
+  `STRIPE_WEBHOOK_SECRET`. Copy **this** endpoint's signing secret into the env
+  and restart. (Multiple secrets: comma-separate them.)
+- `stale_timestamp` → the signature is **authentic** but the **server clock is
+  skewed**. Fix NTP (`sudo timedatectl set-ntp true`) — or, as a stop-gap,
+  raise `STRIPE_WEBHOOK_TOLERANCE_SEC`.
+- `no_secret_configured` → `STRIPE_WEBHOOK_SECRET` is empty.
+- `malformed_header` → the proxy isn't forwarding `Stripe-Signature` / the raw
+  body is being altered.
