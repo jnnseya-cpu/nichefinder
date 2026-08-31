@@ -1,3 +1,4 @@
+import './isolate-stores.js'; // never touch the live data/ files (must be first)
 // METRICS test — the observability endpoint the watchdog polls. Verifies the
 // admin-gated /v1/admin/metrics reports request/error/webhook-failure counters,
 // that a forged webhook increments webhookFailures, and that it is not public.

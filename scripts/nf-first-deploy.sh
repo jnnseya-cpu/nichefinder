@@ -36,7 +36,19 @@ git checkout "$BR"
 git merge --ff-only "origin/$BR"
 
 echo ">> [2/4] installing deps + running the test suite (mocks, no live impact)"
-( cd backend/gateway && npm ci --omit=dev && npm test )
+# HERMETIC test run: point every store at a throwaway dir and drop any inherited
+# encryption key, so the suite can never read or write the LIVE data files under
+# the repo's data/ directory. Tests that need their own store/key set them and
+# win over these defaults.
+TDATA="$(mktemp -d)"; trap 'rm -rf "$TDATA"' EXIT
+(
+  cd backend/gateway && npm ci --omit=dev
+  env -u WALLET_STORE_KEY \
+    WALLET_STORE="$TDATA/wallets.json" AUTH_STORE="$TDATA/auth.json" REFERRALS_STORE="$TDATA/referrals.json" \
+    DOCS_STORE="$TDATA/docs.json" ARTICLES_STORE="$TDATA/articles.json" LEADS_STORE="$TDATA/leads.jsonl" \
+    AVATAR_STORE="$TDATA/avatars" WALLET_DB="$TDATA/wallets.db" AUTH_DB="$TDATA/auth.db" REFERRALS_DB="$TDATA/referrals.db" \
+    npm test
+)
 
 echo ">> [3/4] restarting the gateway onto the new code"
 systemctl restart "$SERVICE"

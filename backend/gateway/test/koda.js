@@ -1,3 +1,4 @@
+import './isolate-stores.js'; // never touch the live data/ files (must be first)
 // KODA MOBILE-MONEY PAYMENT test — the second money door.
 // Boots the gateway with KODA configured (test key + local KODA mock), then
 // walks the mobile-money path: hosted intent creation → signed payment.verified

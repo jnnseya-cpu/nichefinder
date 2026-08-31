@@ -1,3 +1,4 @@
+import './isolate-stores.js'; // never touch the live data/ files (must be first)
 // SUBSCRIPTION CYCLE test — recurring Stripe plans → monthly ACU allotment.
 // Boots the gateway with billing ENFORCED (test Stripe keys + a local Stripe
 // mock), then walks the subscription money path:

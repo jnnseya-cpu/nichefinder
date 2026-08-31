@@ -1,3 +1,4 @@
+import './isolate-stores.js'; // never touch the live data/ files (must be first)
 // AI EVAL test (Phase 10) — runs the eval harness against the live gateway and
 // asserts the measurable safety/quality thresholds: prompt-injection is blocked
 // 100%, structured output conforms, tasks succeed, latency is recorded. Quality/

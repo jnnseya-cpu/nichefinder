@@ -1,3 +1,4 @@
+import './isolate-stores.js'; // never touch the live data/ files (must be first)
 // DIAG test — the launch-readiness self-diagnosis endpoint. Verifies the
 // admin-gated /v1/admin/diag reports provider-key presence, payments/webhook
 // config, server clock, and a human-readable problems list — WITHOUT leaking

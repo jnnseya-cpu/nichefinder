@@ -1,3 +1,4 @@
+import './isolate-stores.js'; // never touch the live data/ files (must be first)
 // SECURITY HEADERS test — asserts the hardening headers are present on both API
 // and static responses, and that the CSP is the non-breaking framing/base/object
 // policy (does not restrict scripts/styles, so the site's inline JS + tags work).

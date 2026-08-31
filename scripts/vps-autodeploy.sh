@@ -46,12 +46,22 @@ if ! git diff --quiet "$LOCAL" "$REMOTE" -- backend/gateway/package-lock.json; t
 fi
 
 # Gate 1 — TESTS (pre-restart): never restart a broken build. Tests use MOCK_AI
-# and their own ports, so they neither cost money nor touch the live service.
-if ! ( cd backend/gateway && npm test ) >"$TESTLOG" 2>&1; then
+# and their own ports. HERMETIC: every store points at a throwaway dir and any
+# inherited encryption key is dropped, so the suite can never read or write the
+# LIVE data/ files (auth, wallets, referrals) — a test without its own store
+# path would otherwise fall back to the repo's real data dir.
+TDATA="$(mktemp -d)"
+if ! ( cd backend/gateway && env -u WALLET_STORE_KEY \
+        WALLET_STORE="$TDATA/wallets.json" AUTH_STORE="$TDATA/auth.json" REFERRALS_STORE="$TDATA/referrals.json" \
+        DOCS_STORE="$TDATA/docs.json" ARTICLES_STORE="$TDATA/articles.json" LEADS_STORE="$TDATA/leads.jsonl" \
+        AVATAR_STORE="$TDATA/avatars" WALLET_DB="$TDATA/wallets.db" AUTH_DB="$TDATA/auth.db" REFERRALS_DB="$TDATA/referrals.db" \
+        npm test ) >"$TESTLOG" 2>&1; then
+  rm -rf "$TDATA"
   git reset -q --hard "$LOCAL"   # roll the working tree back; live service untouched
   alert "🔴 Niche Finder deploy BLOCKED: tests failed for ${REMOTE:0:8} — kept ${LOCAL:0:8} live (see $TESTLOG)"
   exit 1
 fi
+rm -rf "$TDATA"
 
 # Restart onto the new code.
 systemctl restart "$SERVICE"

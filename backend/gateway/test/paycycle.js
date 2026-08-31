@@ -1,3 +1,4 @@
+import './isolate-stores.js'; // never touch the live data/ files (must be first)
 // FULL PAYMENT CYCLE test — the launch-night proof.
 // Boots the gateway with billing ENFORCED (test Stripe keys + local Stripe
 // mock), then walks the entire money path a real customer takes:
