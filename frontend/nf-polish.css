@@ -1,7 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500;1,9..144,600&family=Inter:wght@400;450;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
 /* Niche Finder — product polish layer.
    Loaded after each page's own styles; carries the micro-craft that separates
    an operating product from a generated mockup: one radius scale, engineered
-   form controls, hover/press states, quiet scrollbars, and restrained motion. */
+   form controls, hover/press states, quiet scrollbars, and restrained motion,
+   and a bespoke type system (Fraunces display serif + Inter text + JetBrains
+   Mono labels) so the site reads as designed, not defaulted. */
+
+/* ---------- bespoke type system: overrides every page's local font tokens ----------
+   Fraunces (an optical, characterful serif) for display; Inter for text; a real
+   monospace for the technical labels. Loaded once here, applied everywhere. */
+html:root{
+  --serif:"Fraunces","Hoefler Text",Georgia,"Times New Roman",serif;
+  --sans:"Inter","Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+  --mono:"JetBrains Mono","SF Mono","Cascadia Code",ui-monospace,Menlo,Consolas,monospace;
+}
+body{
+  font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+  text-rendering:optimizeLegibility;
+  font-feature-settings:"kern" 1,"liga" 1,"calt" 1;
+  letter-spacing:-.005em;
+}
+/* Fraunces sings with optical sizing + a hair of negative tracking at display
+   sizes and its lower "soft/wonk" defaults (quietly elegant, not decorative). */
+h1,h2,h3,.page-title,.brand,.hero h1,.serif,.dash-main h3{
+  font-optical-sizing:auto;
+  font-variation-settings:"opsz" 40,"SOFT" 0,"WONK" 0;
+}
+h1,.page-title,.hero h1{letter-spacing:-.02em;line-height:1.08}
+h2{letter-spacing:-.012em}
+/* the mono labels/kickers: slightly tighter, a touch calmer than the default */
+.kicker,.k,.eyebrow,code,kbd,.mono{font-feature-settings:"kern" 1;letter-spacing:.16em}
 
 /* ---------- brand identity: NicheFinder gold + royal blue ----------
    Canonical palette taken from the NicheFinder logo — vivid gold for "Niche",
@@ -88,3 +118,35 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,te
 
 /* ---------- footer links: reveal underline on hover, like a publication ---------- */
 footer.site a:hover{color:#FFC53D !important;text-decoration:underline;text-underline-offset:3px}
+
+/* ============================================================================
+   PREMIUM DEPTH — surgical. Applied ONLY to the flat informational surfaces
+   (the page.css cards/notes/prose on About, Terms, Blog, etc.). The bespoke app
+   pages — landing, dashboard, search, project — keep their own crafted shadows,
+   grain and key-light; we deliberately do NOT override those.
+   ============================================================================ */
+html:root{
+  --shadow-md:0 4px 16px -6px rgba(0,0,0,.5),0 2px 6px -3px rgba(0,0,0,.4);
+  --shadow-lg:0 24px 54px -24px rgba(0,0,0,.62),0 8px 20px -12px rgba(0,0,0,.45);
+  --hairline:inset 0 1px 0 rgba(255,255,255,.05);
+}
+
+/* informational cards: grounded depth + a small physical hover lift. Scoped to
+   main.page / .page-body so it never touches the app pages' bespoke surfaces. */
+main.page .card, .page-body .card{
+  box-shadow:var(--shadow-md),var(--hairline);
+  transition:transform .22s cubic-bezier(.2,.7,.2,1),box-shadow .22s,border-color .22s;
+}
+main.page .card:hover, .page-body .card:hover{
+  transform:translateY(-2px);
+  box-shadow:var(--shadow-lg),var(--hairline);
+  border-color:rgba(232,166,26,.28);
+}
+main.page .note{box-shadow:var(--shadow-md),var(--hairline)}
+
+/* prose links read like a publication: gold with a thin underline on hover */
+.page-body a, .lede a{color:var(--gold-bright);text-decoration:none;border-bottom:1px solid rgba(232,166,26,.3);transition:border-color .2s}
+.page-body a:hover, .lede a:hover{border-bottom-color:var(--gold-bright)}
+
+/* secondary (ghost) buttons on informational pages get a quiet hover */
+main.page .btn:not(.gold):hover{border-color:rgba(232,166,26,.4);background:rgba(255,255,255,.03)}

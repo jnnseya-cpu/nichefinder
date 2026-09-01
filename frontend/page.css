@@ -5,9 +5,9 @@
   --teal:#3FA79B; --red:#C4604F; --violet:#6B5CA5; --blue:#3D85E0;
   --text:#E8ECF4; --muted:#8B93A5;
   --line:rgba(255,255,255,.12); --line-soft:rgba(255,255,255,.07);
-  --sans:"Avenir Next","Segoe UI",system-ui,-apple-system,sans-serif;
-  --serif:"Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif;
-  --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,monospace;
+  --sans:"Inter","Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+  --serif:"Fraunces","Hoefler Text",Georgia,"Times New Roman",serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,monospace;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
