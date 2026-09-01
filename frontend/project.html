@@ -84,7 +84,7 @@
   @media(max-width:1020px){.layout{grid-template-columns:1fr}}
   .col{display:flex;flex-direction:column;gap:26px;min-width:0}
 
-  .block{background:linear-gradient(170deg,var(--panel-2),var(--panel) 60%);border:1px solid var(--line-soft);border-radius:10px;padding:26px 28px}
+  .block{background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,0) 44%),var(--panel-2);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:26px 28px;box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 12px 32px -20px rgba(0,0,0,.6)}
   .block h2{font-family:var(--serif);font-weight:400;font-size:1.3rem;display:flex;align-items:center;gap:12px}
   .block h2::after{content:"";height:1px;background:var(--line-soft);flex:1}
   .block p{color:var(--muted);font-size:.92rem;margin-top:14px}
@@ -125,7 +125,7 @@
   /* rail */
   .rail{position:sticky;top:86px;display:flex;flex-direction:column;gap:18px}
   @media(max-width:1020px){.rail{position:static}}
-  .rail-card{background:linear-gradient(170deg,var(--panel-2),var(--panel) 60%);border:1px solid var(--line);border-radius:10px;padding:24px}
+  .rail-card{background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,0) 44%),var(--panel-2);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:24px;box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 14px 34px -18px rgba(0,0,0,.65)}
   .rail-card h3{font-family:var(--serif);font-weight:400;font-size:1.15rem;margin-bottom:16px}
   .score-ring{display:flex;align-items:center;gap:18px}
   .ring{position:relative;width:96px;height:96px;flex:none}
@@ -169,14 +169,15 @@
   .tabpane.on{display:block}
 
   /* AI operational brief */
-  .brief{background:linear-gradient(170deg,var(--panel-2),var(--panel) 60%);border:1px solid var(--line);border-radius:10px;padding:26px 28px}
+  .brief{background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,0) 44%),var(--panel-2);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:26px 28px;box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 12px 32px -20px rgba(0,0,0,.6)}
   .brief-head{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
   .brief-head h2{font-family:var(--serif);font-weight:400;font-size:1.3rem;flex:1}
   .brief-score{font-family:var(--mono);font-size:1.5rem;color:var(--gold-bright)}
   .brief-score small{font-size:.7rem;color:var(--muted)}
   .brief-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px}
   @media(max-width:760px){.brief-grid{grid-template-columns:1fr}}
-  .bcard{border:1px solid var(--line-soft);border-radius:8px;padding:17px 18px;background:rgba(7,11,20,.45);position:relative;overflow:hidden}
+  .bcard{border:1px solid rgba(255,255,255,.06);border-radius:9px;padding:17px 18px;background:rgba(255,255,255,.018);position:relative;overflow:hidden;transition:border-color .2s,background .2s}
+  .bcard:hover{background:rgba(255,255,255,.035);border-color:rgba(255,255,255,.1)}
   .bcard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--bc,var(--gold))}
   .bcard .bk{font-family:var(--mono);font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--bc,var(--gold))}
   .bcard p{font-size:.84rem;color:var(--muted);margin-top:8px}
@@ -194,7 +195,7 @@
 
   /* build hub */
   .hub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px;margin-top:6px}
-  .hub-card{border:1px solid var(--line-soft);border-radius:10px;padding:22px;background:linear-gradient(170deg,var(--panel-2),var(--panel) 60%);display:flex;flex-direction:column;gap:8px;position:relative;overflow:hidden}
+  .hub-card{border:1px solid var(--line-soft);border-radius:10px;padding:22px;background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,0) 44%),var(--panel-2);display:flex;flex-direction:column;gap:8px;position:relative;overflow:hidden}
   .hub-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--hc,var(--gold))}
   .hub-card b{font-family:var(--serif);font-weight:400;font-size:1.1rem}
   .hub-card .hd{font-size:.8rem;color:var(--muted)}
@@ -211,7 +212,7 @@
   /* memory */
   .mem-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:6px}
   @media(max-width:860px){.mem-grid{grid-template-columns:1fr}}
-  .mem-card{border:1px solid var(--line-soft);border-radius:10px;padding:22px;background:linear-gradient(170deg,var(--panel-2),var(--panel) 60%)}
+  .mem-card{border:1px solid var(--line-soft);border-radius:10px;padding:22px;background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,0) 44%),var(--panel-2)}
   .mem-card h3{font-family:var(--serif);font-weight:400;font-size:1.1rem;display:flex;gap:12px;align-items:center}
   .mem-card h3::after{content:"";height:1px;background:var(--line-soft);flex:1}
   .mem-card p{font-size:.84rem;color:var(--muted);margin-top:10px}
