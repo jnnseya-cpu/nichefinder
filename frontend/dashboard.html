@@ -60,17 +60,28 @@
 
   .grid{display:grid;gap:18px}
   .stats{grid-template-columns:repeat(auto-fit,minmax(190px,1fr));margin-top:26px}
-  .tile{border:1px solid var(--line-soft);border-radius:10px;padding:20px 22px;background:linear-gradient(170deg,var(--panel-2),var(--panel) 60%);position:relative;overflow:hidden}
-  .tile::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--tc,var(--gold))}
-  .tile .v{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:1.7rem;color:var(--text)}
+  /* premium surface: neutral, top-lit, grounded — accent is a small corner mark,
+     not a neon stripe (restraint reads as "designed", not templated). */
+  .tile{border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:21px 22px;
+    background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,0) 46%),var(--panel);
+    position:relative;overflow:hidden;
+    box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 8px 22px -12px rgba(0,0,0,.6);
+    transition:transform .22s cubic-bezier(.2,.7,.2,1),box-shadow .22s,border-color .22s}
+  .tile:hover{transform:translateY(-2px);border-color:rgba(232,166,26,.26);
+    box-shadow:0 1px 0 rgba(255,255,255,.06) inset,0 18px 38px -18px rgba(0,0,0,.72)}
+  .tile::before{content:"";position:absolute;top:0;left:0;width:78px;height:2px;
+    background:linear-gradient(90deg,var(--tc,var(--gold)),transparent)}
+  .tile .v{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:1.75rem;letter-spacing:-.01em;color:var(--text)}
   .tile .v small{font-size:.8rem;color:var(--muted)}
   .tile .k{font-family:var(--mono);font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:var(--tc,var(--gold));margin-bottom:8px}
   .tile .d{font-size:.72rem;color:var(--muted);margin-top:6px}
   .tile .top-up{margin-top:10px;font-size:.7rem;font-weight:700;cursor:pointer;background:none;border:1px solid var(--line);color:var(--gold-bright);border-radius:4px;padding:5px 12px}
   .tile .top-up:hover{background:rgba(232,166,26,.1)}
 
-  section.blk{margin-top:26px;border:1px solid var(--line-soft);border-radius:10px;padding:24px 26px;background:linear-gradient(170deg,var(--panel-2),var(--panel) 60%)}
-  section.blk>h2{font-family:var(--serif);font-weight:400;font-size:1.25rem;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  section.blk{margin-top:26px;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:24px 26px;
+    background:linear-gradient(180deg,rgba(255,255,255,.028),rgba(255,255,255,0) 30%),var(--panel);
+    box-shadow:0 1px 0 rgba(255,255,255,.03) inset,0 12px 32px -20px rgba(0,0,0,.6)}
+  section.blk>h2{font-family:var(--serif);font-weight:500;font-size:1.32rem;letter-spacing:-.01em;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
   section.blk>h2 .tag{font-family:var(--mono);font-size:.56rem;letter-spacing:.16em;color:var(--muted);border:1px solid var(--line-soft);border-radius:3px;padding:3px 8px}
   section.blk>h2::after{content:"";height:1px;background:var(--line-soft);flex:1}
   section.blk>p{font-size:.85rem;color:var(--muted);margin-top:10px}
@@ -80,8 +91,9 @@
 
   .bgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
   @media(max-width:700px){.bgrid{grid-template-columns:1fr}}
-  .bcard{border:1px solid var(--line-soft);border-radius:8px;padding:15px 16px;background:rgba(7,11,20,.45);position:relative;overflow:hidden}
-  .bcard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--bc,var(--gold))}
+  .bcard{border:1px solid rgba(255,255,255,.06);border-radius:9px;padding:15px 17px;background:rgba(255,255,255,.018);position:relative;overflow:hidden;transition:border-color .2s,background .2s}
+  .bcard:hover{background:rgba(255,255,255,.035);border-color:rgba(255,255,255,.1)}
+  .bcard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--bc,var(--gold));opacity:.75}
   .bcard .bk{font-family:var(--mono);font-size:.56rem;letter-spacing:.16em;text-transform:uppercase;color:var(--bc,var(--gold))}
   .bcard p{font-size:.82rem;color:var(--muted);margin-top:6px}
 
