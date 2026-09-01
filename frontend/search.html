@@ -552,6 +552,7 @@
           <span class="v" id="acuCost">25 <small>ACU</small></span>
         </div>
         <button class="btn-generate" id="generate">Run Discovery</button>
+        <button type="button" id="previewBtn" style="width:100%;margin-top:8px;background:transparent;border:1px solid rgba(232,166,26,.5);color:var(--gold-bright);border-radius:9px;padding:11px 14px;cursor:pointer;font-family:inherit;font-size:.86rem">Quick Preview · <span id="previewCost">20</span> ACU <small style="color:var(--muted)">— welcome ACU OK</small></button>
         <p class="rail-note">All outputs are probabilistic and require your critical review. You are the final decision-maker.</p>
       </div>
       <div class="rail-card" id="histCard" style="margin-top:14px" hidden>
@@ -942,6 +943,69 @@
     });
   }
 
+  // Lightweight schema for the Quick Preview — one short niche with just the
+  // headline scores. Small on purpose: previews are cheap and welcome-ACU funded.
+  var PREVIEW_SCHEMA = {
+    type: 'object',
+    properties: {
+      niches: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            title: { type: 'string' },
+            tagline: { type: 'string', description: 'UPPERCASE meta line: SECTOR · LOCATION · MODE' },
+            summary: { type: 'string', description: '2 sentence commercial rationale' },
+            confidence: { type: 'integer', description: 'Overall confidence 0-100' },
+            marketReadiness: { type: 'integer' },
+            competitiveGap: { type: 'integer' },
+            prospectOfSuccess: { type: 'integer' }
+          },
+          required: ['title', 'tagline', 'summary', 'confidence', 'marketReadiness', 'competitiveGap', 'prospectOfSuccess'],
+          additionalProperties: false
+        }
+      }
+    },
+    required: ['niches'],
+    additionalProperties: false
+  };
+
+  // Quick Preview fetch: a single lightweight niche, billed at the fixed cheap
+  // preview price server-side (welcome ACU may fund it). Same gateway endpoint
+  // with preview:true — the server caps the output and price.
+  function fetchPreview(cfg){
+    var controller = new AbortController();
+    var timer = setTimeout(function(){ controller.abort(); }, 90000);
+    return fetch(GATEWAY + '/v1/generate', {
+      method: 'POST',
+      headers: Object.assign({ 'content-type': 'application/json' }, (window.NF_AUTH ? NF_AUTH.authHeader() : {})),
+      signal: controller.signal,
+      body: JSON.stringify({
+        preview: true,
+        system: 'You are the Opportunity Discovery Agent of Niche Finder. Give a fast, honest teaser — one concrete niche with a one-line tagline, a two-sentence rationale, and three 0-100 scores. Be specific to the market; never generic. This is a lightweight preview, not the full report.',
+        messages: [{ role: 'user', content: 'Generate ONE quick niche venture idea for these constraints:\n' + JSON.stringify(cfg, null, 2) }],
+        jsonSchema: PREVIEW_SCHEMA,
+        user: window.NF_WALLET_USER,
+        capitalGBP: cfg.maxInvestmentUsd
+      })
+    }).then(function(r){
+      clearTimeout(timer);
+      if (!r.ok) return r.json().catch(function(){ return {}; }).then(function(e){ throw new Error('gateway ' + r.status + (e && (e.message || e.error) ? ' — ' + (e.message || e.error) : '')); });
+      return r.json();
+    }).then(function(data){
+      if (data && data.wallet) { try { NF.syncWallet(data.wallet); } catch (e) {} }
+      var text = (data && data.text) || '';
+      var parsed;
+      try { parsed = JSON.parse(text); } catch (e1) { var a = text.indexOf('{'), b = text.lastIndexOf('}'); if (a >= 0 && b > a) { try { parsed = JSON.parse(text.slice(a, b + 1)); } catch (e2) {} } }
+      if (!parsed || !Array.isArray(parsed.niches) || !parsed.niches.length) throw new Error('empty_result');
+      return parsed.niches.slice(0, 1).map(function(n){
+        return { t: n.title, m: (n.tagline || '').toUpperCase(), s: Math.max(0, Math.min(100, n.confidence)), p: n.summary, live: true, preview: true,
+          sub: { 'Market Readiness': n.marketReadiness, 'Competitive Gap': n.competitiveGap, 'Prospect of Success': n.prospectOfSuccess },
+          scores: { prs: n.marketReadiness, cs: n.competitiveGap, pss: n.prospectOfSuccess, bps: Math.max(0, (n.confidence || 60) - 15), msp: n.marketReadiness, ppp: n.prospectOfSuccess } };
+      });
+    });
+  }
+
   var MOCKS = [
     { t:'Solar-Powered Cold-Chain Micro-Depots', m:'AGRIBUSINESS · KINSHASA · HYBRID', s:87,
       p:'Off-grid refrigerated storage hubs serving smallholder produce cooperatives, monetized per-crate with mobile-money settlement. Post-harvest losses above 35% signal strong latent demand.',
@@ -1156,6 +1220,39 @@
         }
         setTimeout(function(){ renderNiches(MOCKS, false); }, reduced ? 60 : 1200);
       });
+  });
+
+  /* ---------- Quick Preview: a cheap teaser welcome ACU may fund ---------- */
+  var previewBtn = document.getElementById('previewBtn');
+  var PREVIEW_BASE = (NF.COSTS && NF.COSTS.quick_preview) || 20;
+  function previewCostNow(){ return Math.round(PREVIEW_BASE * NF.bracket(+budget.value).factor); }
+  function paintPreviewCost(){ var e = document.getElementById('previewCost'); if (e) e.textContent = previewCostNow(); }
+  paintPreviewCost();
+  budget.addEventListener('input', paintPreviewCost);
+  sel.addEventListener('change', paintPreviewCost);
+  function resetPreviewBtn(){ previewBtn.disabled = false; previewBtn.innerHTML = 'Quick Preview · <span id="previewCost">' + previewCostNow() + '</span> ACU <small style="color:var(--muted)">— welcome ACU OK</small>'; }
+
+  previewBtn && previewBtn.addEventListener('click', function(){
+    if (!sel.value){ sel.focus(); document.getElementById('sumMarket').textContent = 'Select a country — mandatory'; return; }
+    var cost = previewCostNow();
+    // Welcome ACU MAY fund a preview, so gate on the TOTAL balance (paid + welcome),
+    // not paid alone. The server bills the fixed price (welcome drawn first).
+    if (window.NF_GATEWAY_URL) {
+      if (NF.total() < cost) { NF.openTopup(cost, 'Quick preview'); return; }
+    } else if (!charge(cost, 'quick preview')) { return; }
+    previewBtn.disabled = true; previewBtn.textContent = 'Previewing…';
+    nichesEl.innerHTML = ''; thinking.classList.add('on');
+    document.getElementById('results').scrollIntoView({behavior: reduced ? 'auto' : 'smooth'});
+    fetchPreview(canvasConfig())
+      .then(function(niches){ renderNiches(niches, true); })
+      .catch(function(err){
+        thinking.classList.remove('on');
+        if (window.NF_GATEWAY_URL) {
+          if (err && /\b402\b/.test(String(err.message))) { NF.openTopup(cost, 'Quick preview'); }
+          else { nichesEl.innerHTML = '<p style="color:#C4604F;padding:24px 4px">Preview is temporarily unavailable — please try again in a moment.</p>'; }
+        } else { setTimeout(function(){ renderNiches(MOCKS.slice(0, 1), false); }, reduced ? 60 : 800); }
+      })
+      .then(resetPreviewBtn, resetPreviewBtn);
   });
 
   updBudget(); updAcu();

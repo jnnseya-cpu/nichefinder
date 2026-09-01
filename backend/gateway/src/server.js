@@ -1152,6 +1152,35 @@ const server = http.createServer(async (req, res) => {
         strike(ip, 'prompt_injection', inj);
         throw new GatewayError('Instruction blocked by the platform security agent.', { status: 400, code: 'non_human_instruction' });
       }
+
+      // QUICK PREVIEW — a cheap teaser (one short niche) that WELCOME (free) ACU
+      // may fund, unlike the full paid search. Fixed low price (quick_preview ×
+      // capital bracket) and a hard-capped output budget so it's cheap to serve;
+      // the small size + fixed price bound any free-account farming. allowFree
+      // lets welcome ACU pay (free drawn first). This never touches the paid-only
+      // metered path below.
+      if (body.preview === true) {
+        const previewStarted = Date.now();
+        const ECO = globalThis.NF_ECONOMY;
+        const price = Math.max(config.acu.minimumCharge, Math.round(ECO.COSTS.quick_preview * ECO.bracketFor(body.capitalGBP).factor));
+        const previewBody = { ...body, effort: 'low', maxTokens: Math.min(Number(process.env.QUICK_PREVIEW_TOKENS || 1400), MAX_GEN_OUTPUT) };
+        if (billingEnforced()) {
+          requireOwner(req, body.user);
+          if (isFrozen(body.user)) throw new GatewayError('This wallet is temporarily frozen pending a payment dispute. Contact support.', { status: 402, code: 'wallet_frozen', platformCode: 4002 });
+          const holdKey = `preview_${previewStarted}_${crypto.randomUUID()}`;
+          reserve({ user: body.user, amount: price, key: holdKey, allowFree: true });
+          hold = { user: body.user, key: holdKey }; // the catch releases it on failure
+        }
+        console.log(`[preview] start price=${price} maxOut=${previewBody.maxTokens} billed=${!!hold}`);
+        const presult = await route(previewBody);
+        if (clientGone) { if (hold) releaseHold({ user: hold.user, key: hold.key }); return; }
+        if (hold) {
+          const s = settleHold({ user: hold.user, key: hold.key, actual: price, label: 'quick preview', action: 'preview', bracketFactor: presult.bracketFactor || 1, allowFree: true });
+          return json(res, 200, { ...presult, preview: true, latencyMs: Date.now() - previewStarted, charged: s.charged, fromFree: s.fromFree, wallet: s.wallet });
+        }
+        return json(res, 200, { ...presult, preview: true, latencyMs: Date.now() - previewStarted });
+      }
+
       // Production billing law: with payments live (or REQUIRE_WALLET=1), the
       // SERVER meters and debits every generation — the client never bills
       // itself and anonymous calls can't burn provider spend.

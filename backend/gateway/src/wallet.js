@@ -107,6 +107,13 @@ function spendable(wallet) {
   return wallet.paid - (wallet.held || 0);
 }
 
+// Welcome (free) ACU are read-only for generation, but MAY fund the cheap
+// quick-preview action. A caller opts in with allowFree — only the fixed-price
+// preview path does; core generation never passes it, so paid-only stays paid-only.
+function spendableWith(wallet, allowFree) {
+  return spendable(wallet) + (allowFree ? (wallet.free || 0) : 0);
+}
+
 function view(wallet) {
   return {
     paid: wallet.paid, free: wallet.free, total: wallet.paid + wallet.free,
@@ -238,7 +245,7 @@ export function charge({ user, amount, label, idempotencyKey, action, bracketFac
    refused. After the work completes we settle() the real cost (≤ the hold) and
    release the rest, or release() the whole hold on failure/cancel — the caller
    is never billed for work it didn't deliver. */
-export function reserve({ user, amount, key }) {
+export function reserve({ user, amount, key, allowFree = false }) {
   const wallet = requireUser(user);
   const hold = Math.ceil(Number(amount));
   if (!Number.isFinite(hold) || hold <= 0) {
@@ -249,10 +256,12 @@ export function reserve({ user, amount, key }) {
   }
   wallet.holds = wallet.holds || {};
   if (wallet.holds[key] != null) return { held: wallet.holds[key], key, replayed: true }; // idempotent re-reserve
-  if (spendable(wallet) < hold) {
-    throw new GatewayError(`Insufficient paid ACU: need ${hold}, have ${spendable(wallet)}. Welcome ACUs are read-only.`, {
-      status: 402, code: 'insufficient_acu', platformCode: 4001,
-    });
+  if (spendableWith(wallet, allowFree) < hold) {
+    const have = spendableWith(wallet, allowFree);
+    const msg = allowFree
+      ? `Insufficient ACU: need ${hold}, have ${have} (paid + welcome).`
+      : `Insufficient paid ACU: need ${hold}, have ${spendable(wallet)}. Welcome ACUs are read-only.`;
+    throw new GatewayError(msg, { status: 402, code: 'insufficient_acu', platformCode: 4001 });
   }
   wallet.held = (wallet.held || 0) + hold;
   wallet.holds[key] = hold;
@@ -263,7 +272,7 @@ export function reserve({ user, amount, key }) {
 // Convert a hold into a real debit of `actual` (clamped to the hold), releasing
 // any unused remainder back to the spendable balance. Idempotent: once the hold
 // is gone, a repeat call is a no-op. One clean ledger line per settled action.
-export function settleHold({ user, key, actual, label, action, bracketFactor, referenceId }) {
+export function settleHold({ user, key, actual, label, action, bracketFactor, referenceId, allowFree = false }) {
   const wallet = requireUser(user);
   const hold = wallet.holds && wallet.holds[key];
   if (hold == null) return { charged: 0, settled: false, wallet: view(wallet) };
@@ -271,14 +280,18 @@ export function settleHold({ user, key, actual, label, action, bracketFactor, re
   const bf = Number.isFinite(Number(bracketFactor)) && Number(bracketFactor) >= 1 ? Number(bracketFactor) : 1;
   wallet.held -= hold;
   delete wallet.holds[key];
-  wallet.paid -= cost;
+  // Preview settlements (allowFree) draw welcome ACU first, then paid; everything
+  // else is paid-only. Welcome ACU stay read-only for real generation.
+  let fromFree = 0;
+  if (allowFree) { fromFree = Math.min(wallet.free || 0, cost); wallet.free -= fromFree; }
+  wallet.paid -= (cost - fromFree);
   ledger(wallet, `OPERATIONAL_TASK · ${String(label || 'action').slice(0, 120)}`, -cost, {
     type: action ? `debit_${String(action).slice(0, 40)}` : 'debit_action',
-    pool: 'paid', bracketFactor: bf,
+    pool: fromFree > 0 ? (fromFree < cost ? 'free+paid' : 'free') : 'paid', bracketFactor: bf,
     ...(referenceId ? { referenceId: String(referenceId).slice(0, 64) } : {}),
   });
   saveWallet(user);
-  return { charged: cost, settled: true, wallet: view(wallet) };
+  return { charged: cost, settled: true, fromFree, wallet: view(wallet) };
 }
 
 // Cancel a hold without charging (generation failed, client vanished, malformed

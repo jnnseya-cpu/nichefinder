@@ -19,6 +19,7 @@
 
   var COSTS = ECO ? ECO.COSTS : {
     niche_search: 125,
+    quick_preview: 20,      // lightweight single-niche teaser — welcome (free) ACU may fund it
     unlock: 150,
     export_pdf: 100,
     validation: 250,        // market validation report

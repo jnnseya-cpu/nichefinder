@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "MOCK_AI=1 node src/server.js",
-    "test": "node test/smoke.js && node test/paycycle.js && node test/moneyleaks.js && node test/subscriptions.js && node test/koda.js && node test/auth.js && node test/mailer.js && node test/referrals.js && node test/newsletter.js && node test/migrate.js && node test/articles.js && node test/capi.js && node test/gsc.js && node test/headers.js && node test/metrics.js && node test/backup.js && node test/smoke-gate.js && node test/drill.js && node test/dbmigrate.js && node test/wallet-sqlite.js && node test/auth-referrals-sqlite.js && node test/docmigrate.js && node test/erasure.js && node test/ai-eval.js && node test/claude-degrade.js && node test/webhook-verify.js && node test/diag.js"
+    "test": "node test/smoke.js && node test/paycycle.js && node test/preview.js && node test/moneyleaks.js && node test/subscriptions.js && node test/koda.js && node test/auth.js && node test/mailer.js && node test/referrals.js && node test/newsletter.js && node test/migrate.js && node test/articles.js && node test/capi.js && node test/gsc.js && node test/headers.js && node test/metrics.js && node test/backup.js && node test/smoke-gate.js && node test/drill.js && node test/dbmigrate.js && node test/wallet-sqlite.js && node test/auth-referrals-sqlite.js && node test/docmigrate.js && node test/erasure.js && node test/ai-eval.js && node test/claude-degrade.js && node test/webhook-verify.js && node test/diag.js"
   },
   "engines": {
     "node": ">=20"
