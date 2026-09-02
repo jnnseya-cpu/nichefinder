@@ -9,18 +9,18 @@
 
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Niche Finder — The Operating System for Venture Creation</title>
-<meta name="description" content="From market signal to investor-ready venture — an autonomous venture intelligence system that discovers, validates, and builds your next business.">
+<title>Niche Finder — Know if the idea is real, before you spend</title>
+<meta name="description" content="Pressure-test a business idea against your country’s real market and your real budget — with a 3-year model where every number shows its assumptions. For founders with £10k or less.">
 <link rel="canonical" href="https://nichefinderhq.com/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Niche Finder">
-<meta property="og:title" content="Niche Finder — The Operating System for Venture Creation">
-<meta property="og:description" content="From market signal to investor-ready venture — an autonomous venture intelligence system that discovers, validates, and builds your next business.">
+<meta property="og:title" content="Niche Finder — Know if the idea is real, before you spend">
+<meta property="og:description" content="Pressure-test a business idea against your country’s real market and your real budget — with a 3-year model where every number shows its assumptions. For founders with £10k or less.">
 <meta property="og:url" content="https://nichefinderhq.com/">
 <meta property="og:image" content="https://nichefinderhq.com/icon.svg">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Niche Finder — The Operating System for Venture Creation">
-<meta name="twitter:description" content="From market signal to investor-ready venture — an autonomous venture intelligence system that discovers, validates, and builds your next business.">
+<meta name="twitter:title" content="Niche Finder — Know if the idea is real, before you spend">
+<meta name="twitter:description" content="Pressure-test a business idea against your country’s real market and your real budget — with a 3-year model where every number shows its assumptions. For founders with £10k or less.">
 <meta name="theme-color" content="#070B14">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
@@ -429,12 +429,12 @@
     <canvas id="radar" aria-hidden="true"></canvas>
     <div class="hero-vignette" aria-hidden="true"></div>
     <div class="wrap">
-      <p class="eyebrow rise d1">Autonomous venture intelligence</p>
-      <h1 class="rise d2">The Operating System for <span class="gold">Venture Creation</span></h1>
-      <p class="lede rise d3">From a market signal to an investor-ready venture — in minutes. Niche Finder finds the opportunity, proves the numbers, writes the plan, and hands you the 0–90 day playbook to your first 100 customers.</p>
+      <p class="eyebrow rise d1">Grounded venture validation</p>
+      <h1 class="rise d2">Know if the idea is real — <span class="gold">before you spend your savings.</span></h1>
+      <p class="lede rise d3">Most first-time founders don't fail at execution. They fail at <em>selection</em> — backing an idea with no demand evidence, misjudging local competition, or committing capital to something that was never buildable on their budget. Niche Finder pressure-tests your idea against your country's real market and your real budget, and <b>shows its working on every number</b> — so you move with evidence, not hope.</p>
       <!-- FREE INSTANT-VALUE HOOK — no signup, no card, instant score. The organic funnel. -->
       <div class="freescore rise d4" id="freeScore">
-        <div class="fs-head">Score your business idea free — no signup</div>
+        <div class="fs-head">Try it — a directional read on any idea, free, no signup</div>
         <div class="fs-row">
           <input id="fsIdea" class="fs-in" placeholder="Your idea (e.g. solar phone-charging kiosks)" maxlength="90">
           <input id="fsCountry" class="fs-in fs-country" placeholder="Country" maxlength="40">
@@ -446,12 +446,12 @@
         <a class="btn btn-ghost" href="#how">How It Works</a>
       </div>
       <div class="hero-badges rise d5">
-        <span><i></i>End-to-End Encrypted</span>
-        <span><i></i>Human-Only Access · Bots Blocked</span>
-        <span><i></i>Global Market Coverage</span>
-        <span><i></i>100 free credits · no card</span>
+        <span><i></i>Every figure shows its assumptions</span>
+        <span><i></i>Priced to your real budget · not Silicon Valley's</span>
+        <span><i></i>Grounded in your country's data</span>
+        <span><i></i>You make the final call</span>
       </div>
-      <p class="hero-trust rise d5">Built for founders in <b>every country</b> · start with a free score above</p>
+      <p class="hero-trust rise d5">Built for founders in <b>Lagos, Kinshasa, Nairobi — and everywhere the data reaches.</b></p>
     </div>
   </section>
 
@@ -501,13 +501,13 @@
       out.innerHTML =
         '<div class="fs-score"><div class="fs-dial" style="--sc:'+band(overall)+'">'+overall.toFixed(1)+'</div>'+
         '<div><div class="fs-verdict" style="color:'+band(overall)+'">'+verdict+'</div>'+
-        '<div class="fs-cap">Preview score for <b>'+esc(i)+'</b> in <b>'+esc(c)+'</b>.</div></div></div>'+
+        '<div class="fs-cap">Directional read for <b>'+esc(i)+'</b> in <b>'+esc(c)+'</b> — from your words alone. The real analysis is grounded in live country data.</div></div></div>'+
         '<div class="fs-pillars">'+
         '<div class="fs-pill"><div class="pn">MARKET READINESS</div><div class="pv" style="color:'+band(prs)+'">'+prs.toFixed(1)+'</div></div>'+
         '<div class="fs-pill"><div class="pn">COMPETITIVE GAP</div><div class="pv" style="color:'+band(cs)+'">'+cs.toFixed(1)+'</div></div>'+
         '<div class="fs-pill"><div class="pn">PROSPECT OF SUCCESS</div><div class="pv" style="color:'+band(pss)+'">'+pss.toFixed(1)+'</div></div>'+
         '</div>'+
-        '<p class="fs-cap">This is a free preview. The full breakdown — real demand evidence, competitor scan, 3-year numbers, and an investor-ready pack for '+esc(c)+' — runs in the Search Canvas with your <b>100 free credits</b>.</p>'+
+        '<p class="fs-cap">This is a directional teaser, not the analysis. The real breakdown — country-grounded demand evidence, a competitor scan, and 3-year numbers that each show their assumptions for '+esc(c)+' — runs in the Search Canvas. New accounts get <b>welcome credits</b> to try a Quick Preview first.</p>'+
         '<div class="fs-unlock">'+
         '<input class="fs-email" id="fsEmail" type="email" placeholder="Email — get the full breakdown + launch invite">'+
         '<a class="btn btn-gold" id="fsClaim" href="search.html">Get full analysis →</a>'+
@@ -593,7 +593,57 @@
           </div>
         </div>
       </div>
-      <p class="dash-caption reveal">Live view · Opportunity validated in under five minutes</p>
+      <p class="dash-caption reveal">Illustrative worked example — and every figure above traces to its assumptions. Here's one:</p>
+    </div>
+  </section>
+
+  <!-- SEE THE WORKING — the trust proof: numbers that show their derivation -->
+  <style>
+    .work-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:clamp(28px,4vw,60px);align-items:start}
+    @media(max-width:900px){.work-grid{grid-template-columns:1fr}}
+    .derive{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,0) 40%),var(--panel);box-shadow:0 24px 60px -30px rgba(0,0,0,.7)}
+    .derive-h{padding:14px 20px;border-bottom:1px solid var(--line-soft);font-family:var(--mono);font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .derive-h b{color:var(--gold)}
+    .drow{display:grid;grid-template-columns:1fr auto;gap:4px 16px;padding:16px 20px;border-bottom:1px solid var(--line-soft)}
+    .drow .dl{font-size:.92rem;color:var(--text)}
+    .drow .dv{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--gold-bright);text-align:right;white-space:nowrap}
+    .drow .dw{grid-column:1/-1;font-size:.8rem;color:var(--muted);margin-top:3px}
+    .drow.op{position:relative}
+    .drow.op .dl::before{content:"×";font-family:var(--mono);color:var(--muted);margin-right:8px}
+    .drow.sum{background:rgba(232,166,26,.06)}
+    .drow.sum .dl{font-family:var(--serif);font-size:1.05rem}
+    .drow.sum .dv{font-size:1.15rem;color:var(--gold-bright)}
+    .drow:last-child{border-bottom:none}
+    .work-note{border-left:3px solid var(--teal);padding:4px 0 4px 18px;color:var(--muted);font-size:.9rem;margin-top:22px;max-width:46ch}
+    .work-points{list-style:none;margin-top:8px;display:grid;gap:20px}
+    .work-points li b{font-family:var(--serif);font-size:1.15rem;display:block;margin-bottom:6px}
+    .work-points li p{color:var(--muted);font-size:.94rem;max-width:42ch}
+    .work-points .wk{font-family:var(--mono);font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
+  </style>
+  <section class="act" id="working">
+    <div class="wrap">
+      <div class="act-head reveal" style="max-width:760px">
+        <p class="eyebrow">See the working</p>
+        <h2>Numbers you can <span class="gold">tear apart.</span></h2>
+        <p>Any tool can hand you a confident forecast — that's the easy part, and it's worthless. So we do the opposite: every figure traces to assumptions you can see and change. Here's exactly how the <b>$1.24M</b> in the example above is built.</p>
+      </div>
+      <div class="work-grid">
+        <div class="derive reveal" aria-label="Worked derivation of Year-3 revenue">
+          <div class="derive-h"><span>Year-3 revenue · <b>derivation</b></span><span>Cold-chain micro-depots · Kinshasa</span></div>
+          <div class="drow"><span class="dl">Serviceable cooperatives</span><span class="dv">~1,900</span><span class="dw">Producer cooperatives within a 40 km cold-chain radius of Kinshasa's main produce corridors.</span></div>
+          <div class="drow op"><span class="dl">Adoption by Year 3</span><span class="dv">12%</span><span class="dw">Deliberately conservative — comparable East-African cold-chain operators reach 15–22%.</span></div>
+          <div class="drow op"><span class="dl">Revenue per depot / year</span><span class="dv">$0.35 × 480 × 71%</span><span class="dw">Price per crate/day × crate capacity × utilisation — utilisation held below peak on purpose.</span></div>
+          <div class="drow sum"><span class="dl">Year-3 revenue</span><span class="dv">≈ $1.24M</span><span class="dw">Reconciles with the 61% gross margin and 14-month break-even shown above — the same model, one set of assumptions.</span></div>
+        </div>
+        <div>
+          <ul class="work-points reveal">
+            <li><span class="wk">Assumption-first</span><b>Change one number, the model re-derives.</b><p>Adjust the cooperative count, the adoption rate, or the price and every downstream figure updates. Nothing is a fixed guess.</p></li>
+            <li><span class="wk">Country-grounded</span><b>Priced to your market, not a template.</b><p>Population, category spend, competition and cost structures come from the country you're building in — Kinshasa is not Kansas.</p></li>
+            <li><span class="wk">Honest by design</span><b>It tells you where it's unsure.</b><p>Every output is probabilistic and flags its weakest assumptions, so you know exactly what to pressure-test before you commit.</p></li>
+          </ul>
+          <p class="work-note reveal">Illustrative worked example. Your run pulls your country's live figures and your own budget — and shows the working the same way, every time.</p>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -601,38 +651,38 @@
   <section class="act tint" id="what">
     <div class="wrap">
       <div class="act-head reveal">
-        <p class="eyebrow">What you get</p>
-        <h2>An end-to-end <span class="gold">Venture OS</span></h2>
-        <p>Everything you need to go from idea to a validated, fundable venture — all in one seamless system.</p>
+        <p class="eyebrow">What it does for you</p>
+        <h2>From a hunch to a <span class="gold">decision you can defend.</span></h2>
+        <p>Four jobs, in one place — each built to remove a specific way first-time founders lose money.</p>
       </div>
       <div class="features">
         <article class="feature reveal">
           <svg class="glyph" viewBox="0 0 38 38" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
             <circle cx="19" cy="19" r="14"/><circle cx="19" cy="19" r="7" opacity=".5"/><circle cx="19" cy="19" r="1.8" fill="currentColor" stroke="none"/><path d="M19 5v-3M33 19h3M19 33v3M5 19H2"/>
           </svg>
-          <h3>Autonomous Opportunity Discovery</h3>
-          <p>Discover high-potential niches with data-backed scores and deep market insights.</p>
+          <h3>See where demand is really forming</h3>
+          <p>Country-grounded opportunities matched to your budget — not a feed of trendy ideas, but ones actually buildable where you are.</p>
         </article>
         <article class="feature reveal">
           <svg class="glyph" viewBox="0 0 38 38" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
             <path d="M4 32h30"/><path d="M7 32V20m8 12V14m8 18V22m8 10V9"/><path d="M7 15l8-6 8 7 8-9" opacity=".5"/>
           </svg>
-          <h3>Automated Financial Modeling</h3>
-          <p>Instantly generate 3-year financial forecasts and cashflow projections for any niche.</p>
+          <h3>Prove the numbers before you commit</h3>
+          <p>A 3-year model where every figure shows its assumptions — so you can stress-test it, not just trust it.</p>
         </article>
         <article class="feature reveal">
           <svg class="glyph" viewBox="0 0 38 38" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
             <path d="M10 3h13l7 7v25H10z"/><path d="M23 3v7h7" opacity=".5"/><path d="M15 18h10M15 23h10M15 28h6"/>
           </svg>
-          <h3>Generative Investor Documents</h3>
-          <p>Produce professional business plans, financial models, and pitch decks automatically.</p>
+          <h3>Walk in ready for hard questions</h3>
+          <p>Validation report, business plan and pitch deck — all drawn from one consistent model, so your story holds up under scrutiny.</p>
         </article>
         <article class="feature reveal">
           <svg class="glyph" viewBox="0 0 38 38" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
             <path d="M5 33c9 0 7-22 16-22"/><circle cx="27" cy="11" r="4"/><circle cx="5" cy="33" r="2.4" fill="currentColor" stroke="none"/><path d="M27 15v6m0 4v2m-6-3h12" opacity=".5"/>
           </svg>
-          <h3>Intelligent Execution Planning</h3>
-          <p>Turn strategy into action with step-by-step roadmaps built from your own numbers.</p>
+          <h3>Know exactly what to do on day one</h3>
+          <p>A step-by-step 0–90 day launch plan built from your own numbers, down to your first 100 customers.</p>
         </article>
       </div>
     </div>
@@ -642,9 +692,9 @@
   <section class="act" id="how">
     <div class="wrap">
       <div class="act-head reveal">
-        <p class="eyebrow">How the system operates</p>
-        <h2>From idea to investor-ready — <span class="gold">in minutes</span></h2>
-        <p>Our OS streamlines the entire venture creation process, turning your initial spark into a fundable business plan with unprecedented speed.</p>
+        <p class="eyebrow">How it works</p>
+        <h2>Four steps. <span class="gold">Evidence at each one.</span></h2>
+        <p>You stay in control the whole way — the OS narrows the field and shows its reasoning; you make the calls that matter.</p>
       </div>
       <div class="steps">
         <div class="step reveal">
@@ -701,26 +751,26 @@
   <section class="act" id="proof">
     <div class="wrap">
       <div class="act-head reveal">
-        <p class="eyebrow">Operating proof</p>
-        <h2>Trust built through <span class="gold">measurable structure</span></h2>
-        <p>No inflated claims. No synthetic testimonials. The proof comes from how quickly the platform converts exploration into decision-grade outputs.</p>
+        <p class="eyebrow">Where trust comes from</p>
+        <h2>We'd rather be <span class="gold">honest than impressive.</span></h2>
+        <p>No inflated claims, no synthetic testimonials, no income promises. The trust comes from what you can check yourself — every number shows its working, and you decide what to believe.</p>
       </div>
       <div class="proof-grid">
         <div class="proof reveal">
-          <div class="big">8</div>
-          <p>Investor-grade engines per venture — validation, 3-year forecast, P&amp;L, risk heatmap, business plan, pitch deck, go-to-market blueprint, and export pack.</p>
-        </div>
-        <div class="proof reveal">
-          <div class="big">3</div>
-          <p>AI engines — Claude, Gemini and OpenAI — with automatic failover on every deep search and document.</p>
-        </div>
-        <div class="proof reveal">
-          <div class="big">£1 = 100</div>
-          <p>ACU. Transparent, pay-as-you-go pricing shown before you commit — no subscription required.</p>
+          <div class="big">0</div>
+          <p>Synthetic testimonials, fake reviews, or income promises. We publish none — and never will. If you see a number here, it's real or it's clearly a worked example.</p>
         </div>
         <div class="proof reveal">
           <div class="big">100%</div>
-          <p>Probabilistic and reviewable — every figure traces to explicit market reasoning, and you are the final decision-maker.</p>
+          <p>Of every figure traces to an assumption you can inspect and change. No black box — the reasoning is on the page.</p>
+        </div>
+        <div class="proof reveal">
+          <div class="big">£1 = 100</div>
+          <p>ACU. The price of every action is on screen <em>before</em> you spend it — pay-as-you-go, priced to your real budget, no subscription required.</p>
+        </div>
+        <div class="proof reveal">
+          <div class="big">You</div>
+          <p>Make the final call. The OS narrows the field and pressure-tests the plan; the decision — and the judgement — stays yours.</p>
         </div>
       </div>
     </div>
@@ -729,12 +779,12 @@
   <!-- FINAL -->
   <section class="final" id="final">
     <div class="wrap">
-      <p class="eyebrow reveal">Final call</p>
-      <h2 class="reveal">Your next venture <span class="gold">is waiting.</span></h2>
-      <p class="reveal">No guesswork. Just execution. Choose the niche, structure the model, and move with outputs that look ready for serious conversations.</p>
+      <p class="eyebrow reveal">Before you commit</p>
+      <h2 class="reveal">Stop guessing. <span class="gold">Start knowing.</span></h2>
+      <p class="reveal">Your savings deserve better than a hunch. Pressure-test the idea against your market and your real budget — then commit with evidence, not hope.</p>
       <div class="hero-ctas reveal">
-        <a class="btn btn-gold" href="search.html">Start Now <span class="arr" aria-hidden="true">→</span></a>
-        <a class="btn btn-ghost" href="#how">See How It Works</a>
+        <a class="btn btn-gold" href="search.html">Validate my idea <span class="arr" aria-hidden="true">→</span></a>
+        <a class="btn btn-ghost" href="#working">See the working</a>
       </div>
     </div>
   </section>
