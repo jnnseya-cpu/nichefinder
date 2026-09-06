@@ -423,6 +423,13 @@ curl -s https://nichefinderhq.com/v1/admin/diag -H "x-admin-key: $ADMIN_API_KEY"
   `webhookPath` to register in Stripe, and the active `webhookToleranceSec`.
 - `time.serverUnix` — compare to real UTC now. A skew **> 300 s breaks every
   Stripe webhook signature** even with the correct secret.
+- `grounding` — World Bank market-grounding config (enabled, cached countries).
+  Add `?probe=1` to the URL for a live reachability check (one quick, time-boxed
+  call): `grounding.reachable` then tells you if the VPS can actually reach
+  `api.worldbank.org`.
+- `alerting.webhookConfigured` — is `NF_ALERT_WEBHOOK` set (crash alerts)?
+- `showcase.published` — is a real "See the working" example live on the landing
+  (see below)?
 - `problems[]` — a plain-English list of exactly what to fix.
 
 ### Generation is self-healing
@@ -480,3 +487,40 @@ It now also supports object storage — set `NF_BACKUP_S3` (e.g.
 is installed (each reads its own credentials from the environment/config — no
 secret is handled in the script). Or wire any uploader/notifier via
 `NF_BACKUP_HOOK` (your command is run with the archive path as `$1`).
+
+### Publishing a real "See the working" example on the landing
+
+The landing's "See the working" panel shows a clearly-labelled **illustrative**
+derivation by default. The instant you publish a real, consented run, the panel
+auto-swaps to it (public read: `GET /v1/showcase`). This is an explicit
+privacy/consent decision — only publish figures the venture's operator has
+agreed to show.
+
+Publish (admin-gated, same key as diag):
+
+```
+curl -s -X POST https://nichefinderhq.com/v1/admin/showcase \
+  -H "x-admin-key: $ADMIN_API_KEY" -H "content-type: application/json" -d '{
+    "title": "Cold-chain micro-depots",
+    "country": "DR Congo",
+    "metricLabel": "Year-3 revenue",
+    "rows": [
+      {"label":"Serviceable cooperatives","value":"~1,900","why":"Within a 40km cold-chain radius of Kinshasa."},
+      {"label":"Adoption by Year 3","value":"12%","why":"Conservative vs comparable operators."}
+    ],
+    "result": {"label":"Year-3 revenue","value":"$1.24M","why":"Reconciles with the 61% gross margin."},
+    "source": "operator name / date, shown with permission"
+  }' | jq
+```
+
+Validated on write (≥1 rows, a result, rows capped at 6, lengths trimmed) — a
+malformed body is rejected `400` and nothing is published. Revert to the
+illustrative example any time:
+
+```
+curl -s -X DELETE https://nichefinderhq.com/v1/admin/showcase -H "x-admin-key: $ADMIN_API_KEY"
+```
+
+The record is one plain-JSON file at `SHOWCASE_STORE` (default
+`data/showcase.json`) — it's public content, so no encryption — and is included
+in the normal `data/` backups.
