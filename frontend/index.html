@@ -631,11 +631,11 @@
       <div class="act-head reveal" style="max-width:760px">
         <p class="eyebrow">See the working</p>
         <h2>Numbers you can <span class="gold">tear apart.</span></h2>
-        <p>Any tool can hand you a confident forecast — that's the easy part, and it's worthless. So we do the opposite: every figure traces to assumptions you can see and change. Here's exactly how the <b>$1.24M</b> in the example above is built.</p>
+        <p id="workLead">Any tool can hand you a confident forecast — that's the easy part, and it's worthless. So we do the opposite: every figure traces to assumptions you can see and change. Here's exactly how the <b>$1.24M</b> in the example above is built.</p>
       </div>
       <div class="work-grid">
-        <div class="derive reveal" aria-label="Worked derivation of Year-3 revenue">
-          <div class="derive-h"><span>Year-3 revenue · <b>derivation</b></span><span>Cold-chain micro-depots · Kinshasa</span></div>
+        <div class="derive reveal" id="derivePanel" aria-label="Worked derivation">
+          <div class="derive-h"><span>Year-3 revenue · <b>derivation</b></span><span id="deriveTag">Cold-chain micro-depots · Kinshasa</span></div>
           <div class="drow"><span class="dl">Serviceable cooperatives</span><span class="dv">~1,900</span><span class="dw">Producer cooperatives within a 40 km cold-chain radius of Kinshasa's main produce corridors.</span></div>
           <div class="drow op"><span class="dl">Adoption by Year 3</span><span class="dv">12%</span><span class="dw">Deliberately conservative — comparable East-African cold-chain operators reach 15–22%.</span></div>
           <div class="drow op"><span class="dl">Revenue per depot / year</span><span class="dv">$0.35 × 480 × 71%</span><span class="dw">Price per crate/day × crate capacity × utilisation — utilisation held below peak on purpose.</span></div>
@@ -647,11 +647,40 @@
             <li><span class="wk">Country-grounded</span><b>Priced to your market, not a template.</b><p>Population, category spend, competition and cost structures come from the country you're building in — Kinshasa is not Kansas.</p></li>
             <li><span class="wk">Honest by design</span><b>It tells you where it's unsure.</b><p>Every output is probabilistic and flags its weakest assumptions, so you know exactly what to pressure-test before you commit.</p></li>
           </ul>
-          <p class="work-note reveal">Illustrative worked example. Your run pulls your country's live figures and your own budget — and shows the working the same way, every time.</p>
+          <p class="work-note reveal" id="workNote">Illustrative worked example. Your run pulls your country's live figures and your own budget — and shows the working the same way, every time.</p>
         </div>
       </div>
     </div>
   </section>
+  <script>
+  /* Auto-pull a REAL "see the working" example the instant the operator publishes
+     one (POST /v1/admin/showcase). Until then, the illustrative example above
+     stands. Fails silently — a missing/empty showcase just leaves the default. */
+  (function(){
+    var base = (window.NF_GATEWAY_URL || '').replace(/\/$/, '');
+    function esc(s){ var d = document.createElement('i'); d.textContent = (s == null ? '' : s); return d.innerHTML; }
+    fetch(base + '/v1/showcase').then(function(r){ return r.ok ? r.json() : null; }).then(function(d){
+      var s = d && d.showcase;
+      if (!s || !s.real || !Array.isArray(s.rows) || !s.rows.length || !s.result) return;
+      var panel = document.getElementById('derivePanel');
+      var tag = (s.metricLabel || 'Derivation');
+      var html = '<div class="derive-h"><span>' + esc(tag) + ' · <b>real run</b></span><span>' + esc(s.title) + (s.country ? ' · ' + esc(s.country) : '') + '</span></div>';
+      s.rows.forEach(function(row, i){
+        html += '<div class="drow' + (i ? ' op' : '') + '"><span class="dl">' + esc(row.label) + '</span><span class="dv">' + esc(row.value) + '</span>' +
+          (row.why ? '<span class="dw">' + esc(row.why) + '</span>' : '') + '</div>';
+      });
+      html += '<div class="drow sum"><span class="dl">' + esc(s.result.label || 'Result') + '</span><span class="dv">' + esc(s.result.value) + '</span>' +
+        (s.result.why ? '<span class="dw">' + esc(s.result.why) + '</span>' : '') + '</div>';
+      panel.innerHTML = html;
+      var lead = document.getElementById('workLead');
+      if (lead) lead.innerHTML = 'Any tool can hand you a confident forecast — that’s the easy part, and it’s worthless. So we do the opposite: every figure traces to assumptions you can see and change. Here’s a <b>real run</b>, with its working shown.';
+      var note = document.getElementById('workNote');
+      if (note) note.textContent = s.source ? ('Real, consented run — ' + s.source + '. Figures are the operator’s own; shown with permission.') : 'A real, consented run — figures shown with permission.';
+      var cap = document.querySelector('.dash-caption');
+      if (cap) cap.textContent = 'A real run — and every figure traces to its assumptions. Here it is:';
+    }).catch(function(){});
+  })();
+  </script>
 
   <!-- WHAT YOU GET -->
   <section class="act tint" id="what">

@@ -125,5 +125,18 @@ export async function marketGrounding(countryName, fetchFn = fetch) {
   return block;
 }
 
+// Config snapshot for the admin diag endpoint (no secrets — there are none).
+export function marketDataStatus() {
+  return { enabled: ENABLED, apiBase: WB_BASE, timeoutMs: TIMEOUT_MS, cachedCountries: _cache.size };
+}
+
+// Live reachability probe for diag: one quick call, time-boxed. { reachable, ms }.
+export async function probe(fetchFn = fetch) {
+  const t0 = Date.now();
+  const j = await getJson(`${WB_BASE}/country/US/indicator/SP.POP.TOTL?format=json&per_page=1&mrnev=1`, fetchFn);
+  const ok = Array.isArray(j) && Array.isArray(j[1]);
+  return { reachable: ok, ms: Date.now() - t0 };
+}
+
 // test/diagnostic helper
 export function _clearCache() { _countryList = null; _cache.clear(); }

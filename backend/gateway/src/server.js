@@ -17,7 +17,8 @@ import { sendMail, mailConfigured } from './mailer.js';
 import { publishArticle, unpublishArticle, listArticles, getArticle, recordView, articleStats } from './articles.js';
 import { sendEvent as capiSend } from './meta-capi.js';
 import { getSearchConsole, gscConfigured } from './search-console.js';
-import { marketGrounding } from './marketdata.js';
+import { marketGrounding, marketDataStatus, probe as marketProbe } from './marketdata.js';
+import { getShowcase, setShowcase, clearShowcase } from './showcase.js';
 import { startNewsletterScheduler, sendNewsletterOnce, handleUnsubscribe } from './newsletter.js';
 
 const MAX_BODY_BYTES = 2 * 1024 * 1024;
@@ -561,6 +562,11 @@ const server = http.createServer(async (req, res) => {
     } catch (err) { return handleError(res, err); }
   }
 
+  // Public: the landing's "See the working" real example (null until published).
+  if (method === 'GET' && url.pathname === '/v1/showcase') {
+    return json(res, 200, { showcase: getShowcase() });
+  }
+
   // Record one blog view (any article slug, static or published). Public; the
   // client throttles per session so a reload doesn't inflate the count.
   if (req.method === 'POST' && url.pathname === '/v1/articles/view') {
@@ -933,16 +939,40 @@ const server = http.createServer(async (req, res) => {
     if (!whsecs.length) problems.push('STRIPE_WEBHOOK_SECRET missing — every Stripe webhook will be rejected (no crediting).');
     if (!kodaConfigured()) problems.push('KODA not fully configured — mobile-money door is off (this is fine if you only take card).');
     if (!mailConfigured()) problems.push('SMTP not configured — receipts, password resets and lead notifications will not send.');
+    const alertOn = present(process.env.NF_ALERT_WEBHOOK);
+    if (!alertOn) problems.push('NF_ALERT_WEBHOOK not set — the gateway can\'t alert you on crashes (recommended: a Slack/Discord webhook).');
+    const md = marketDataStatus();
+    if (!md.enabled) problems.push('MARKETDATA_DISABLED=1 — searches run WITHOUT real country grounding.');
+    // Optional live reachability probe (?probe=1) — one quick World Bank call.
+    let wb = null;
+    if (url.searchParams.get('probe')) { try { wb = await marketProbe(); } catch { wb = { reachable: false, ms: 0 }; } }
+    if (wb && !wb.reachable) problems.push('World Bank API not reachable from this box — grounding will fail soft (searches still work, just ungrounded). Check outbound egress to api.worldbank.org.');
     return json(res, 200, {
       status: problems.length ? 'attention' : 'ready',
       time: { serverIso: new Date().toISOString(), serverUnix: Math.floor(Date.now() / 1000), note: 'compare serverUnix to real UTC now; a skew > 300s breaks Stripe webhook signatures' },
       generation: { mock: config.mock, providerKeys: providers, fallbackChain: config.fallbackChain, active: config.mock ? ['mock'] : availableProviders(), model: config.providers.claude.model, maxOutputTokens: MAX_GEN_OUTPUT, structuredDefaultTokens: STRUCTURED_DEFAULT_OUTPUT },
+      grounding: { ...md, reachable: wb ? wb.reachable : 'not probed — add ?probe=1', probeMs: wb ? wb.ms : undefined },
+      alerting: { webhookConfigured: alertOn, minIntervalMs: Number(process.env.NF_ALERT_MIN_MS || 60000) },
+      showcase: { published: Boolean(getShowcase()) },
       payments: { configured: paymentsConfigured(), stripeSecretKey: present(process.env.STRIPE_SECRET_KEY), webhookSecrets: whsecs.length, webhookToleranceSec: Math.max(30, Number(process.env.STRIPE_WEBHOOK_TOLERANCE_SEC || 300)), webhookPath: '/v1/payments/stripe-webhook' },
       koda: { configured: kodaConfigured(), webhookPath: '/v1/payments/koda-webhook' },
       mail: { configured: mailConfigured() },
       maintenance: maintenanceOn,
       problems,
     });
+  }
+
+  // Admin: publish / clear the landing's real "See the working" example.
+  if ((req.method === 'POST' || req.method === 'DELETE') && url.pathname === '/v1/admin/showcase') {
+    const keyOk = req.headers['x-admin-key'] === process.env.ADMIN_API_KEY && Boolean(process.env.ADMIN_API_KEY);
+    if (!adminOf() && !keyOk) return json(res, 403, { error: 'admin_required' });
+    if (req.method === 'DELETE') return json(res, 200, clearShowcase());
+    try {
+      const body = JSON.parse((await readBody(req)) || '{}');
+      return json(res, 200, { published: true, showcase: setShowcase(body) });
+    } catch (err) {
+      return json(res, 400, { error: 'invalid_showcase', message: err.message });
+    }
   }
 
   if (method === 'GET' && url.pathname === '/v1/admin/overview') {
