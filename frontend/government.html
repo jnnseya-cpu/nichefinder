@@ -9,18 +9,22 @@
 
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Niche Finder — Government Mode</title>
-<meta name="description" content="Aggregated venture-demand analytics for governments and development-finance institutions. No personal data.">
+<title>Niche Finder — Venture Demand Observatory</title>
+<meta name="description" content="Anonymised, aggregated venture-demand signals for governments and development-finance institutions — by country and sector. No personal data.">
 <link rel="canonical" href="https://nichefinderhq.com/government.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Niche Finder">
-<meta property="og:title" content="Niche Finder — Government Mode">
-<meta property="og:description" content="Aggregated venture-demand analytics for governments and development-finance institutions. No personal data.">
+<meta property="og:title" content="Niche Finder — Venture Demand Observatory">
+<meta property="og:description" content="Anonymised, aggregated venture-demand signals for governments and development-finance institutions — by country and sector. No personal data.">
 <meta property="og:url" content="https://nichefinderhq.com/government.html">
-<meta property="og:image" content="https://nichefinderhq.com/icon.svg">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Niche Finder — Government Mode">
-<meta name="twitter:description" content="Aggregated venture-demand analytics for governments and development-finance institutions. No personal data.">
+<meta property="og:image" content="https://nichefinderhq.com/icon-512.png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta property="og:image:type" content="image/png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://nichefinderhq.com/icon-512.png">
+<meta name="twitter:title" content="Niche Finder — Venture Demand Observatory">
+<meta name="twitter:description" content="Anonymised, aggregated venture-demand signals for governments and development-finance institutions — by country and sector. No personal data.">
 <meta name="robots" content="noindex">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="stylesheet" href="page.css">
@@ -28,25 +32,10 @@
   .gov-head{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:18px;margin-bottom:8px}
   .role-pill{font-family:var(--mono);font-size:.6rem;letter-spacing:.18em;color:var(--blue);border:1px solid rgba(107,155,209,.45);border-radius:99px;padding:6px 14px}
   .privacy-note{border:1px solid var(--line-soft);border-left:3px solid var(--teal);border-radius:8px;padding:12px 16px;background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,0) 44%),var(--panel-2);font-size:.8rem;color:var(--muted);margin:18px 0 26px;max-width:70ch}
-  .filter-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:26px}
-  .filter-row label{font-family:var(--mono);font-size:.6rem;letter-spacing:.18em;color:var(--gold)}
-  select.field{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:7px;padding:10px 14px;color:var(--text);font-family:inherit;font-size:.9rem;min-width:240px}
-  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
-  .kpi{border:1px solid var(--line-soft);border-radius:12px;padding:20px;background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,0) 44%),var(--panel-2);border-top:3px solid var(--kc,var(--gold))}
-  .kpi .k{font-family:var(--mono);font-size:.56rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
-  .kpi .v{font-family:var(--serif);font-size:1.9rem;margin:8px 0 2px;color:var(--text);font-variant-numeric:tabular-nums}
-  .kpi .d{font-size:.74rem;color:var(--muted)}
+  .field{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:7px;padding:10px 14px;color:var(--text);font-family:inherit;font-size:.9rem}
   .panel{border:1px solid var(--line-soft);border-radius:14px;padding:24px;background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,0) 44%),var(--panel-2);margin-top:20px}
   .panel h3{font-family:var(--serif);font-weight:400;font-size:1.2rem;margin-bottom:4px}
   .panel .sub{font-size:.82rem;color:var(--muted);margin-bottom:16px}
-  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-  @media (max-width:900px){ .two-col{grid-template-columns:1fr} }
-  canvas.chart{width:100%;height:230px;display:block}
-  .heat-wrap{overflow-x:auto}
-  table.heat{width:100%;border-collapse:collapse;font-size:.86rem;min-width:640px}
-  table.heat th{font-family:var(--mono);font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);text-align:left;padding:10px 12px;border-bottom:1px solid var(--line)}
-  table.heat td{padding:10px 12px;border-bottom:1px solid var(--line-soft);color:#C3C9D6;font-variant-numeric:tabular-nums}
-  .heat-cell{display:inline-block;min-width:52px;text-align:center;border-radius:6px;padding:4px 10px;font-family:var(--mono);font-size:.74rem;color:var(--ink);font-weight:700}
   .brief-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:14px}
   .brief-card{border:1px solid var(--line-soft);border-left:3px solid var(--bc,var(--gold));border-radius:10px;padding:18px;background:rgba(255,255,255,.02)}
   .brief-card b{font-family:var(--serif);font-weight:400;font-size:1.02rem;display:block;margin-bottom:6px}
@@ -114,23 +103,23 @@
   <div class="wrap">
     <div class="gov-head">
       <div>
-        <span class="kicker">GOVERNMENT & INSTITUTIONAL · AGGREGATED ANALYTICS</span>
+        <span class="kicker">GOVERNMENT & INSTITUTIONAL · AGGREGATED DEMAND SIGNALS</span>
         <h1 class="page-title" style="margin-bottom:6px">Venture Demand Observatory</h1>
-        <p class="lede">See where entrepreneurial demand is forming — by country and sector — for SME programmes, development finance, and evidence-based policy. Delivered as a secured, privacy-by-design engagement.</p>
+        <p class="lede">See where entrepreneurial demand is forming — by country and sector — to target SME programmes, development finance, and evidence-based policy. Built from anonymised, aggregated activity on the platform, and delivered as a secure dashboard or data feed with no personal data. We're onboarding launch partners now.</p>
       </div>
     </div>
 
     <div class="privacy-note"><b style="color:var(--teal)">PRIVACY BY DESIGN.</b> The Observatory reports aggregated, anonymised metrics only — no personal data, no individual searches, no user identities. Any cell covering fewer than 20 operators is suppressed (k-anonymity, k = 20).</div>
 
     <div class="panel">
-      <h3>What the Observatory reports</h3>
-      <p class="sub">Derived from the platform's own anonymised venture-discovery activity, scoped to your country or region, and delivered as a secured dashboard or data feed under an enterprise engagement.</p>
+      <h3>What the Observatory can report</h3>
+      <p class="sub">As founders use Niche Finder in your region, their anonymised discovery activity aggregates into the signals below — scoped to your country or region, and delivered as a secure dashboard or data feed. We scope every engagement against the real coverage in your region first, so you know exactly what the data can and can't yet answer before any commitment.</p>
       <div class="brief-grid">
-        <div class="brief-card" style="--bc:var(--gold)"><b>Sector demand</b><p>Share of venture-discovery activity across the five-sector model — where founders are actually looking.</p></div>
-        <div class="brief-card" style="--bc:var(--teal)"><b>Adoption velocity</b><p>How discovery converts into deep validation over time — a leading indicator of formation intent.</p></div>
-        <div class="brief-card" style="--bc:var(--violet)"><b>Geographic intensity</b><p>Regional demand bands, so programmes target where near-ready operators actually are.</p></div>
-        <div class="brief-card" style="--bc:var(--blue)"><b>Capital & viability</b><p>Median capital sought and the distribution of viability scores — the readiness curve of the pipeline.</p></div>
-        <div class="brief-card" style="--bc:var(--red)"><b>Policy brief</b><p>A plain-language read of the binding constraints (e.g. first-cheque finance gaps), generated from the aggregates.</p></div>
+        <div class="brief-card" style="--bc:var(--gold)"><b>Sector demand</b><p>Share of venture-discovery activity by sector — where founders in your region are actually looking.</p></div>
+        <div class="brief-card" style="--bc:var(--teal)"><b>Where interest turns serious</b><p>How often early discovery converts into full validation — a leading indicator of real formation intent.</p></div>
+        <div class="brief-card" style="--bc:var(--violet)"><b>Geographic intensity</b><p>Which regions show the most activity, so programmes target where near-ready founders actually are.</p></div>
+        <div class="brief-card" style="--bc:var(--blue)"><b>Capital &amp; readiness</b><p>How much capital founders are seeking, and how ready their ideas score — the shape of the pipeline.</p></div>
+        <div class="brief-card" style="--bc:var(--red)"><b>Policy brief</b><p>A plain-language read of what's holding founders back — for example, gaps in early-stage finance — drawn from the aggregates.</p></div>
       </div>
     </div>
 

@@ -10,17 +10,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Niche Finder — Know if the idea is real, before you spend</title>
-<meta name="description" content="Pressure-test a business idea against your country’s real market and your real budget — with a 3-year model where every number shows its assumptions. For founders with £10k or less.">
+<meta name="description" content="Pressure-test a business idea against your country’s real market and your real budget — with a 3-year model where every number shows its assumptions. For founders starting from £10k or less — and scaling up from there.">
 <link rel="canonical" href="https://nichefinderhq.com/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Niche Finder">
 <meta property="og:title" content="Niche Finder — Know if the idea is real, before you spend">
-<meta property="og:description" content="Pressure-test a business idea against your country’s real market and your real budget — with a 3-year model where every number shows its assumptions. For founders with £10k or less.">
+<meta property="og:description" content="Pressure-test a business idea against your country’s real market and your real budget — with a 3-year model where every number shows its assumptions. For founders starting from £10k or less — and scaling up from there.">
 <meta property="og:url" content="https://nichefinderhq.com/">
-<meta property="og:image" content="https://nichefinderhq.com/icon.svg">
-<meta name="twitter:card" content="summary">
+<meta property="og:image" content="https://nichefinderhq.com/icon-512.png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta property="og:image:type" content="image/png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://nichefinderhq.com/icon-512.png">
 <meta name="twitter:title" content="Niche Finder — Know if the idea is real, before you spend">
-<meta name="twitter:description" content="Pressure-test a business idea against your country’s real market and your real budget — with a 3-year model where every number shows its assumptions. For founders with £10k or less.">
+<meta name="twitter:description" content="Pressure-test a business idea against your country’s real market and your real budget — with a 3-year model where every number shows its assumptions. For founders starting from £10k or less — and scaling up from there.">
 <meta name="theme-color" content="#070B14">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
@@ -28,7 +32,7 @@
 <meta name="apple-mobile-web-app-title" content="Niche Finder">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@graph":[
-{"@type":"Organization","@id":"https://nichefinderhq.com/#org","name":"Niche Finder","url":"https://nichefinderhq.com","logo":"https://nichefinderhq.com/icon-512.png","description":"An autonomous venture intelligence system that discovers, validates, and builds your next business.","email":"support@nichefinderhq.com","sameAs":["https://www.linkedin.com/company/nichefinder","https://x.com/nichefinderhq"],"contactPoint":[{"@type":"ContactPoint","contactType":"customer support","email":"support@nichefinderhq.com","availableLanguage":"English"}]},
+{"@type":"Organization","@id":"https://nichefinderhq.com/#org","name":"Niche Finder","url":"https://nichefinderhq.com","logo":"https://nichefinderhq.com/icon-512.png","description":"Helps founders discover, validate and document a fundable venture — grounded in verified market data, with the working shown on every number. You stay the decision-maker.","email":"support@nichefinderhq.com","sameAs":["https://www.linkedin.com/company/nichefinder","https://x.com/nichefinderhq"],"contactPoint":[{"@type":"ContactPoint","contactType":"customer support","email":"support@nichefinderhq.com","availableLanguage":"English"}]},
 {"@type":"WebSite","@id":"https://nichefinderhq.com/#website","url":"https://nichefinderhq.com","name":"Niche Finder","publisher":{"@id":"https://nichefinderhq.com/#org"},"potentialAction":{"@type":"SearchAction","target":{"@type":"EntryPoint","urlTemplate":"https://nichefinderhq.com/search.html?q={search_term_string}"},"query-input":"required name=search_term_string"}},
 {"@type":"SoftwareApplication","name":"Niche Finder","applicationCategory":"BusinessApplication","operatingSystem":"Web","url":"https://nichefinderhq.com","offers":{"@type":"Offer","price":"0","priceCurrency":"GBP","description":"Free niche score — no card required"},"publisher":{"@id":"https://nichefinderhq.com/#org"}}
 ]}
@@ -502,7 +506,7 @@
       var uniq = new Set(i.toLowerCase().replace(/[^a-z]/g,'')).size;
       if (i.length < 12 || words < 2 || uniq < 5){ prs = Math.min(prs,5.3); cs = Math.min(cs,5.1); pss = Math.min(pss,4.9); }
       var overall = Math.round((prs*0.35 + cs*0.30 + pss*0.35)*10)/10;
-      var verdict = overall>=7.5?'STRONG GO':overall>=6?'CONDITIONAL GO':'NEEDS SHARPENING';
+      var verdict = overall>=7.5?'STRONG GO':overall>=6?'CONDITIONAL GO':'NO GO';
       out.hidden = false;
       out.innerHTML =
         '<div class="fs-score"><div class="fs-dial" style="--sc:'+band(overall)+'">'+overall.toFixed(1)+'</div>'+
@@ -644,7 +648,7 @@
         <div>
           <ul class="work-points reveal">
             <li><span class="wk">Assumption-first</span><b>Change one number, the model re-derives.</b><p>Adjust the cooperative count, the adoption rate, or the price and every downstream figure updates. Nothing is a fixed guess.</p></li>
-            <li><span class="wk">Country-grounded</span><b>Priced to your market, not a template.</b><p>Population, category spend, competition and cost structures come from the country you're building in — Kinshasa is not Kansas.</p></li>
+            <li><span class="wk">Country-grounded</span><b>Priced to your market, not a template.</b><p>Every run is grounded in verified World Bank indicators for your country — population, GDP per capita, urbanisation, internet and mobile penetration — so demand, pricing and cost structures reflect where you're actually building. Kinshasa is not Kansas.</p></li>
             <li><span class="wk">Honest by design</span><b>It tells you where it's unsure.</b><p>Every output is probabilistic and flags its weakest assumptions, so you know exactly what to pressure-test before you commit.</p></li>
           </ul>
           <p class="work-note reveal" id="workNote">Illustrative worked example. Your run pulls your country's live figures and your own budget — and shows the working the same way, every time.</p>
@@ -735,22 +739,22 @@
         <div class="step reveal">
           <span class="n">01 / SEARCH</span>
           <h3>Search</h3>
-          <p>Enter your preferences and let our system find the best opportunities worldwide.</p>
+          <p>Set your country and budget. Every result is grounded in your country's real market — not a global template.</p>
         </div>
         <div class="step reveal">
           <span class="n">02 / RESULTS</span>
           <h3>Results</h3>
-          <p>Explore top opportunities ranked by our deterministic scoring engine.</p>
+          <p>Opportunities ranked on one transparent rubric — Market Readiness, Competitive Gap, Prospect of Success — each with its reasoning shown.</p>
         </div>
         <div class="step reveal">
           <span class="n">03 / ANALYZE</span>
           <h3>Analyze</h3>
-          <p>Generate financial models and validate profitability in seconds.</p>
+          <p>Build the financial model against your real numbers — and see the assumption behind every figure, so you can change it and watch the result move.</p>
         </div>
         <div class="step reveal">
           <span class="n">04 / CREATE</span>
           <h3>Create</h3>
-          <p>Download investor-ready documents and pitch with full confidence.</p>
+          <p>Export the plan and investor pack — with the working shown, so you can defend every number in the room.</p>
         </div>
       </div>
     </div>
