@@ -447,3 +447,36 @@ The log line tells you which of these it is:
 - `no_secret_configured` → `STRIPE_WEBHOOK_SECRET` is empty.
 - `malformed_header` → the proxy isn't forwarding `Stripe-Signature` / the raw
   body is being altered.
+
+---
+
+## Real country grounding, ops alerting, off-site backups (keyless)
+
+Three deep-dive fixes that need **no third-party API key** to work.
+
+### Real market-data grounding (World Bank — keyless)
+`src/marketdata.js` injects **verified World Bank indicators** (population, urban %,
+GDP per capita, internet %, mobile penetration, unemployment) for the searched
+country into the model's context on every `/v1/generate` and `/v1/document` call.
+This makes "grounded in your country's real market" true rather than a prompt
+instruction. Requires only outbound HTTPS to `api.worldbank.org` (no key). It is
+**fail-soft and time-boxed** (`MARKETDATA_TIMEOUT_MS`, default 4000) — if the API
+is slow or down, generation proceeds ungrounded, never blocked. Data is cached
+per country for `MARKETDATA_TTL_MS` (default 30 days). Disable with
+`MARKETDATA_DISABLED=1`. Confirm the VPS can reach it: `curl -s
+"https://api.worldbank.org/v2/country/NG/indicator/SP.POP.TOTL?format=json&mrnev=1"`.
+
+### In-process ops alerting
+Set `NF_ALERT_WEBHOOK` to a Slack or Discord incoming-webhook URL (the payload
+carries both `text` and `content`, so either works). The gateway then alerts on
+an uncaught exception (then exits clean for systemd to restart), an unhandled
+rejection, and on startup if no AI provider key is set. Rate-limited by
+`NF_ALERT_MIN_MS` (default 60000). No-op until the webhook is set.
+
+### Off-site backups
+`scripts/nf-backup.sh` already supports an rsync/scp target (`NF_BACKUP_REMOTE`).
+It now also supports object storage — set `NF_BACKUP_S3` (e.g.
+`s3://bucket/nichefinder`) and it uploads via the `aws` CLI or `rclone` if either
+is installed (each reads its own credentials from the environment/config — no
+secret is handled in the script). Or wire any uploader/notifier via
+`NF_BACKUP_HOOK` (your command is run with the archive path as `$1`).

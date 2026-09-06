@@ -17,6 +17,7 @@ import { sendMail, mailConfigured } from './mailer.js';
 import { publishArticle, unpublishArticle, listArticles, getArticle, recordView, articleStats } from './articles.js';
 import { sendEvent as capiSend } from './meta-capi.js';
 import { getSearchConsole, gscConfigured } from './search-console.js';
+import { marketGrounding } from './marketdata.js';
 import { startNewsletterScheduler, sendNewsletterOnce, handleUnsubscribe } from './newsletter.js';
 
 const MAX_BODY_BYTES = 2 * 1024 * 1024;
@@ -486,6 +487,7 @@ const server = http.createServer(async (req, res) => {
       // 30/60/90 roadmap), so it gets a higher ceiling.
       const tokenCap = body.docType === 'gtm' ? 24000 : 18000;
       const genBody = { ...body, maxTokens: Math.min(Number(body.maxTokens) || 14000, tokenCap) };
+      try { const g = await marketGrounding(body.country); if (g) genBody.system = (genBody.system || '') + g; } catch {}
       const started = Date.now();
 
       // The Export Pack is assembled deterministically on the client (xlsx
@@ -1164,6 +1166,7 @@ const server = http.createServer(async (req, res) => {
         const ECO = globalThis.NF_ECONOMY;
         const price = Math.max(config.acu.minimumCharge, Math.round(ECO.COSTS.quick_preview * ECO.bracketFor(body.capitalGBP).factor));
         const previewBody = { ...body, effort: 'low', maxTokens: Math.min(Number(process.env.QUICK_PREVIEW_TOKENS || 1400), MAX_GEN_OUTPUT) };
+        try { const g = await marketGrounding(body.country); if (g) previewBody.system = (previewBody.system || '') + g; } catch {}
         if (billingEnforced()) {
           requireOwner(req, body.user);
           if (isFrozen(body.user)) throw new GatewayError('This wallet is temporarily frozen pending a payment dispute. Contact support.', { status: 402, code: 'wallet_frozen', platformCode: 4002 });
@@ -1188,6 +1191,10 @@ const server = http.createServer(async (req, res) => {
       // elicit a huge response can't run up a bill beyond the reserved estimate.
       const reservedOut = reservedOutputTokens(body);
       const genBody = { ...body, maxTokens: reservedOut };
+      // Real country grounding (World Bank, keyless): inject verified indicators
+      // so the model's numbers are anchored to the market, not its memory. Fails
+      // soft and is time-boxed, so it never blocks or breaks a search.
+      try { const g = await marketGrounding(body.country); if (g) genBody.system = (genBody.system || '') + g; } catch {}
       const started = Date.now();
       let debit = null;
       if (billingEnforced()) {
@@ -1254,7 +1261,43 @@ function handleError(res, err) {
   return json(res, 500, { error: 'internal_error', message: 'Unexpected gateway error.' });
 }
 
+/* ---- ops alerting: shout when something is actually broken --------------------
+   Posts to NF_ALERT_WEBHOOK (Slack or Discord — the payload carries both `text`
+   and `content` so either reads it). No-op until the webhook is set, so the same
+   build runs pre/post setup. Rate-limited so a crash loop can't spam the channel.
+   This is the in-process complement to the external uptime watchdog. */
+const ALERT_WEBHOOK = process.env.NF_ALERT_WEBHOOK || '';
+let _lastAlert = 0;
+function alertOps(text) {
+  console.error(`[alert] ${text}`);
+  if (!ALERT_WEBHOOK || typeof fetch !== 'function') return;
+  const now = Date.now();
+  if (now - _lastAlert < Number(process.env.NF_ALERT_MIN_MS || 60000)) return; // at most ~1/min
+  _lastAlert = now;
+  const origin = (process.env.PUBLIC_ORIGIN || '').replace(/^https?:\/\//, '') || 'nichefinder';
+  const msg = `🔴 Niche Finder (${origin}): ${String(text).slice(0, 800)}`;
+  try {
+    const c = new AbortController(); const t = setTimeout(() => c.abort(), 5000);
+    fetch(ALERT_WEBHOOK, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text: msg, content: msg }), signal: c.signal })
+      .catch(() => {}).finally(() => clearTimeout(t));
+  } catch {}
+}
+
+// A crashed process should restart clean (systemd Restart=always), but never
+// silently: alert first, then exit so we're not serving from a corrupted state.
+process.on('uncaughtException', (err) => {
+  try { metrics.errors5xx += 1; } catch {}
+  alertOps(`UNCAUGHT EXCEPTION — restarting: ${err && err.stack ? err.stack.split('\n').slice(0, 3).join(' | ') : err}`);
+  setTimeout(() => process.exit(1), 800);
+});
+process.on('unhandledRejection', (reason) => {
+  alertOps(`UNHANDLED REJECTION: ${reason && reason.message ? reason.message : reason}`);
+});
+
 server.listen(config.port, () => {
   console.log(`[gateway] listening on :${config.port} (mock=${config.mock}) providers=${availableProviders().join(',') || 'none'}`);
   startNewsletterScheduler();
+  // A startup ping after a restart is a useful "it's back" signal (and confirms
+  // the webhook works). Quiet if generation has no provider — that's alert-worthy.
+  if (!config.mock && availableProviders().length === 0) alertOps('started but NO AI PROVIDER KEY is set — generation will fail.');
 });

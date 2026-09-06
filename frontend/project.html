@@ -814,6 +814,7 @@
         // this converted USD→GBP, so the server billed one bracket lower than the
         // UI displayed for ventures just over a 10k boundary.)
         investorMode: invMode, capitalGBP: P.investmentUsd || 0,
+        country: (P && P.country) || '',
         idempotencyKey: 'doc_' + P.id + '_' + a.id + '_' + Date.now()
       })
     }).then(function(r){ clearTimeout(timer); return r.json().then(function(d){ return { ok: r.ok, status: r.status, d: d }; }); })

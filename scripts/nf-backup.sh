@@ -54,6 +54,26 @@ if [ -n "$REMOTE" ]; then
   else scp -q "$OUT" "$REMOTE/" && log "copied off-box via scp -> $REMOTE"; fi
 fi
 
+# Off-site copy to S3-compatible object storage (S3 / R2 / B2 / Spaces). Uses the
+# aws CLI if present, else rclone; both read their OWN credentials from the
+# environment or their config, so no secret is handled in this script. Set e.g.
+#   NF_BACKUP_S3=s3://my-bucket/nichefinder
+if [ -n "${NF_BACKUP_S3:-}" ]; then
+  if command -v aws >/dev/null 2>&1; then
+    aws s3 cp "$OUT" "$NF_BACKUP_S3/" >/dev/null && log "uploaded off-site via aws -> $NF_BACKUP_S3" || log "WARNING: aws s3 upload failed"
+  elif command -v rclone >/dev/null 2>&1; then
+    rclone copy "$OUT" "$NF_BACKUP_S3" && log "uploaded off-site via rclone -> $NF_BACKUP_S3" || log "WARNING: rclone upload failed"
+  else
+    log "WARNING: NF_BACKUP_S3 set but neither aws nor rclone is installed — off-site upload skipped"
+  fi
+fi
+
+# Generic post-backup hook (optional): your command is run with the archive path
+# as its first argument — wire any uploader/notifier you like.
+if [ -n "${NF_BACKUP_HOOK:-}" ]; then
+  if "$NF_BACKUP_HOOK" "$OUT"; then log "post-backup hook ran: $NF_BACKUP_HOOK"; else log "WARNING: post-backup hook failed: $NF_BACKUP_HOOK"; fi
+fi
+
 # Prune: keep the newest $KEEP archives, delete the rest.
 mapfile -t OLD < <(ls -1t "$DEST"/nf-data-*.tar.gz* 2>/dev/null | tail -n +"$((KEEP+1))")
 for f in "${OLD[@]:-}"; do [ -n "$f" ] && rm -f "$f" && log "pruned $f"; done

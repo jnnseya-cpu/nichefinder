@@ -876,7 +876,8 @@
         // it, billing rejects the request with 403 before any provider is called.
         user: window.NF_WALLET_USER,
         investorMode: cfg.investorMode,
-        capitalGBP: cfg.maxInvestmentUsd
+        capitalGBP: cfg.maxInvestmentUsd,
+        country: cfg.country
       })
     }).then(function(r){
       clearTimeout(timer);
@@ -988,7 +989,8 @@
         messages: [{ role: 'user', content: 'Generate ONE quick niche venture idea for these constraints:\n' + JSON.stringify(cfg, null, 2) }],
         jsonSchema: PREVIEW_SCHEMA,
         user: window.NF_WALLET_USER,
-        capitalGBP: cfg.maxInvestmentUsd
+        capitalGBP: cfg.maxInvestmentUsd,
+        country: cfg.country
       })
     }).then(function(r){
       clearTimeout(timer);
@@ -1049,6 +1051,7 @@
       title: m.t,
       meta: m.m,
       score: m.s,
+      country: sel.value || '',
       thesis: m.p.replace(/&/g, '&amp;').replace(/</g, '&lt;'),
       sub: m.sub || { 'Market Readiness': Math.min(100, m.s + 4), 'Competitive Gap': Math.max(0, m.s - 3), 'Prospect of Success': m.s }
     };

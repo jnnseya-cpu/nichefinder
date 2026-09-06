@@ -495,6 +495,12 @@
       // Deterministic pillar preview seeded by the inputs — stable and shareable.
       var seed = hash(i.toLowerCase()+'|'+c.toLowerCase());
       var prs = 5 + (seed % 45)/10, cs = 5 + ((seed>>>4) % 40)/10, pss = 5 + ((seed>>>8) % 45)/10;
+      // Honesty guard: this is a directional teaser, but it must never hand a
+      // confident verdict to gibberish. Low-signal input (too short, one word, or
+      // few distinct letters) is capped so junk can't read "STRONG GO".
+      var words = i.split(/\s+/).filter(Boolean).length;
+      var uniq = new Set(i.toLowerCase().replace(/[^a-z]/g,'')).size;
+      if (i.length < 12 || words < 2 || uniq < 5){ prs = Math.min(prs,5.3); cs = Math.min(cs,5.1); pss = Math.min(pss,4.9); }
       var overall = Math.round((prs*0.35 + cs*0.30 + pss*0.35)*10)/10;
       var verdict = overall>=7.5?'STRONG GO':overall>=6?'CONDITIONAL GO':'NEEDS SHARPENING';
       out.hidden = false;
