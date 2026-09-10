@@ -72,6 +72,16 @@ systemctl restart "$SERVICE"
 # restart, and confirm recovery — a bad push can never stay live.
 if bash scripts/nf-smoke.sh; then
   alert "✅ Niche Finder DEPLOYED ${REMOTE:0:8} — tests + live smoke passed."
+  # Best-effort: tell Bing/Yandex/Seznam/Naver which public pages changed, so they
+  # recrawl in hours (IndexNow). Never fails the deploy; skipped if no key file.
+  if command -v node >/dev/null 2>&1; then
+    CHANGED_HTML=$(git diff --name-only "$LOCAL" "$REMOTE" -- 'frontend/*.html' | sed 's#^frontend/##')
+    if [ -n "$CHANGED_HTML" ]; then
+      # shellcheck disable=SC2086
+      node scripts/indexnow-submit.mjs $CHANGED_HTML >/dev/null 2>&1 \
+        && echo "$(stamp) IndexNow: pinged changed pages" || true
+    fi
+  fi
   exit 0
 fi
 

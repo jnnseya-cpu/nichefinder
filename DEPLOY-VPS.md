@@ -321,6 +321,41 @@ Set `NF_ALERT_WEBHOOK` in `/etc/nichefinder.env` (same Slack/Discord webhook as
 the watchdog) to receive DEPLOYED / BLOCKED / ROLLED-BACK notifications. The
 smoke and rollback logic is covered by `test/smoke-gate.js`.
 
+### Instant search-engine pings (IndexNow — Bing/Yandex/Seznam/Naver)
+
+New and changed pages normally wait to be rediscovered. **IndexNow** tells
+participating engines to recrawl within hours. It covers Bing, Yandex, Seznam
+and Naver — **not** Google (Google uses Search Console + its own signals; submit
+the sitemap there separately).
+
+It is already wired in — **no vendor, no key to buy**:
+
+- A key file lives at the site root: `frontend/<key>.txt` (its contents are the
+  key). Engines fetch it to verify domain ownership, so it must be publicly
+  reachable at `https://nichefinderhq.com/<key>.txt` — it deploys automatically
+  as a static file.
+- After every successful deploy, `vps-autodeploy.sh` calls
+  `scripts/indexnow-submit.mjs` with the public `.html` pages that changed in
+  that commit (robots-disallowed pages are skipped). It is best-effort and can
+  never fail or delay a deploy.
+
+Submit manually any time (e.g. right after the first go-live, so the flagship
+article is pinged immediately):
+
+```
+cd /opt/nichefinder
+node scripts/indexnow-submit.mjs                     # default key pages
+node scripts/indexnow-submit.mjs what-are-ai-agents.html   # one page
+node scripts/indexnow-submit.mjs --dry-run           # show what would be sent
+```
+
+A `403` means the key file isn't live at its URL yet — deploy the site first,
+then re-run. The script auto-discovers the key from `frontend/<key>.txt`; set
+`INDEXNOW_KEY` only if you host the key file elsewhere, and `NF_SITE_HOST` if the
+domain ever changes. **Google:** add the property in Google Search Console and
+submit `https://nichefinderhq.com/sitemap.xml` once — that is the Google-side
+equivalent of this ping.
+
 ## Backups (data survival) and monitoring (outage detection)
 
 The system of record is flat JSON in `data/` (wallets, accounts, documents,
