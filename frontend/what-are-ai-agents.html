@@ -15,17 +15,19 @@
 <meta property="og:title" content="What Are AI Agents? A Founder's Guide (2026)">
 <meta property="og:description" content="A plain-English guide to how AI agents work, the types, real use cases for founders, the risks, and how to put them to work building a business.">
 <meta property="og:url" content="https://nichefinderhq.com/what-are-ai-agents.html">
-<meta property="og:image" content="https://nichefinderhq.com/icon-512.png">
-<meta property="og:image:width" content="512">
-<meta property="og:image:height" content="512">
+<meta property="og:image" content="https://nichefinderhq.com/og-ai-agents.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="What Are AI Agents? A founder's guide — with a diagram of the AI agent loop: goal, perceive, reason, act, observe, memory.">
 <meta property="article:published_time" content="2026-09-10">
 <meta property="article:modified_time" content="2026-09-10">
 <meta property="article:author" content="Niche Finder">
 <meta property="article:section" content="AI &amp; Venture Intelligence">
 <meta property="article:tag" content="AI agents">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://nichefinderhq.com/icon-512.png">
+<meta name="twitter:image" content="https://nichefinderhq.com/og-ai-agents.png">
+<meta name="twitter:image:alt" content="What Are AI Agents? A founder's guide, with a diagram of the AI agent loop.">
 <meta name="twitter:title" content="What Are AI Agents? A Founder's Guide (2026)">
 <meta name="twitter:description" content="How AI agents work, the types, real use cases for founders, the risks, and how to put them to work building a business.">
 
@@ -82,6 +84,9 @@
   .related a:hover{text-decoration:underline}
   .sources{font-size:.82rem;color:var(--muted);border-top:1px solid var(--line-soft);margin-top:30px;padding-top:16px}
   .sources a{color:var(--blue)}
+  figure.diagram{margin:24px 0 8px;text-align:center}
+  figure.diagram svg{width:100%;height:auto;max-width:520px}
+  figure.diagram figcaption{font-size:.82rem;color:var(--muted);margin:12px auto 0;max-width:58ch;line-height:1.5}
 </style>
 
 <script type="application/ld+json">
@@ -94,7 +99,7 @@
       "headline": "What Are AI Agents? A Founder's Guide to Agentic AI (2026)",
       "alternativeHeadline": "How AI agents work, the types, use cases for founders, and the risks",
       "description": "A plain-English guide to what AI agents are, how they work, the main types, real use cases for founders, the risks, and how to use them to build a business.",
-      "image": "https://nichefinderhq.com/icon-512.png",
+      "image": { "@type": "ImageObject", "url": "https://nichefinderhq.com/og-ai-agents.png", "width": 1200, "height": 630 },
       "inLanguage": "en",
       "isAccessibleForFree": true,
       "datePublished": "2026-09-10",
@@ -247,6 +252,30 @@
 
     <h2 id="how">How AI agents actually work</h2>
     <p>Under the hood, almost every AI agent runs the same cycle. Understanding it demystifies the magic and — more usefully — tells you exactly where an agent can go wrong.</p>
+
+    <figure class="diagram">
+      <svg viewBox="0 0 560 440" role="img" aria-label="Diagram of the AI agent loop: a goal drives a repeating cycle of perceive, reason, act, and observe, held together by memory, until the task is complete.">
+        <title>How an AI agent works: the perceive–reason–act–observe loop</title>
+        <desc>Six stages arranged in a clockwise loop — 1 Goal, 2 Perceive, 3 Reason, 4 Act, 5 Observe, 6 Memory — showing that an AI agent repeats the cycle until its goal is met.</desc>
+        <defs>
+          <marker id="ah" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#E8A61A"/></marker>
+        </defs>
+        <circle cx="280" cy="205" r="145" fill="none" stroke="rgba(232,166,26,.28)" stroke-width="2" stroke-dasharray="5 9"/>
+        <path d="M317.5,65 A145,145 0 0 1 382.5,102.5" fill="none" stroke="#E8A61A" stroke-width="2" marker-end="url(#ah)"/>
+        <g text-anchor="middle" font-family="system-ui,Arial,sans-serif">
+          <text x="280" y="200" fill="#8B93A5" font-size="13">repeats until</text>
+          <text x="280" y="218" fill="#8B93A5" font-size="13">the goal is met</text>
+          <g><circle cx="280" cy="60" r="44" fill="#111C30" stroke="#E8A61A" stroke-width="1.5"/><text x="280" y="55" fill="#FFC53D" font-size="12" font-weight="700">1</text><text x="280" y="72" fill="#E8ECF4" font-size="15">Goal</text></g>
+          <g><circle cx="406" cy="133" r="44" fill="#111C30" stroke="#3D85E0" stroke-width="1.5"/><text x="406" y="128" fill="#FFC53D" font-size="12" font-weight="700">2</text><text x="406" y="145" fill="#E8ECF4" font-size="15">Perceive</text></g>
+          <g><circle cx="406" cy="277" r="44" fill="#111C30" stroke="#3FA79B" stroke-width="1.5"/><text x="406" y="272" fill="#FFC53D" font-size="12" font-weight="700">3</text><text x="406" y="289" fill="#E8ECF4" font-size="15">Reason</text></g>
+          <g><circle cx="280" cy="350" r="44" fill="#111C30" stroke="#E8A61A" stroke-width="1.5"/><text x="280" y="345" fill="#FFC53D" font-size="12" font-weight="700">4</text><text x="280" y="362" fill="#E8ECF4" font-size="15">Act</text></g>
+          <g><circle cx="154" cy="277" r="44" fill="#111C30" stroke="#3D85E0" stroke-width="1.5"/><text x="154" y="272" fill="#FFC53D" font-size="12" font-weight="700">5</text><text x="154" y="289" fill="#E8ECF4" font-size="15">Observe</text></g>
+          <g><circle cx="154" cy="133" r="44" fill="#111C30" stroke="#6B5CA5" stroke-width="1.5"/><text x="154" y="128" fill="#FFC53D" font-size="12" font-weight="700">6</text><text x="154" y="145" fill="#E8ECF4" font-size="15">Memory</text></g>
+        </g>
+      </svg>
+      <figcaption>The AI agent loop: guided by a <strong>goal</strong> and its <strong>memory</strong>, an agent repeats <em>perceive → reason → act → observe</em> until the task is done.</figcaption>
+    </figure>
+
     <h3>1. Goal</h3>
     <p>You give the agent an objective and any constraints — a budget, a country, a deadline, a tone. Everything downstream is judged against this goal.</p>
     <h3>2. Perception</h3>
