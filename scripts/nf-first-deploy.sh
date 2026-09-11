@@ -61,5 +61,5 @@ systemctl enable --now nf-deploy.timer
 
 echo ""
 echo ">> DONE. The fix is live and auto-deploy is on."
-echo ">> Verify:  https://nichefinderhq.com/v1/admin/diag?key=\$ADMIN_API_KEY"
+echo ">> Verify:  curl -s https://nichefinderhq.com/v1/admin/diag -H \"x-admin-key: \$ADMIN_API_KEY\" | jq"
 echo ">>          (expect 'ready' with a provider key true; then run a real search)"

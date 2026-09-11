@@ -40,7 +40,10 @@ export function verifyChallenge(ip, challenge, nonce) {
   const [salt, cip, diffStr, expStr, sig] = parts;
   const payload = `${salt}~${cip}~${diffStr}~${expStr}`;
   const expect = crypto.createHmac('sha256', SECRET).update(payload).digest('hex').slice(0, 24);
-  if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expect))) return { human: false, reason: 'bad_signature' };
+  // Length-guard before timingSafeEqual: it throws RangeError on unequal-length
+  // buffers, and `sig` is attacker-supplied. Unequal length is a mismatch anyway.
+  const sigBuf = Buffer.from(String(sig)), expBuf = Buffer.from(expect);
+  if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) return { human: false, reason: 'bad_signature' };
   if (cip !== ip) return { human: false, reason: 'ip_mismatch' };
   if (Date.now() > Number(expStr)) return { human: false, reason: 'expired' };
   if (used.has(salt)) return { human: false, reason: 'replayed' };

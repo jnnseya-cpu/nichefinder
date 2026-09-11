@@ -73,6 +73,47 @@ function rateLimited(ip) {
   return slot.n > RATE_LIMIT;
 }
 
+/* Constant-time admin-key check. Returns false whenever ADMIN_API_KEY is unset —
+   so an unconfigured box has admin CLOSED, never open (an unset env compared with
+   `===` to a missing header is `undefined === undefined` → true, which would make
+   every admin route world-open; this closes that). Timing-safe on equal lengths. */
+function adminKeyMatches(given) {
+  const key = process.env.ADMIN_API_KEY;
+  if (!key || !given) return false;
+  const a = Buffer.from(String(given));
+  const b = Buffer.from(key);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+/* Trusted client IP. The leftmost X-Forwarded-For entry is CLIENT-supplied and
+   forgeable, so trusting it lets an attacker reset every IP-keyed control (rate
+   limit, Sentinel ban, human-challenge binding) with a random header per request.
+   Behind a reverse proxy (Caddy) the REAL client is the last hop the proxy
+   appended, so we take the Nth-from-right entry. TRUSTED_PROXY_HOPS = number of
+   proxies in front (default 1 = Caddy); 0 means "no proxy, use the socket". */
+const TRUSTED_PROXY_HOPS = Math.max(0, Number(process.env.TRUSTED_PROXY_HOPS || 1));
+function clientIp(req) {
+  if (TRUSTED_PROXY_HOPS > 0) {
+    const xff = String(req.headers['x-forwarded-for'] || '').split(',').map((s) => s.trim()).filter(Boolean);
+    if (xff.length >= TRUSTED_PROXY_HOPS) return xff[xff.length - TRUSTED_PROXY_HOPS];
+  }
+  return req.socket.remoteAddress || 'unknown';
+}
+
+/* Login brute-force throttle: per-account (email) failed-attempt lockout with
+   escalating backoff, so credential-stuffing can't run unbounded even from many
+   IPs. In-memory; resets on a successful login. */
+const loginFails = new Map(); // emailLower -> { n, until }
+function loginBlocked(email) { const e = loginFails.get(email); return !!(e && e.until > Date.now()); }
+function noteLoginFail(email) {
+  const e = loginFails.get(email) || { n: 0, until: 0 };
+  e.n += 1;
+  if (e.n >= 5) e.until = Date.now() + Math.min(15 * 60000, (e.n - 4) * 60000); // 1,2,3…→15 min cap
+  if (loginFails.size > 20000) loginFails.clear(); // memory backstop
+  loginFails.set(email, e);
+}
+function noteLoginOk(email) { loginFails.delete(email); }
+
 /* PLATFORM LAW: every AI action is metered and gated by available ACUs —
    no free AI action, regardless. Enforcement is the DEFAULT; the only way
    to run an un-gated gateway is the explicit ALLOW_FREE_AI=1 escape hatch
@@ -323,7 +364,7 @@ const server = http.createServer(async (req, res) => {
   // HEAD through the GET handlers yields correct headers-only replies.
   const method = req.method === 'HEAD' ? 'GET' : req.method;
 
-  const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress || 'unknown';
+  const ip = clientIp(req);
   if (sentinelBanned(ip)) return json(res, 403, { error: 'sentinel_block', message: 'This address is temporarily blocked by the platform security agent.' });
   if (sentinelScreen(ip, url, '')) return json(res, 403, { error: 'sentinel_block', message: 'Request refused by the platform security agent.' });
   if (url.pathname.startsWith('/v1/') && rateLimited(ip)) {
@@ -646,7 +687,20 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'POST' && url.pathname === '/v1/auth/login') {
     try {
       const body = JSON.parse((await readBody(req)) || '{}');
-      return json(res, 200, login({ email: body.email, password: body.password }));
+      const emailKey = String(body.email || '').trim().toLowerCase();
+      // Brute-force / credential-stuffing throttle: lock an account after repeated
+      // failures regardless of source IP (the global per-IP cap is not enough).
+      if (emailKey && loginBlocked(emailKey)) {
+        return json(res, 429, { error: 'too_many_attempts', message: 'Too many login attempts. Wait a few minutes and try again.' });
+      }
+      try {
+        const out = login({ email: body.email, password: body.password });
+        if (emailKey) noteLoginOk(emailKey);
+        return json(res, 200, out);
+      } catch (err) {
+        if (emailKey) noteLoginFail(emailKey);
+        throw err;
+      }
     } catch (err) { return handleError(res, err); }
   }
 
@@ -771,7 +825,7 @@ const server = http.createServer(async (req, res) => {
   //   the x-admin-key header (so a script/cron can trigger it too).
   if (req.method === 'POST' && url.pathname === '/v1/admin/newsletter/send') {
     try {
-      const keyOk = req.headers['x-admin-key'] && req.headers['x-admin-key'] === process.env.ADMIN_API_KEY;
+      const keyOk = adminKeyMatches(req.headers['x-admin-key']);
       if (!adminOf() && !keyOk) return json(res, 403, { error: 'admin_required' });
       const body = JSON.parse((await readBody(req)) || '{}');
       const result = await sendNewsletterOnce({ force: true, to: body.to || null });
@@ -901,7 +955,7 @@ const server = http.createServer(async (req, res) => {
    // monitor can poll with x-admin-key without a login). Never public — it
    // reveals failure counts and revenue.
   if (method === 'GET' && url.pathname === '/v1/admin/metrics') {
-    const keyOk = req.headers['x-admin-key'] === process.env.ADMIN_API_KEY && Boolean(process.env.ADMIN_API_KEY);
+    const keyOk = adminKeyMatches(req.headers['x-admin-key']);
     if (!adminOf() && !keyOk) return json(res, 403, { error: 'admin_required' });
     const sum = summary();
     return json(res, 200, {
@@ -923,9 +977,8 @@ const server = http.createServer(async (req, res) => {
   if (method === 'GET' && url.pathname === '/v1/admin/diag') {
     // Header OR ?key= query param (diag reports only presence/counts, never a
     // secret value, so a plain browser URL on a phone is an acceptable way in).
-    const givenKey = req.headers['x-admin-key'] || url.searchParams.get('key');
-    const keyOk = Boolean(process.env.ADMIN_API_KEY) && givenKey === process.env.ADMIN_API_KEY;
-    if (!adminOf() && !keyOk) return json(res, 403, { error: 'admin_required', message: 'Open /v1/admin/diag?key=YOUR_ADMIN_API_KEY' });
+    const keyOk = adminKeyMatches(req.headers['x-admin-key']);
+    if (!adminOf() && !keyOk) return json(res, 403, { error: 'admin_required', message: 'Send the admin key in the x-admin-key header (curl -H "x-admin-key: ...").' });
     const present = (v) => Boolean(v && String(v).trim());
     const providers = {
       claude: present(process.env.ANTHROPIC_API_KEY),
@@ -937,6 +990,7 @@ const server = http.createServer(async (req, res) => {
     if (!config.mock && !Object.values(providers).some(Boolean)) problems.push('NO AI PROVIDER KEY set — every /v1/generate will fail. Set ANTHROPIC_API_KEY (or GEMINI/OPENAI), or MOCK_AI=1 for a demo.');
     if (!present(process.env.STRIPE_SECRET_KEY)) problems.push('STRIPE_SECRET_KEY missing — Checkout cannot be created.');
     if (!whsecs.length) problems.push('STRIPE_WEBHOOK_SECRET missing — every Stripe webhook will be rejected (no crediting).');
+    if (!present(process.env.ADMIN_API_KEY)) problems.push('ADMIN_API_KEY not set — admin endpoints are CLOSED (all admin/credit/grant calls return 403). Set it (openssl rand -hex 24) before you need admin, ACU grants, or newsletter sends.');
     if (!kodaConfigured()) problems.push('KODA not fully configured — mobile-money door is off (this is fine if you only take card).');
     if (!mailConfigured()) problems.push('SMTP not configured — receipts, password resets and lead notifications will not send.');
     const alertOn = present(process.env.NF_ALERT_WEBHOOK);
@@ -964,7 +1018,7 @@ const server = http.createServer(async (req, res) => {
 
   // Admin: publish / clear the landing's real "See the working" example.
   if ((req.method === 'POST' || req.method === 'DELETE') && url.pathname === '/v1/admin/showcase') {
-    const keyOk = req.headers['x-admin-key'] === process.env.ADMIN_API_KEY && Boolean(process.env.ADMIN_API_KEY);
+    const keyOk = adminKeyMatches(req.headers['x-admin-key']);
     if (!adminOf() && !keyOk) return json(res, 403, { error: 'admin_required' });
     if (req.method === 'DELETE') return json(res, 200, clearShowcase());
     try {
@@ -1123,7 +1177,7 @@ const server = http.createServer(async (req, res) => {
       // key — regardless of billing mode — and can never be client-initiated.
       const isCredit = url.pathname.endsWith('credit');
       const isGrant = isCredit && body.amount != null && body.packageId == null;
-      const adminOk = req.headers['x-admin-key'] === process.env.ADMIN_API_KEY;
+      const adminOk = adminKeyMatches(req.headers['x-admin-key']);
       if (isGrant && !adminOk) {
         throw new GatewayError('Admin grants require a valid admin key.', { status: 403, code: 'admin_required' });
       }
@@ -1330,4 +1384,7 @@ server.listen(config.port, () => {
   // A startup ping after a restart is a useful "it's back" signal (and confirms
   // the webhook works). Quiet if generation has no provider — that's alert-worthy.
   if (!config.mock && availableProviders().length === 0) alertOps('started but NO AI PROVIDER KEY is set — generation will fail.');
+  // A production box that takes money but has no admin key can neither grant ACU
+  // nor run admin ops (all such routes now 403). Warn loudly — it is a launch gap.
+  if (billingEnforced() && !process.env.ADMIN_API_KEY) alertOps('started with NO ADMIN_API_KEY while billing is enforced — admin/credit/grant endpoints are CLOSED. Set ADMIN_API_KEY.');
 });

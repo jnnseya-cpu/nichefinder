@@ -25,15 +25,17 @@ const admin = { 'x-admin-key': process.env.ADMIN_API_KEY };
 console.log('— diag is admin-gated —');
 let res = await fetch(`${BASE}/v1/admin/diag`);
 check('diag refuses the public (403)', res.status === 403);
-res = await fetch(`${BASE}/v1/admin/diag?key=wrong`);
-check('diag refuses a wrong query key (403)', res.status === 403);
+res = await fetch(`${BASE}/v1/admin/diag`, { headers: { 'x-admin-key': 'wrong' } });
+check('diag refuses a wrong key (403)', res.status === 403);
 
 res = await fetch(`${BASE}/v1/admin/diag`, { headers: admin });
 const d = await res.json();
 check('admin key (header) can read diag (200)', res.status === 200, JSON.stringify(d).slice(0, 120));
 
+// SECURITY: the admin key must NOT be accepted as a URL query param — query
+// strings leak into proxy logs, browser history and Referer headers. Header only.
 const res2 = await fetch(`${BASE}/v1/admin/diag?key=${encodeURIComponent(process.env.ADMIN_API_KEY)}`);
-check('admin key (?key= query param) can read diag (200) — phone-friendly', res2.status === 200);
+check('admin key in ?key= query param is REFUSED (403) — no secret-in-URL', res2.status === 403);
 
 console.log('— content is actionable and leaks no secrets —');
 check('reports server time for clock-skew checks', typeof d.time?.serverUnix === 'number');

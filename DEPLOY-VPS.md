@@ -58,6 +58,9 @@ STRIPE_WEBHOOK_SECRET=whsec_...
 WALLET_STORE_KEY=REPLACE_WITH_64_HEX
 # admin/support credit path — any long random string:
 #   run:  openssl rand -hex 24
+# MANDATORY: if unset, every admin/credit/grant/diag route is CLOSED (returns 403)
+# and the gateway logs a startup warning. Send it only in the x-admin-key HEADER,
+# never as a ?key= URL param (URLs leak into proxy logs, history and Referer).
 ADMIN_API_KEY=REPLACE_WITH_RANDOM
 # admin ACCOUNT (seeds the operator login for /admin-console.html on first boot).
 # The account is created with this email+password if it doesn't exist; an
@@ -231,6 +234,7 @@ sudo systemctl restart nichefinder
 
 ### Money-safety levers (optional env)
 
+- `TRUSTED_PROXY_HOPS` — how many reverse proxies sit in front of the gateway, so the real client IP is read from the correct `X-Forwarded-For` position (rate limiting, Sentinel bans, and the human-challenge binding all key off it). **Default `1`** — correct for the standard Caddy-in-front setup in this guide. Set to `0` only if the Node service is exposed directly with no proxy (then the socket address is used). Never leave the gateway trusting a client-supplied XFF, or every IP-keyed control can be reset with a spoofed header.
 - `REFERRAL_LIFETIME_CAP_ACU` — max referral commission any one referrer can ever earn, in ACU (default `50000` = £500 of commission). Bounds a "refer myself with two accounts" scheme. `0` disables the cap.
 - `REQUIRE_WALLET_SESSION` — set to `1` to bind account wallets to their owner's login session: reading or spending an account wallet then requires that account's bearer token, not just its id. **Default OFF** (the id is the bearer credential, like a guest wallet). Turn it on ONLY after confirming the token-sending frontend is deployed to all clients and old service-worker caches have cycled — enabling it while a stale page is in flight hard-fails real users' billed calls with `403 not_wallet_owner` (which shows as "temporarily unavailable"). Guests are unaffected either way.
 - `KODA_MINOR_UNITS=1` — set **only if** your KODA account bills 2-decimal currencies (GBP/USD/EUR) in the smallest unit (pence/cents). Default is whole units. Getting this wrong under/over-charges the payer by 100× — the amount + currency is logged on every intent (`[koda] intent created: … amount=… CUR`), so check the first live payment.
