@@ -15,6 +15,6 @@ RUN npm ci --omit=dev
 COPY backend/gateway/ ./
 
 ENV NODE_ENV=production PORT=8080
-# Wallet + leads persist under ./data — mount a volume there (see render.yaml).
+# Wallet + leads persist under ./data — mount a volume there (see DEPLOY-VPS.md).
 EXPOSE 8080
 CMD ["node", "src/server.js"]

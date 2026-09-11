@@ -5,7 +5,7 @@
 > rehearsal + go-live discipline below (test keys first, be customer zero)
 > still applies exactly.
 
-Everything in the code is done and green (smoke 45/45, full payment cycle passed).
+Everything in the code is done and green (full test suite passing, full payment cycle passed — verify with `node scripts/preflight.mjs`).
 Saturday is **founder admin + one deploy**, in this exact order. Budget ~90 min.
 Do NOT skip step 6 (test-key rehearsal) — it is the difference between a launch
 and a refund queue.
