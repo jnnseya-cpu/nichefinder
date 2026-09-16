@@ -48,6 +48,14 @@ export function buildMessage({ from, to, subject, text, html, date, headers: ext
     `Date: ${oneLine(date) || new Date().toUTCString()}`,
     'MIME-Version: 1.0',
   ];
+  // Message-ID: RFC 5322 recommends it and spam filters penalise its absence.
+  // Derive the domain from the From address so the id aligns with the sending
+  // domain (SpamAssassin flags a Message-ID whose domain doesn't match From).
+  const hasMsgId = extra && Object.keys(extra).some((k) => k.toLowerCase() === 'message-id');
+  if (!hasMsgId) {
+    const fromDomain = (addr(from).split('@')[1] || 'localhost').replace(/[>\s]/g, '');
+    headers.push(`Message-ID: <${crypto.randomBytes(16).toString('hex')}@${fromDomain}>`);
+  }
   // Body: when BOTH a plaintext and an HTML part are supplied, send a proper
   // multipart/alternative so text-only clients and spam filters get the plain
   // part (better deliverability + accessibility). Previously the text part was

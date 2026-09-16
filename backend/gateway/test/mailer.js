@@ -54,6 +54,8 @@ check('mailConfigured() true when SMTP_* set', mailConfigured() === true);
 console.log('— message construction —');
 const msg = buildMessage({ from: 'A <a@x.com>', to: 'b@y.com', subject: 'Hi', text: '.dot line\nsecond', date: 'Fri, 01 Jan 2027 00:00:00 GMT' });
 check('has From/To/Subject headers', /From: A <a@x.com>/.test(msg) && /To: b@y.com/.test(msg) && /Subject: Hi/.test(msg));
+check('auto Message-ID aligned to the From domain', /Message-ID: <[0-9a-f]{32}@x\.com>/.test(msg), msg.slice(0, 300));
+check('a caller-supplied Message-ID is not duplicated', (buildMessage({ from: 'a@x.com', to: 'b@y', subject: 's', text: 't', headers: { 'Message-ID': '<given@x.com>' } }).match(/Message-ID:/g) || []).length === 1);
 check('dot-stuffs leading-dot lines', /\r\n\.\.dot line/.test(msg), JSON.stringify(msg));
 
 const mp = buildMessage({ from: 'A <a@x.com>', to: 'b@y.com', subject: 'Hi', text: 'plain body', html: '<b>rich</b>', date: 'Fri, 01 Jan 2027 00:00:00 GMT' });
