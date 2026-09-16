@@ -1,5 +1,29 @@
 # Email deliverability — why mail lands in spam, and how to fix it
 
+> ## LIVE AUDIT (2026-09-16) — root cause found
+> Everything is on **Hostinger** (no Vercel): site IP `187.124.117.159` (Hostinger
+> VPS), MX `mx1/mx2.hostinger.com`, nameservers `athena/apollo.dns-parking.com`
+> (edit records in hPanel → **DNS Zone Editor**).
+>
+> **Two faults are sending mail to spam:**
+> 1. **NO SPF record exists.** Root TXT holds only a `fah-claim=…` and a
+>    `brevo-code:…` — there is no `v=spf1` record, so Hostinger's senders are
+>    unauthorized and **SPF fails on every message.** ← the big one.
+> 2. **TWO `_dmarc` records** (`…rua=…brevo…` and a bare `v=DMARC1; p=none`).
+>    DMARC allows exactly one; two = permerror = no DMARC.
+> 3. DKIM is fine (`hostingermail-a/b._domainkey` CNAMEs published).
+>
+> A `brevo-code` TXT + Brevo DMARC rua means **Brevo (Sendinblue) was also set up**
+> at some point — the SPF below authorizes Hostinger and Brevo both.
+>
+> **FIX (hPanel → DNS Zone Editor):**
+> - ADD one SPF TXT on `@`:
+>   `v=spf1 include:_spf.mail.hostinger.com include:spf.sendinblue.com ~all`
+>   (drop the sendinblue include if nothing uses Brevo; only ONE SPF record allowed)
+> - DELETE both `_dmarc` TXT records, ADD one:
+>   `v=DMARC1; p=none; rua=mailto:dmarc@nichefinderhq.com; fo=1`
+> - Leave DKIM as-is. Wait for propagation, re-test at mail-tester.com.
+
 > **YOUR SETUP: Hostinger relay** (`SMTP_HOST=smtp.hostinger.com`). Hostinger's
 > servers send, so their IP reputation and rDNS are already handled. Your job is
 > just to publish **SPF + DKIM + DMARC** for `nichefinderhq.com`. Exact steps:
