@@ -1,5 +1,46 @@
 # Email deliverability — why mail lands in spam, and how to fix it
 
+> **YOUR SETUP: Hostinger relay** (`SMTP_HOST=smtp.hostinger.com`). Hostinger's
+> servers send, so their IP reputation and rDNS are already handled. Your job is
+> just to publish **SPF + DKIM + DMARC** for `nichefinderhq.com`. Exact steps:
+>
+> **First, find where your DNS lives** — this decides how you add records:
+> - If the domain's nameservers point at **Hostinger** (hPanel → Domains → DNS/
+>   Nameservers shows Hostinger), you add records in hPanel → **DNS Zone Editor**,
+>   and Hostinger may have already created SPF/DKIM automatically — verify them.
+> - If DNS is at **Cloudflare / Namecheap / GoDaddy** (external), you must copy
+>   the records Hostinger shows in **hPanel → Emails → your mailbox → DNS records
+>   / Configure** into that provider by hand. This is the usual reason Hostinger
+>   mail still spams: the records exist in hPanel but were never added at the DNS
+>   host.
+>
+> **The three records (values as Hostinger shows them — these are the typical ones):**
+> 1. **SPF** — one TXT on the root (`@`). Hostinger's is usually:
+>    `v=spf1 include:_spf.mail.hostinger.com ~all`
+>    You may have only ONE SPF record — if one exists, merge the include into it.
+> 2. **DKIM** — Hostinger publishes two CNAMEs (copy the exact targets from hPanel):
+>    `hostingermail-a._domainkey  CNAME  hostingermail-a.dkim.mail.hostinger.com`
+>    `hostingermail-b._domainkey  CNAME  hostingermail-b.dkim.mail.hostinger.com`
+>    (some accounts show a single `default._domainkey` TXT instead — use whatever
+>    hPanel lists). **This is the biggest lever — do not skip it.**
+> 3. **DMARC** — TXT on `_dmarc`:
+>    `v=DMARC1; p=none; rua=mailto:dmarc@nichefinderhq.com; fo=1`
+>
+> **Then confirm From alignment:** set
+> `SMTP_FROM="Niche Finder <contact@nichefinderhq.com>"` in `/etc/nichefinder.env`
+> (must be the same `@nichefinderhq.com` mailbox as `SMTP_USER`), and redeploy.
+>
+> **Verify:** send a password reset to the address at **mail-tester.com** → aim
+> 9–10/10, and check a Gmail "Show original" shows SPF/DKIM/DMARC = PASS. DNS can
+> take up to a few hours to propagate.
+>
+> The rest of this document is the full reference (both setups) and the exact
+> record formats.
+
+---
+
+## The general picture
+
 Symptom: receipts, password resets, lead notifications, or the newsletter land in
 the **Spam/Junk** folder.
 
