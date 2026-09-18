@@ -9,8 +9,10 @@ function getClient() {
       apiKey: apiKeyFor('claude'),
       // Bound the wait: if the deep call runs long, time out and let the router
       // fail over to the next (faster) provider rather than hanging the request.
-      // A timeout surfaces as APIConnectionError → retryable → failover.
-      timeout: Number(process.env.CLAUDE_TIMEOUT_MS || 200000),
+      // A timeout surfaces as APIConnectionError → retryable → failover. Generous
+      // by default (10 min) so a long, complete deep generation is never cut off
+      // mid-result; raise CLAUDE_TIMEOUT_MS further for very large batch work.
+      timeout: Number(process.env.CLAUDE_TIMEOUT_MS || 600000),
       maxRetries: 1,
     });
   }
@@ -63,9 +65,10 @@ export function degradeFor(err, tried) {
 // (auth, connection, 5xx, refusal, an irreducible 400) reach the router.
 export async function generate(req) {
   let opts = {};
+  let maxTokens = req.maxTokens || config.defaults.maxTokens;
   const t0 = Date.now();
   for (let attempt = 1; ; attempt++) {
-    const params = buildParams(req, opts);
+    const params = buildParams({ ...req, maxTokens }, opts);
     const shape = `thinking=${params.thinking ? 'adaptive' : 'off'} effort=${params.output_config?.effort || 'off'} schema=${params.output_config?.format ? 'yes' : req.jsonSchema ? 'dropped' : 'no'}`;
     console.log(`[claude] start attempt=${attempt} model=${params.model} ${shape} maxTokens=${params.max_tokens}`);
     let response;
@@ -84,6 +87,18 @@ export async function generate(req) {
       console.error(
         `[claude] generate failed attempt=${attempt}: status=${err?.status ?? '?'} type=${err?.error?.type || err?.name || '?'} model=${params.model} ${shape} :: ${err?.message || err}`,
       );
+      // A generous budget can exceed the model's per-response max_tokens ceiling,
+      // which the API rejects with a 400. Clamp and retry rather than hard-failing
+      // the run — so operators can set large ceilings for complete results without
+      // risking a crash if a model's cap is lower than configured.
+      if (err instanceof Anthropic.BadRequestError && /max_tokens/i.test(String(err?.message || '')) && maxTokens > 2048) {
+        const clamped = Math.max(2048, Math.floor(maxTokens / 2));
+        if (clamped < maxTokens) {
+          console.warn(`[claude] max_tokens=${maxTokens} exceeds this model's ceiling — clamping to ${clamped} and retrying`);
+          maxTokens = clamped;
+          continue;
+        }
+      }
       const next = degradeFor(err, opts);
       if (next) {
         console.warn(`[claude] retrying with reduced params: ${JSON.stringify(next)}`);

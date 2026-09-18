@@ -522,13 +522,16 @@ const server = http.createServer(async (req, res) => {
         }
         debit = { user: body.user, price };
       }
-      // Fixed price → bound provider spend, AND keep generation inside a live
-      // request window: a too-large budget runs past the provider timeout, fails
-      // over, and the page spins for minutes. 14k fits a deep, detailed document;
-      // the GTM Blueprint is far larger (17 sections incl. marketing engine +
-      // 30/60/90 roadmap), so it gets a higher ceiling.
-      const tokenCap = body.docType === 'gtm' ? 24000 : 18000;
-      const genBody = { ...body, maxTokens: Math.min(Number(body.maxTokens) || 14000, tokenCap) };
+      // Token budget is a CEILING, not a target: the model stops at end_turn when
+      // the document is complete, so a generous ceiling makes complex documents
+      // finish in full without slowing simple ones. Documents are FIXED-price, so
+      // raising this changes only the operator's provider cost (never the user's
+      // ACU charge) — and only when the content actually needs the room. Env-tunable;
+      // the provider clamps safely if a value exceeds the model's real ceiling.
+      const DOC_CAP = Number(process.env.DOC_MAX_TOKENS || 32000);
+      const DOC_CAP_GTM = Number(process.env.DOC_MAX_TOKENS_GTM || 32000);
+      const tokenCap = body.docType === 'gtm' ? DOC_CAP_GTM : DOC_CAP;
+      const genBody = { ...body, maxTokens: Math.min(Number(body.maxTokens) || tokenCap, tokenCap) };
       try { const g = await marketGrounding(body.country); if (g) genBody.system = (genBody.system || '') + g; } catch {}
       const started = Date.now();
 

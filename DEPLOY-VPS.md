@@ -239,6 +239,40 @@ sudo systemctl restart nichefinder
 - `REQUIRE_WALLET_SESSION` — set to `1` to bind account wallets to their owner's login session: reading or spending an account wallet then requires that account's bearer token, not just its id. **Default OFF** (the id is the bearer credential, like a guest wallet). Turn it on ONLY after confirming the token-sending frontend is deployed to all clients and old service-worker caches have cycled — enabling it while a stale page is in flight hard-fails real users' billed calls with `403 not_wallet_owner` (which shows as "temporarily unavailable"). Guests are unaffected either way.
 - `KODA_MINOR_UNITS=1` — set **only if** your KODA account bills 2-decimal currencies (GBP/USD/EUR) in the smallest unit (pence/cents). Default is whole units. Getting this wrong under/over-charges the payer by 100× — the amount + currency is logged on every intent (`[koda] intent created: … amount=… CUR`), so check the first live payment.
 
+### AI generation depth — how long / how large a run can go
+
+The goal is that AI functions produce **complete, high-quality results** and are
+never cut off mid-answer. These knobs control the room they get. Three honest
+facts first, because "no limit at all" isn't physically or financially possible:
+
+1. **The model has a hard max output per response.** No setting exceeds it. Very
+   long outputs would need multi-call continuation (not yet enabled — these
+   venture documents fit comfortably in one response at the ceilings below).
+2. **A single HTTP request can't run forever** — the browser/Caddy drop the socket
+   after minutes. Streaming (always on) keeps long runs alive; truly unbounded
+   jobs would need an async job queue.
+3. **Cost.** Documents are **fixed-price** in ACU, so a longer/deeper document
+   changes only YOUR provider bill, not the user's charge — raising the ceiling
+   trades margin for completeness. Search/`/v1/generate` is **metered**, so there
+   the user pays in proportion to output (no artificial cutoff — that's the meter
+   working). The paid-ACU gate itself stays: without it, a bot runs unlimited AI
+   on your Anthropic bill. That gate keeps you solvent — it is not a limit to remove.
+
+Knobs (all optional; defaults are generous):
+- `DOC_MAX_TOKENS` (default `32000`) / `DOC_MAX_TOKENS_GTM` (default `32000`) — the
+  output ceiling for generated documents. It is a **ceiling, not a target**: the
+  model stops when the document is complete, so raising it only helps complex docs
+  finish in full and never slows simple ones. If a value exceeds the model's real
+  ceiling, the provider clamps and retries automatically (no crash).
+- `AI_MAX_TOKENS` (default `16000`) — ceiling for the metered `/v1/generate` search
+  path. Raising it lets a search return more (and charges the user proportionally,
+  and raises the upfront hold), so tune it deliberately.
+- `CLAUDE_TIMEOUT_MS` (default `600000` = 10 min) — how long one deep call may run
+  before failing over. Raise for very large batch work.
+
+A failed or interrupted run **always releases its ACU hold**, so the user is never
+charged for an incomplete result.
+
 ## 8. Go live
 
 Swap `STRIPE_SECRET_KEY`/`STRIPE_WEBHOOK_SECRET` in `/etc/nichefinder.env` to the
