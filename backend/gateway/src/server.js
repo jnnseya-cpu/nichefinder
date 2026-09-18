@@ -163,14 +163,14 @@ function requireOwner(req, userId) {
    count toward max_tokens, an under-sized ceiling truncates the JSON and the
    client's parse fails. 16000 matches config.defaults.maxTokens, which was
    documented for exactly this. */
-const MAX_GEN_OUTPUT = Number(process.env.MAX_GEN_OUTPUT || 16000);
+const MAX_GEN_OUTPUT = Number(process.env.MAX_GEN_OUTPUT || 32000);
 
 /* Default reserve when the caller gives no budget. A structured request
    (jsonSchema present) is a large venture report and needs real room for
    thinking + JSON; a plain chat reply is small. Under-reserving a structured
    call is what silently truncated discovery output and made "0 results" the
    norm. */
-const STRUCTURED_DEFAULT_OUTPUT = Number(process.env.STRUCTURED_DEFAULT_OUTPUT || 12000);
+const STRUCTURED_DEFAULT_OUTPUT = Number(process.env.STRUCTURED_DEFAULT_OUTPUT || 24000);
 const PLAIN_DEFAULT_OUTPUT = 2000;
 
 /* How many output tokens this generation is ALLOWED (and therefore RESERVED) to

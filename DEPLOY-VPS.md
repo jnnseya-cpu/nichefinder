@@ -251,22 +251,26 @@ facts first, because "no limit at all" isn't physically or financially possible:
 2. **A single HTTP request can't run forever** — the browser/Caddy drop the socket
    after minutes. Streaming (always on) keeps long runs alive; truly unbounded
    jobs would need an async job queue.
-3. **Cost.** Documents are **fixed-price** in ACU, so a longer/deeper document
-   changes only YOUR provider bill, not the user's charge — raising the ceiling
-   trades margin for completeness. Search/`/v1/generate` is **metered**, so there
-   the user pays in proportion to output (no artificial cutoff — that's the meter
-   working). The paid-ACU gate itself stays: without it, a bot runs unlimited AI
-   on your Anthropic bill. That gate keeps you solvent — it is not a limit to remove.
+3. **Cost.** Users are charged **~4× the underlying provider cost**, so a longer,
+   deeper result means proportionally more revenue with margin intact — completeness
+   is revenue-positive, not a loss. Documents are **fixed-price** in ACU (a deeper
+   document changes only your provider cost, absorbed by the markup); search/
+   `/v1/generate` is **metered**, so the user pays ~4× the actual tokens produced —
+   no artificial cutoff. The paid-ACU gate stays ON: it is what enables the 4×
+   charge in the first place, and without it a bot runs unlimited AI on your bill.
 
-Knobs (all optional; defaults are generous):
+Knobs (all optional; defaults are now generous — no path is artificially capped):
 - `DOC_MAX_TOKENS` (default `32000`) / `DOC_MAX_TOKENS_GTM` (default `32000`) — the
   output ceiling for generated documents. It is a **ceiling, not a target**: the
   model stops when the document is complete, so raising it only helps complex docs
   finish in full and never slows simple ones. If a value exceeds the model's real
   ceiling, the provider clamps and retries automatically (no crash).
-- `AI_MAX_TOKENS` (default `16000`) — ceiling for the metered `/v1/generate` search
-  path. Raising it lets a search return more (and charges the user proportionally,
-  and raises the upfront hold), so tune it deliberately.
+- `MAX_GEN_OUTPUT` (default `32000`) / `STRUCTURED_DEFAULT_OUTPUT` (default `24000`)
+  / `AI_MAX_TOKENS` (default `32000`) — ceilings and default room for the metered
+  `/v1/generate` search path. A search reserves (holds) up to the ceiling and the
+  user is charged for the actual tokens produced at the 4× rate, so bigger =
+  deeper results and proportional revenue; the hold is worst-case and released if
+  the run fails.
 - `CLAUDE_TIMEOUT_MS` (default `600000` = 10 min) — how long one deep call may run
   before failing over. Raise for very large batch work.
 
