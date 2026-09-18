@@ -170,7 +170,7 @@ const MAX_GEN_OUTPUT = Number(process.env.MAX_GEN_OUTPUT || 32000);
    thinking + JSON; a plain chat reply is small. Under-reserving a structured
    call is what silently truncated discovery output and made "0 results" the
    norm. */
-const STRUCTURED_DEFAULT_OUTPUT = Number(process.env.STRUCTURED_DEFAULT_OUTPUT || 24000);
+const STRUCTURED_DEFAULT_OUTPUT = Number(process.env.STRUCTURED_DEFAULT_OUTPUT || 12000);
 const PLAIN_DEFAULT_OUTPUT = 2000;
 
 /* How many output tokens this generation is ALLOWED (and therefore RESERVED) to

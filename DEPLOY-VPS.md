@@ -241,36 +241,42 @@ sudo systemctl restart nichefinder
 
 ### AI generation depth — how long / how large a run can go
 
-The goal is that AI functions produce **complete, high-quality results** and are
-never cut off mid-answer. These knobs control the room they get. Three honest
-facts first, because "no limit at all" isn't physically or financially possible:
+The goal: AI functions run **until they produce the complete, expected result** —
+never cut off by an artificial time or token limit. The **only** thing that stops
+an AI run is ACU balance: **enough ACU → it runs to completion; no ACU → no AI**
+(a `402`). **ACU charges are unchanged** — the pricing multiplier and the default
+per-action charge are exactly what they were; these knobs lift artificial ceilings
+only, they do not change what a user is charged for the same work.
 
-1. **The model has a hard max output per response.** No setting exceeds it. Very
-   long outputs would need multi-call continuation (not yet enabled — these
-   venture documents fit comfortably in one response at the ceilings below).
+Three honest facts, because "no limit at all" isn't physically or financially real:
+
+1. **The model has a hard max output per response.** No setting exceeds it; if a
+   budget is set above it, the provider clamps and retries (no crash). Book-length
+   output would need multi-call continuation (not enabled — these venture
+   documents fit in one response).
 2. **A single HTTP request can't run forever** — the browser/Caddy drop the socket
-   after minutes. Streaming (always on) keeps long runs alive; truly unbounded
-   jobs would need an async job queue.
-3. **Cost.** Users are charged **~4× the underlying provider cost**, so a longer,
-   deeper result means proportionally more revenue with margin intact — completeness
-   is revenue-positive, not a loss. Documents are **fixed-price** in ACU (a deeper
-   document changes only your provider cost, absorbed by the markup); search/
-   `/v1/generate` is **metered**, so the user pays ~4× the actual tokens produced —
-   no artificial cutoff. The paid-ACU gate stays ON: it is what enables the 4×
-   charge in the first place, and without it a bot runs unlimited AI on your bill.
+   after minutes. Streaming (always on) keeps long runs alive.
+3. **Cost is gated by ACU, not by an artificial cap.** The user pays the same
+   multiplier as always; a longer result on the metered path costs proportionally
+   more ACU (which the user must hold), and a fixed-price document costs the same
+   regardless of depth. The paid-ACU gate stays ON — it IS the limit ("no ACU → no
+   AI"), and it stops a bot burning your provider bill.
 
-Knobs (all optional; defaults are now generous — no path is artificially capped):
-- `DOC_MAX_TOKENS` (default `32000`) / `DOC_MAX_TOKENS_GTM` (default `32000`) — the
-  output ceiling for generated documents. It is a **ceiling, not a target**: the
-  model stops when the document is complete, so raising it only helps complex docs
-  finish in full and never slows simple ones. If a value exceeds the model's real
-  ceiling, the provider clamps and retries automatically (no crash).
-- `MAX_GEN_OUTPUT` (default `32000`) / `STRUCTURED_DEFAULT_OUTPUT` (default `24000`)
-  / `AI_MAX_TOKENS` (default `32000`) — ceilings and default room for the metered
-  `/v1/generate` search path. A search reserves (holds) up to the ceiling and the
-  user is charged for the actual tokens produced at the 4× rate, so bigger =
-  deeper results and proportional revenue; the hold is worst-case and released if
-  the run fails.
+Knobs (defaults leave charges exactly as before; raise only to allow deeper runs):
+- `DOC_MAX_TOKENS` / `DOC_MAX_TOKENS_GTM` (default `32000`) — output ceiling for
+  generated documents. Documents are **fixed-price**, so this changes only your
+  provider cost (absorbed by the markup), never the user's charge. It is a
+  **ceiling, not a target**: the model stops when the document is complete, so it
+  only helps complex docs finish in full and never slows simple ones.
+- `MAX_GEN_OUTPUT` (default `32000`) — the hard ceiling for the metered
+  `/v1/generate` path, so a deep search is never artificially cut off. The
+  **default** reserve/charge is unchanged (`STRUCTURED_DEFAULT_OUTPUT`, default
+  `12000`); a request only reserves/charges more if it explicitly asks for more,
+  at the same rate, and only if the balance covers the worst-case hold.
+- `STRUCTURED_DEFAULT_OUTPUT` (default `12000`) — default reserved output for a
+  structured search when the caller gives no budget. This sets the default
+  per-search charge — leave it to keep charges as they are.
+- `AI_MAX_TOKENS` (default `16000`) — provider-call fallback budget.
 - `CLAUDE_TIMEOUT_MS` (default `600000` = 10 min) — how long one deep call may run
   before failing over. Raise for very large batch work.
 

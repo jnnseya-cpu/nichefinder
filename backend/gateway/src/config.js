@@ -58,7 +58,7 @@ export const config = {
     // for many minutes and blow past any live-request timeout. 16k comfortably
     // fits deep reasoning plus 3 richly-structured niches while keeping the call
     // inside a usable window. Override with AI_MAX_TOKENS for batch/async work.
-    maxTokens: Number(process.env.AI_MAX_TOKENS || 32000),
+    maxTokens: Number(process.env.AI_MAX_TOKENS || 16000),
     streamThreshold: 8000, // above this, upstream calls always stream
   },
 
