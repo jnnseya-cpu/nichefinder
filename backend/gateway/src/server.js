@@ -114,6 +114,36 @@ function noteLoginFail(email) {
 }
 function noteLoginOk(email) { loginFails.delete(email); }
 
+/* DENIAL-OF-WALLET GUARD for FREE (welcome-ACU-funded) previews.
+   Every fresh guest wallet is minted with welcome ACU, which may fund the cheap
+   Quick Preview — a real provider call. A script rotating guest wallet ids could
+   otherwise pull UNLIMITED free AI previews at the operator's provider cost. We
+   bound free previews per client IP AND globally per rolling window: a circuit
+   breaker that caps worst-case spend even under IP rotation. PAID previews bypass
+   this entirely, and the limits are generous enough that a real user never hits
+   them. Tunable via NF_FREE_PREVIEW_IP_MAX / _GLOBAL_MAX / _WINDOW_MS. */
+const FREE_PREVIEW_IP_MAX = Math.max(1, Number(process.env.NF_FREE_PREVIEW_IP_MAX || 15));
+const FREE_PREVIEW_GLOBAL_MAX = Math.max(1, Number(process.env.NF_FREE_PREVIEW_GLOBAL_MAX || 1000));
+const FREE_PREVIEW_WINDOW_MS = Math.max(60000, Number(process.env.NF_FREE_PREVIEW_WINDOW_MS || 3600000));
+const freePrevByIp = new Map();              // ip -> { n, reset }
+let freePrevGlobal = { n: 0, reset: 0 };
+// Returns { ok } and, when committing, counts one free preview. scope names which
+// cap tripped so the caller can message appropriately. Call with commit:true only
+// when a free preview is actually about to hit the provider.
+function freePreviewGuard(ip, { commit = false } = {}) {
+  const now = Date.now();
+  if (now > freePrevGlobal.reset) freePrevGlobal = { n: 0, reset: now + FREE_PREVIEW_WINDOW_MS };
+  let slot = freePrevByIp.get(ip);
+  if (!slot || now > slot.reset) { slot = { n: 0, reset: now + FREE_PREVIEW_WINDOW_MS }; freePrevByIp.set(ip, slot); }
+  if (freePrevGlobal.n >= FREE_PREVIEW_GLOBAL_MAX) return { ok: false, scope: 'global' };
+  if (slot.n >= FREE_PREVIEW_IP_MAX) return { ok: false, scope: 'ip' };
+  if (commit) {
+    slot.n += 1; freePrevGlobal.n += 1;
+    if (freePrevByIp.size > 50000) freePrevByIp.clear(); // memory backstop
+  }
+  return { ok: true };
+}
+
 /* PLATFORM LAW: every AI action is metered and gated by available ACUs —
    no free AI action, regardless. Enforcement is the DEFAULT; the only way
    to run an un-gated gateway is the explicit ALLOW_FREE_AI=1 escape hatch
@@ -1010,6 +1040,7 @@ const server = http.createServer(async (req, res) => {
       generation: { mock: config.mock, providerKeys: providers, fallbackChain: config.fallbackChain, active: config.mock ? ['mock'] : availableProviders(), model: config.providers.claude.model, maxOutputTokens: MAX_GEN_OUTPUT, structuredDefaultTokens: STRUCTURED_DEFAULT_OUTPUT },
       grounding: { ...md, reachable: wb ? wb.reachable : 'not probed — add ?probe=1', probeMs: wb ? wb.ms : undefined },
       alerting: { webhookConfigured: alertOn, minIntervalMs: Number(process.env.NF_ALERT_MIN_MS || 60000) },
+      abuseGuards: { freePreviewPerIpMax: FREE_PREVIEW_IP_MAX, freePreviewGlobalMax: FREE_PREVIEW_GLOBAL_MAX, freePreviewWindowMs: FREE_PREVIEW_WINDOW_MS, freePreviewsServedThisWindow: freePrevGlobal.n },
       showcase: { published: Boolean(getShowcase()) },
       payments: { configured: paymentsConfigured(), stripeSecretKey: present(process.env.STRIPE_SECRET_KEY), webhookSecrets: whsecs.length, webhookToleranceSec: Math.max(30, Number(process.env.STRIPE_WEBHOOK_TOLERANCE_SEC || 300)), webhookPath: '/v1/payments/stripe-webhook' },
       koda: { configured: kodaConfigured(), webhookPath: '/v1/payments/koda-webhook' },
@@ -1257,6 +1288,23 @@ const server = http.createServer(async (req, res) => {
         if (billingEnforced()) {
           requireOwner(req, body.user);
           if (isFrozen(body.user)) throw new GatewayError('This wallet is temporarily frozen pending a payment dispute. Contact support.', { status: 402, code: 'wallet_frozen', platformCode: 4002 });
+          // Denial-of-wallet guard: if this preview will be funded by welcome
+          // (free) ACU — the wallet has no paid balance to cover it — it costs the
+          // operator real provider spend. Cap such free previews per IP + globally
+          // so rotating guest wallet ids can't farm unlimited free AI. Paid
+          // previews (paid balance covers the price) skip the cap entirely.
+          const w = getWallet(body.user);
+          const freeFunded = ((w.paid || 0) - (w.held || 0)) < price;
+          if (freeFunded) {
+            const guard = freePreviewGuard(ip, { commit: true });
+            if (!guard.ok) {
+              throw new GatewayError(
+                guard.scope === 'global'
+                  ? 'Free previews are temporarily at capacity — please try again shortly, or top up to run one now.'
+                  : 'Free preview limit reached for now. Top up any amount to keep previewing — paid previews are unlimited.',
+                { status: 429, code: 'free_preview_limit', retryable: true });
+            }
+          }
           const holdKey = `preview_${previewStarted}_${crypto.randomUUID()}`;
           reserve({ user: body.user, amount: price, key: holdKey, allowFree: true });
           hold = { user: body.user, key: holdKey }; // the catch releases it on failure
