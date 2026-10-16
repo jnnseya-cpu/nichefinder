@@ -206,17 +206,21 @@
 
     ['si-btn', 'su-btn', 'fg-btn'].forEach(function (id) { var b = document.getElementById(id); b.dataset.label = b.textContent; });
 
-    // SIGN IN
+    // SIGN IN (bot-gated proof of work — same anti-bot layer as signup)
     document.getElementById('form-signin').addEventListener('submit', function (e) {
       e.preventDefault();
-      var btn = document.getElementById('si-btn'); busy(btn, true, 'Signing in…'); setMsg('', '');
-      post('/v1/auth/login', {
-        email: document.getElementById('si-email').value.trim(),
-        password: document.getElementById('si-pass').value
-      }).then(function (res) {
-        if (!res.ok) { setMsg(errText(res), 'err'); busy(btn, false); return; }
-        try { if (window.NF_TRACK) NF_TRACK.login({ method: 'email' }); } catch (e) {} // conversion (consent-gated)
-        NF_AUTH.set(res.data); location.href = next;
+      var btn = document.getElementById('si-btn'); busy(btn, true, 'Verifying you’re human…'); setMsg('', '');
+      var email = document.getElementById('si-email').value.trim();
+      var password = document.getElementById('si-pass').value;
+      NF_humanProof().then(function (proof) {
+        if (!proof) { setMsg('Could not complete human verification. Please retry.', 'err'); busy(btn, false); return; }
+        busy(btn, true, 'Signing in…');
+        return post('/v1/auth/login', { email: email, password: password, challenge: proof.challenge, nonce: proof.nonce })
+          .then(function (res) {
+            if (!res.ok) { setMsg(errText(res), 'err'); busy(btn, false); return; }
+            try { if (window.NF_TRACK) NF_TRACK.login({ method: 'email' }); } catch (e) {} // conversion (consent-gated)
+            NF_AUTH.set(res.data); location.href = next;
+          });
       }).catch(function (err) { setMsg(err.message, 'err'); busy(btn, false); });
     });
 

@@ -726,6 +726,10 @@ const server = http.createServer(async (req, res) => {
       if (emailKey && loginBlocked(emailKey)) {
         return json(res, 429, { error: 'too_many_attempts', message: 'Too many login attempts. Wait a few minutes and try again.' });
       }
+      // Bot gate: signing in requires a solved proof-of-work challenge, the same
+      // in-house anti-bot layer as signup — so automated credential-stuffing must
+      // pay CPU per attempt (on top of the per-account lockout above).
+      requireHuman(body);
       try {
         const out = login({ email: body.email, password: body.password });
         if (emailKey) noteLoginOk(emailKey);

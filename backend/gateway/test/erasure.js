@@ -57,14 +57,14 @@ res = await post('/v1/auth/delete', { currentPassword: 'referpass123' }, { autho
 check('deletion succeeds', res.status === 200 && (await res.json()).ok === true);
 
 console.log('— after deletion: every trace of R is gone —');
-check('R can no longer log in (account erased)', (await post('/v1/auth/login', { email: 'ref@erase.test', password: 'referpass123' })).status >= 400);
+check('R can no longer log in (account erased)', (await post('/v1/auth/login', { email: 'ref@erase.test', password: 'referpass123', ...(await proof()) })).status >= 400);
 check('R wallet money data erased (fresh wallet, paid 0)', (await (await get(`/v1/wallet?user=${RID}`)).json()).paid === 0);
 check('R document erased (404)', (await get(`/v1/document?user=${RID}&project=proj-e&type=validation`)).status === 404);
 const rs = await (await get(`/v1/referrals/summary?user=${RID}`)).json();
 check('R referral earnings + referrals erased', rs.acuEarned === 0 && rs.totalReferrals === 0, JSON.stringify(rs));
 
 console.log('— the OTHER user (referee E) is untouched —');
-check('E can still log in', (await post('/v1/auth/login', { email: 'referee@erase.test', password: 'refereepass1' })).status === 200);
+check('E can still log in', (await post('/v1/auth/login', { email: 'referee@erase.test', password: 'refereepass1', ...(await proof()) })).status === 200);
 
 stripeMock.close();
 console.log(failures === 0 ? '\nERASURE: all checks passed.' : `\n${failures} check(s) FAILED.`);

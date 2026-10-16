@@ -61,10 +61,15 @@ check('signup issues a capability-format userId', /^op_[a-z0-9]{10,}$/.test(jane
 res = await post('/v1/auth/signup', { email: 'jane@example.com', password: 'anotherpass1', ...(await humanProof()) });
 check('duplicate email refused (409 email_taken)', res.status === 409 && (await res.json()).error === 'email_taken');
 
-res = await post('/v1/auth/login', { email: 'jane@example.com', password: 'wrongwrong' });
+// BOT GATE: signing in requires a solved proof-of-work, same as signup. A login
+// with no human proof is refused before the password is even checked.
+res = await post('/v1/auth/login', { email: 'jane@example.com', password: 'hunter2hunter' });
+check('login with NO human proof refused (403 human_required)', res.status === 403 && (await res.json()).error === 'human_required', `status=${res.status}`);
+
+res = await post('/v1/auth/login', { email: 'jane@example.com', password: 'wrongwrong', ...(await humanProof()) });
 check('wrong password refused (401 bad_credentials)', res.status === 401 && (await res.json()).error === 'bad_credentials');
 
-res = await post('/v1/auth/login', { email: 'JANE@example.com', password: 'hunter2hunter' });
+res = await post('/v1/auth/login', { email: 'JANE@example.com', password: 'hunter2hunter', ...(await humanProof()) });
 let janeLogin = await res.json();
 check('login succeeds (email case-insensitive)', res.status === 200 && !!janeLogin.token);
 
@@ -155,7 +160,7 @@ res = await post('/v1/admin/disable', { email: 'boss@nf.test', disabled: true },
 check('admin cannot disable own account (400 self_disable)', res.status === 400 && (await res.json()).error === 'self_disable');
 res = await post('/v1/admin/disable', { email: 'jane@example.com', disabled: true }, { authorization: 'Bearer ' + boss.token });
 check('admin disables jane', res.status === 200 && (await res.json()).disabled === true);
-res = await post('/v1/auth/login', { email: 'jane@example.com', password: 'hunter2hunter' });
+res = await post('/v1/auth/login', { email: 'jane@example.com', password: 'hunter2hunter', ...(await humanProof()) });
 check('disabled account cannot log in (403 account_disabled)', res.status === 403 && (await res.json()).error === 'account_disabled');
 res = await post('/v1/admin/disable', { email: 'jane@example.com', disabled: false }, { authorization: 'Bearer ' + boss.token });
 check('admin re-enables jane', res.status === 200 && (await res.json()).disabled === false);
@@ -196,13 +201,13 @@ check('reset with valid token succeeds', res.status === 200 && (await res.json()
 res = await post('/v1/auth/reset', { email: 'jane@example.com', token: rtoken, password: 'againagain9' });
 check('reset token is single-use (second use refused)', res.status === 400 && (await res.json()).error === 'invalid_reset');
 
-res = await post('/v1/auth/login', { email: 'jane@example.com', password: 'hunter2hunter' });
+res = await post('/v1/auth/login', { email: 'jane@example.com', password: 'hunter2hunter', ...(await humanProof()) });
 check('old password no longer works after reset (401)', res.status === 401);
-res = await post('/v1/auth/login', { email: 'jane@example.com', password: 'brandnewpass9' });
+res = await post('/v1/auth/login', { email: 'jane@example.com', password: 'brandnewpass9', ...(await humanProof()) });
 check('new password works', res.status === 200 && !!(await res.json()).token);
 
 console.log('— profile: name + avatar —');
-res = await post('/v1/auth/login', { email: 'jane@example.com', password: 'brandnewpass9' });
+res = await post('/v1/auth/login', { email: 'jane@example.com', password: 'brandnewpass9', ...(await humanProof()) });
 const janeTok = (await res.json()).token;
 res = await post('/v1/auth/profile', { name: 'Jane Doe', company: 'Acme', country: 'UK', bio: 'builder' }, { authorization: 'Bearer ' + janeTok });
 check('profile update saves name', res.status === 200 && (await res.json()).user.name === 'Jane Doe');
@@ -222,7 +227,7 @@ res = await post('/v1/auth/password', { currentPassword: 'wrong', newPassword: '
 check('wrong current password refused (403)', res.status === 403 && (await res.json()).error === 'bad_current_password');
 res = await post('/v1/auth/password', { currentPassword: 'brandnewpass9', newPassword: 'evenNEWer9' }, { authorization: 'Bearer ' + janeTok });
 check('password change succeeds', res.status === 200);
-res = await post('/v1/auth/login', { email: 'jane@example.com', password: 'evenNEWer9' });
+res = await post('/v1/auth/login', { email: 'jane@example.com', password: 'evenNEWer9', ...(await humanProof()) });
 check('login with changed password works', res.status === 200 && !!(await res.json()).token);
 
 console.log('— admin holds no consumer wallet —');
@@ -240,7 +245,7 @@ res = await post('/v1/auth/delete', { currentPassword: 'nope' }, { authorization
 check('delete with wrong password refused (403)', res.status === 403);
 res = await post('/v1/auth/delete', { currentPassword: 'temppass123' }, { authorization: 'Bearer ' + tempTok });
 check('delete account succeeds', res.status === 200 && (await res.json()).ok === true);
-res = await post('/v1/auth/login', { email: 'temp@example.com', password: 'temppass123' });
+res = await post('/v1/auth/login', { email: 'temp@example.com', password: 'temppass123', ...(await humanProof()) });
 check('deleted account cannot log in (401)', res.status === 401);
 
 console.log('— store encrypted at rest —');
