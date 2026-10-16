@@ -1221,8 +1221,15 @@
         // masks failures. Insufficient paid ACU → prompt to top up; anything
         // else → honest error. Demo data only in the fully offline demo.
         if (window.NF_GATEWAY_URL) {
-          if (err && /\b402\b/.test(String(err.message))) { NF.openTopup(searchCost, 'Niche discovery'); }
-          else { nichesEl.innerHTML = '<p style="color:#C4604F;padding:24px 4px">Discovery is temporarily unavailable — please try again in a moment.</p>'; }
+          var msg = String((err && err.message) || '');
+          if (/\b402\b/.test(msg)) { NF.openTopup(searchCost, 'Niche discovery'); }
+          // The analysis came back incomplete — the server released the hold, so
+          // nothing was charged. Say so plainly and invite a retry, rather than a
+          // vague "unavailable" that leaves the user wondering about their ACU.
+          else if (/generation_incomplete|\b503\b/.test(msg)) {
+            nichesEl.innerHTML = '<p style="color:#C4604F;padding:24px 4px">The analysis didn\'t finish producing a complete result, so <strong>you were not charged</strong>. Please run the search again.</p>';
+          }
+          else { nichesEl.innerHTML = '<p style="color:#C4604F;padding:24px 4px">Discovery is temporarily unavailable — please try again in a moment. If this persists, your ACU was not spent on an incomplete result.</p>'; }
           return;
         }
         setTimeout(function(){ renderNiches(MOCKS, false); }, reduced ? 60 : 1200);

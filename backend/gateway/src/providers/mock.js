@@ -6,15 +6,31 @@ export async function generate(req) {
   const lastUser = [...req.messages].reverse().find((m) => m.role === 'user');
   const prompt = typeof lastUser?.content === 'string' ? lastUser.content : JSON.stringify(lastUser?.content ?? '');
 
-  const text = req.jsonSchema
-    ? JSON.stringify(instantiate(req.jsonSchema))
-    : `[mock] Venture analysis for: ${prompt.slice(0, 120)}`;
+  // Test/dev hook: `mockText` returns a verbatim body, so a suite can inject a
+  // truncated or empty structured response and exercise the gateway's
+  // "don't-charge-for-unusable-output" guard. Ignored by every real provider,
+  // and the mock is off whenever a real key is set, so it is inert in prod.
+  let text = typeof req.mockText === 'string'
+    ? req.mockText
+    : (req.jsonSchema
+        ? JSON.stringify(instantiate(req.jsonSchema))
+        : `[mock] Venture analysis for: ${prompt.slice(0, 120)}`);
+
+  // Realistic token-cap simulation: a real model truncates mid-text when it hits
+  // maxTokens (stop_reason=max_tokens), which is exactly what shipped truncated,
+  // unparseable JSON to the client. Mirror that so the reserve→retry→settle path
+  // can be tested. ~4 chars/token. Only applies when NOT using mockText.
+  let stopReason = 'end_turn';
+  if (req.mockText == null && Number.isInteger(req.maxTokens) && req.maxTokens > 0) {
+    const limit = req.maxTokens * 4;
+    if (text.length > limit) { text = text.slice(0, limit); stopReason = 'max_tokens'; }
+  }
 
   return {
     provider: 'mock',
     model: 'mock-1',
     text,
-    stopReason: 'end_turn',
+    stopReason,
     usage: { inputTokens: Math.ceil(prompt.length / 4), outputTokens: Math.ceil(text.length / 4) },
   };
 }

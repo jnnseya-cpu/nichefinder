@@ -214,6 +214,38 @@ export function reservedOutputTokens(body) {
   return Math.min(Math.max(out, 256), MAX_GEN_OUTPUT);
 }
 
+/* Did a STRUCTURED (jsonSchema) generation actually come back as usable JSON
+   with real content? A truncated response (hit max_tokens mid-object) parses to
+   nothing or an empty shell — the client throws "empty_result" AFTER we already
+   charged, which is the "money spent, nothing produced" incident. We mirror the
+   client's own tolerant parse (best-effort `{…}` / `[…]` slice) so the server's
+   verdict matches what the UI will actually be able to render, and only treat a
+   response as usable if it carries at least one non-empty array or a truthy
+   scalar field — an empty `{}` or `{"niches":[]}` is NOT usable. */
+export function parseStructured(text) {
+  if (typeof text !== 'string' || !text.trim()) return null;
+  try { return JSON.parse(text); } catch {}
+  // tolerant slice: grab the outermost object or array, same as the client does,
+  // so a slightly-wrapped or trailing-token response still parses.
+  const s = text.indexOf('{'); const e = text.lastIndexOf('}');
+  const as = text.indexOf('['); const ae = text.lastIndexOf(']');
+  const tryParse = (a, b) => { if (a >= 0 && b > a) { try { return JSON.parse(text.slice(a, b + 1)); } catch {} } return null; };
+  return tryParse(s, e) ?? tryParse(as, ae);
+}
+
+export function structuredUsable(text) {
+  const obj = parseStructured(text);
+  if (obj == null) return false;
+  if (Array.isArray(obj)) return obj.length > 0;
+  if (typeof obj !== 'object') return false;
+  // An object is usable if ANY value is a non-empty array or a truthy scalar.
+  return Object.values(obj).some((v) =>
+    Array.isArray(v) ? v.length > 0
+    : (v != null && typeof v === 'object') ? Object.keys(v).length > 0
+    : !!v
+  );
+}
+
 /* Pre-flight ACU estimate for a generation body. Reserves the WORST case: the
    full allowed output length, priced at the most expensive provider that could
    serve the request — so neither a long response nor a fail-over to a pricier
@@ -594,11 +626,19 @@ const server = http.createServer(async (req, res) => {
         hold = { user: debit.user, price: debit.price, key: holdKey };
       }
       console.log(`[document] start type=${body.docType} price=${price} effort=${body.effort || 'high'} billed=${!!hold}`);
-      const result = await route(genBody);
-      let content;
-      try { content = JSON.parse(result.text); } catch {
-        if (hold) releaseHold({ user: hold.user, key: hold.key }); // malformed → not charged
-        throw new GatewayError('The document engine returned malformed content — you were not charged. Please try again.', { status: 502, code: 'bad_document' });
+      let result = await route(genBody);
+      // Don't bill for a document that came back truncated or as an empty shell.
+      // A document is FIXED-price, so a single retry costs the user nothing — it
+      // only gives a transient truncation a second chance to complete. If the
+      // output is still unusable, release the hold and fail without charging.
+      if (!structuredUsable(result.text)) {
+        console.warn(`[document] unusable output type=${body.docType} (textLen=${(result.text || '').length}, stop=${result.stopReason || '?'}) — retrying once`);
+        result = await route(genBody);
+      }
+      const content = structuredUsable(result.text) ? parseStructured(result.text) : null;
+      if (!content) {
+        if (hold) releaseHold({ user: hold.user, key: hold.key }); // malformed/empty → not charged
+        throw new GatewayError('The document engine did not return a complete document — you were not charged. Please try again.', { status: 502, code: 'bad_document' });
       }
       console.log(`[document] ok type=${body.docType} provider=${result.provider} latencyMs=${Date.now() - started} sections=${(content.sections || []).length}`);
       if (clientGone) {
@@ -1349,8 +1389,32 @@ const server = http.createServer(async (req, res) => {
         hold = { user: body.user, estimate: est, key: holdKey };
       }
       console.log(`[generate] start effort=${body.effort || 'default'} schema=${body.jsonSchema ? 'yes' : 'no'} maxOut=${reservedOut} billed=${!!hold}`);
-      const result = await route(genBody);
+      let result = await route(genBody);
       console.log(`[generate] ok provider=${result.provider} latencyMs=${Date.now() - started} acu=${result.acu ?? 0} textLen=${(result.text || '').length}`);
+
+      // DON'T CHARGE FOR NOTHING. A structured (jsonSchema) request that comes
+      // back truncated/unparseable is the "money spent, no output" incident: the
+      // provider returns 200 with a half-written JSON that the client can't
+      // render ("empty_result"), yet the old path settled the hold regardless.
+      // So: if the structured output isn't usable, retry ONCE at the full output
+      // ceiling (the usual cause is hitting the token cap mid-JSON); if it's
+      // still unusable, throw a retryable error — the catch below releases the
+      // hold, so the wallet is never debited for an unusable result.
+      if (body.jsonSchema && !structuredUsable(result.text)) {
+        if (reservedOut < MAX_GEN_OUTPUT) {
+          console.warn(`[generate] structured output unusable at maxOut=${reservedOut} (textLen=${(result.text || '').length}) — retrying once at ${MAX_GEN_OUTPUT}`);
+          result = await route({ ...genBody, maxTokens: MAX_GEN_OUTPUT });
+          console.log(`[generate] retry provider=${result.provider} acu=${result.acu ?? 0} textLen=${(result.text || '').length}`);
+        }
+        if (!structuredUsable(result.text)) {
+          metrics.generationFailures += 1;
+          console.error(`[generate] structured output still unusable (textLen=${(result.text || '').length}, stop=${result.stopReason || '?'}) — releasing hold, NO charge`);
+          throw new GatewayError(
+            'The analysis did not finish producing a complete result. Please try again — you were not charged.',
+            { status: 503, code: 'generation_incomplete', retryable: true }
+          );
+        }
+      }
       if (clientGone) {
         if (hold) releaseHold({ user: hold.user, key: hold.key });
         console.log('[generate] client disconnected before result — hold released, no bill');
