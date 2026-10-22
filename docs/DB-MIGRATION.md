@@ -32,9 +32,10 @@ settlement — become **DB constraints** that no future bug can violate (proven 
 
 - **Now:** SQLite via Node's built-in **`node:sqlite`** — zero external
   dependency, single file (the existing `nf-backup.sh` already snapshots it),
-  ACID transactions. **Requires Node ≥ 22** on the VPS (currently Node 20 — a
-  one-time `nodesource setup_22.x` upgrade; `engines` stays `>=20` for the
-  file backend, `>=22` when `STORE_BACKEND=sqlite`).
+  ACID transactions. **Requires Node ≥ 22** on the VPS — which is now the
+  baseline anyway: Node 20 is EOL and `engines` is `>=22` (the 2026-10-21
+  security fixes do not exist for Node 20). Install Node 22 via
+  `nodesource setup_22.x` if the box is still on 20.
 - **Later (scale):** Postgres via `pg` (a real dependency, deferred until ≥2
   replicas are actually needed). The adapter interface below keeps the swap local.
 - **Flagging:** a `STORE_BACKEND` env selects `file` (default, unchanged) or

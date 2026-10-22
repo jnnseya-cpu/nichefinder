@@ -1,6 +1,9 @@
 # Niche Finder OS — single-service production image.
 # One Node process serves the frontend, shared modules, and the /v1 API.
-FROM node:20-alpine
+# Node 22 LTS — Node 20 is end-of-life and did not receive the 2026-10-21
+# security fixes (incl. a high-severity RCE). The `22-alpine` tag tracks the
+# latest patched 22.x (≥ 22.23.4), so a fresh build/pull always lands the fix.
+FROM node:22-alpine
 WORKDIR /app
 
 # Static assets (no build step) — served by the gateway at /frontend and /shared.

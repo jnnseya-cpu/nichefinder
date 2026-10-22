@@ -10,11 +10,15 @@ your domain's DNS **A record** pointing at the VPS IP (set in Hostinger → DNS)
 
 ---
 
-## 1. Install Node 20 + Caddy (one time)
+## 1. Install Node 22 + Caddy (one time)
+
+> Node 20 is end-of-life and did **not** get the 2026-10-21 security fixes
+> (one is a high-severity RCE). Install Node 22 (≥ 22.23.4). Already on Node 20?
+> Jump to **§ Upgrading Node** below — it's a one-command NodeSource bump.
 
 ```bash
-# Node 20
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+# Node 22 LTS (NodeSource)
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt-get install -y nodejs git
 
 # Caddy (auto-HTTPS reverse proxy)
@@ -298,6 +302,35 @@ bank.
 cd /opt/nichefinder && sudo git pull
 cd backend/gateway && sudo npm ci --omit=dev
 sudo systemctl restart nichefinder
+```
+
+## Upgrading Node (security patches)
+
+The gateway runs on the **system Node** (`/usr/bin/node`, installed from
+NodeSource). Node ships security releases that the OS auto-updater does **not**
+pull, so patch Node by hand when an advisory lands (e.g. the 2026-10-21 fixes:
+Node 22 → **22.23.4+**, Node 24 → **24.22.1+**). Node 20 and older are EOL and
+never get these fixes — move off them.
+
+```bash
+node -v                                   # what you're on now
+# Install/upgrade to the Node 22 LTS line (idempotent; re-adds the repo + upgrades):
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt-get install -y nodejs
+node -v                                   # confirm ≥ 22.23.4
+sudo systemctl restart nichefinder        # running process keeps the OLD node until restarted
+curl -s https://app.yourdomain.com/v1/health
+```
+
+> A running app holds the old Node binary in memory until it is restarted — the
+> `systemctl restart` above is what actually puts the patched runtime live.
+
+**If you run the Docker image instead** (`Dockerfile` → `node:22-alpine`): rebuild
+so the base image is re-pulled, then recreate the container:
+```bash
+cd /opt/nichefinder
+docker build --pull -t nichefinder:latest .
+docker compose up -d        # or: docker run … (recreate the container)
 ```
 
 ## Health & logs

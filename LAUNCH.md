@@ -41,7 +41,7 @@ Morning sequence (60–90 min of founder admin, in order):
 1. **Stripe**: create account → copy `sk_live_` → add webhook endpoint
    `https://<host>/v1/payments/stripe-webhook` (event: `checkout.session.completed`) → copy `whsec_`
 2. **Anthropic**: create API key, load £50–100 credit (Gemini/OpenAI optional failover)
-3. **Deploy**: on your Hostinger VPS, follow **DEPLOY-VPS.md** (Node 20 + Caddy,
+3. **Deploy**: on your Hostinger VPS, follow **DEPLOY-VPS.md** (Node 22 + Caddy,
    clone to `/opt/nichefinder`, `npm ci --omit=dev`, systemd service) — put the
    secrets in `/etc/nichefinder.env`; generate `WALLET_STORE_KEY`/`ADMIN_API_KEY`
    with `openssl rand -hex 32` / `-hex 24`
@@ -58,7 +58,7 @@ Morning sequence (60–90 min of founder admin, in order):
 |---|---|---|---|
 | 1 | Create Stripe account (business details + bank account for payouts) | Founder | 1–2 h (approval usually same-day) |
 | 2 | Buy provider API credit: Anthropic (required), Google/OpenAI (optional failover) | Founder | 15 min |
-| 3 | Deploy on the Hostinger VPS per **DEPLOY-VPS.md** (Node 20 + Caddy, systemd `nichefinder` service) with env in `/etc/nichefinder.env`: `ANTHROPIC_API_KEY`, `WALLET_STORE_KEY` (64 hex), `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `PUBLIC_ORIGIN`; `data/` lives on the VPS disk | Founder (or hand me the server) | 30 min |
+| 3 | Deploy on the Hostinger VPS per **DEPLOY-VPS.md** (Node 22 + Caddy, systemd `nichefinder` service) with env in `/etc/nichefinder.env`: `ANTHROPIC_API_KEY`, `WALLET_STORE_KEY` (64 hex), `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `PUBLIC_ORIGIN`; `data/` lives on the VPS disk | Founder (or hand me the server) | 30 min |
 | 4 | In Stripe: add webhook endpoint `https://<host>/v1/payments/stripe-webhook`, event `checkout.session.completed`; copy `whsec_` into env | Founder | 5 min |
 | 5 | Point a domain (e.g. app.nichefinderhq.com) at the deploy; set `window.NF_GATEWAY_URL` in `frontend/nf-config.js` to that origin; redeploy | Founder | 15 min |
 | 6 | Test-mode dry run (sk_test keys): buy Starter £5 with card 4242…, watch ACUs land via webhook; then flip to live keys | Founder | 20 min |

@@ -13,7 +13,7 @@ and a refund queue.
 ## Before Saturday (do now if you can)
 - [ ] Stripe account created, business details + bank account added (approval can take a day — start early)
 - [ ] Anthropic account + API key, £50–100 credit loaded
-- [ ] Hostinger VPS ready: Node 20 + Caddy installed (DEPLOY-VPS.md §1) and your domain's DNS **A record** pointing at the VPS IP
+- [ ] Hostinger VPS ready: Node 22 + Caddy installed (DEPLOY-VPS.md §1) and your domain's DNS **A record** pointing at the VPS IP
 - [ ] Domain available to point (e.g. app.nichefinderhq.com)
 
 ## Saturday sequence
