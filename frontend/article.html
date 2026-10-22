@@ -17,11 +17,23 @@
 <link rel="stylesheet" href="page.css">
 <style>
   .art{max-width:760px}
-  .art h2{font-family:var(--serif);font-weight:400;font-size:1.4rem;margin:30px 0 10px}
+  .art h2{font-family:var(--serif);font-weight:400;font-size:1.4rem;margin:30px 0 10px;scroll-margin-top:90px}
   .art p{font-size:.95rem;line-height:1.75;color:var(--text);margin-bottom:14px}
   .art a{color:var(--gold-bright);text-decoration:underline;text-underline-offset:3px}
   .art a.ext{color:var(--blue)}
-  .art .meta{font-family:var(--mono);font-size:.62rem;letter-spacing:.16em;color:var(--muted);margin:6px 0 26px}
+  .art .meta{font-family:var(--mono);font-size:.62rem;letter-spacing:.16em;color:var(--muted);margin:6px 0 26px;display:flex;flex-wrap:wrap;gap:6px 14px}
+  .art .meta .dot{opacity:.4}
+  .usp-band{border:1px solid var(--gold-dim);border-radius:12px;padding:16px 20px;margin:0 0 24px;background:linear-gradient(180deg,rgba(232,166,26,.08),rgba(255,255,255,0) 60%),var(--panel-2)}
+  .usp-band .lbl{font-family:var(--mono);font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:6px}
+  .usp-band p{font-size:1.04rem;line-height:1.55;color:var(--text);margin:0}
+  .faq{margin-top:30px}
+  .faq h2{font-family:var(--serif);font-weight:400;font-size:1.4rem;margin:0 0 12px}
+  .faq details{border:1px solid var(--line-soft);border-radius:10px;padding:2px 16px;margin-bottom:10px;background:rgba(255,255,255,.02)}
+  .faq summary{font-family:var(--serif);font-size:1rem;color:var(--text);cursor:pointer;padding:13px 0;list-style:none}
+  .faq summary::-webkit-details-marker{display:none}
+  .faq summary::before{content:"+";color:var(--gold);font-family:var(--mono);margin-right:10px}
+  .faq details[open] summary::before{content:"\2013"}
+  .faq details p{margin:0 0 13px;font-size:.92rem;color:#D6DBE6}
   .related{border:1px solid var(--line-soft);border-radius:10px;padding:18px 20px;margin-top:34px}
   .related h3{font-family:var(--serif);font-weight:400;margin-bottom:10px}
   .related a{display:block;font-size:.88rem;color:var(--gold-bright);margin-bottom:8px;text-decoration:none}
@@ -159,19 +171,57 @@
       ['Do it this week', 'Run the free niche score, then one real search with your welcome credits. WB_LINK confirms small, cash-flowing entrants outlast funded generalists.']];
   }
 
-  // kind: 'feature' | 'post' | 'index'
-  function paint(kind, ttl, desc, secs, canonSlug){
+  // kind: 'feature' | 'post' | 'index'. `art` (optional) carries the rich
+  // feature fields: { usp, faq, date, read, kw }.
+  function paint(kind, ttl, desc, secs, canonSlug, art){
+    art = art || {};
     state.used = {};
     document.title = 'Niche Finder — ' + ttl;
     var md = document.querySelector('meta[name="description"]'); if (md) md.setAttribute('content', String(desc).slice(0, 155));
+    // keywords meta for the feature articles (SEO relevance signal)
+    if (art.kw){
+      var mk = document.querySelector('meta[name="keywords"]');
+      if (!mk){ mk = document.createElement('meta'); mk.name = 'keywords'; document.head.appendChild(mk); }
+      mk.setAttribute('content', art.kw);
+    }
     document.getElementById('artTitle').textContent = ttl;
-    document.getElementById('artMeta').textContent = (kind === 'feature' ? 'FEATURE GUIDE' : kind === 'post' ? 'SEO ARTICLE' : 'GUIDE') +
-      ' · NICHE FINDER · ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+    var pubDate = art.date ? new Date(art.date) : new Date();
+    var metaEl = document.getElementById('artMeta');
+    metaEl.innerHTML = '';
+    [ (kind === 'feature' ? 'FEATURE GUIDE' : kind === 'post' ? 'SEO ARTICLE' : 'GUIDE'),
+      'UPDATED ' + pubDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase()
+    ].concat(art.read ? [art.read.toUpperCase()] : []).forEach(function(bit, i){
+      if (i){ var d = document.createElement('span'); d.className = 'dot'; d.textContent = '•'; metaEl.appendChild(d); }
+      var s = document.createElement('span'); s.textContent = bit; metaEl.appendChild(s);
+    });
     bodyEl.innerHTML = '';
+    // USP callout — the one-line unique selling point, up top where it sells.
+    if (art.usp){
+      var band = document.createElement('div'); band.className = 'usp-band';
+      var lbl = document.createElement('span'); lbl.className = 'lbl'; lbl.textContent = 'Why it is different';
+      // The USP is author-controlled copy (from nf-articles.js, never user input)
+      // and carries intentional <strong>/<em> emphasis, so it renders as HTML
+      // rather than being escaped. It is not autolinked — the body carries the
+      // internal-link mesh so phrases link at their first in-body occurrence.
+      var up = document.createElement('p'); up.innerHTML = art.usp;
+      band.appendChild(lbl); band.appendChild(up); bodyEl.appendChild(band);
+    }
     secs.forEach(function(sec){
       if (sec[0]){ var h = document.createElement('h2'); h.textContent = sec[0]; bodyEl.appendChild(h); }
       var p = document.createElement('p'); p.innerHTML = renderPar(sec[1]); bodyEl.appendChild(p);
     });
+    // FAQ block (feature articles) — rendered + emitted as FAQPage JSON-LD below.
+    if (art.faq && art.faq.length){
+      var faq = document.createElement('section'); faq.className = 'faq';
+      var fh = document.createElement('h2'); fh.textContent = 'Frequently asked questions'; faq.appendChild(fh);
+      art.faq.forEach(function(qa){
+        var d = document.createElement('details');
+        var sm = document.createElement('summary'); sm.textContent = qa[0]; d.appendChild(sm);
+        var ap = document.createElement('p'); ap.innerHTML = renderPar(qa[1]); d.appendChild(ap);
+        faq.appendChild(d);
+      });
+      bodyEl.appendChild(faq);
+    }
     if (kind === 'feature' || kind === 'post'){
       var tools = document.createElement('p');
       tools.innerHTML = '<b>Explore the tools in this guide:</b> ' +
@@ -200,15 +250,40 @@
       }
     }
     // Structured data + canonical.
+    var canonUrl = location.origin + '/article.html?s=' + encodeURIComponent(canonSlug);
+    var isoDate = (art.date ? new Date(art.date) : new Date()).toISOString().slice(0, 10);
+    var graph = [{
+      '@type': 'BlogPosting',
+      headline: ttl,
+      description: desc,
+      inLanguage: 'en',
+      isAccessibleForFree: true,
+      datePublished: isoDate,
+      dateModified: isoDate,
+      keywords: art.kw || undefined,
+      articleSection: art.cat || 'Venture Intelligence',
+      author: { '@type': 'Organization', name: 'Niche Finder', url: location.origin },
+      publisher: { '@type': 'Organization', name: 'JNN GLOBAL LTD', url: location.origin,
+        logo: { '@type': 'ImageObject', url: location.origin + '/icon-512.png', width: 512, height: 512 } },
+      mainEntityOfPage: canonUrl
+    }, {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: location.origin + '/' },
+        { '@type': 'ListItem', position: 2, name: 'Blog', item: location.origin + '/blog.html' },
+        { '@type': 'ListItem', position: 3, name: ttl, item: canonUrl }
+      ]
+    }];
+    if (art.faq && art.faq.length){
+      graph.push({ '@type': 'FAQPage', mainEntity: art.faq.map(function(qa){
+        return { '@type': 'Question', name: qa[0], acceptedAnswer: { '@type': 'Answer', text: qa[1] } };
+      }) });
+    }
     var ld = document.createElement('script');
     ld.type = 'application/ld+json';
-    ld.textContent = JSON.stringify({ '@context': 'https://schema.org', '@type': 'Article', headline: ttl,
-      description: desc, author: { '@type': 'Organization', name: 'Niche Finder' },
-      publisher: { '@type': 'Organization', name: 'JNN GLOBAL LTD' },
-      mainEntityOfPage: location.origin + '/article.html?s=' + encodeURIComponent(canonSlug) });
+    ld.textContent = JSON.stringify({ '@context': 'https://schema.org', '@graph': graph });
     document.head.appendChild(ld);
-    var canon = document.createElement('link'); canon.rel = 'canonical';
-    canon.href = location.origin + '/article.html?s=' + encodeURIComponent(canonSlug);
+    var canon = document.createElement('link'); canon.rel = 'canonical'; canon.href = canonUrl;
     document.head.appendChild(canon);
   }
 
@@ -220,7 +295,7 @@
   }
 
   if (isFeature){
-    paint('feature', feature.title, feature.meta, [['', feature.lead]].concat(feature.s), feature.slug);
+    paint('feature', feature.title, feature.meta, [['', feature.lead]].concat(feature.s), feature.slug, feature);
   } else if (adminPost){
     paint('post', adminPost.title, adminPost.title, seededSections(adminPost.title), slug);
   } else if (slug){
