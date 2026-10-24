@@ -168,6 +168,9 @@
       <button class="tab active" data-tab="users">Users</button>
       <button class="tab" data-tab="revenue">Revenue</button>
       <button class="tab" data-tab="leads">Leads</button>
+      <button class="tab" data-tab="content">Content &amp; SEO</button>
+      <button class="tab" data-tab="growth">Growth</button>
+      <button class="tab" data-tab="comms">Comms</button>
       <button class="tab" data-tab="security">Security &amp; System</button>
     </div>
 
@@ -221,6 +224,52 @@
         <thead><tr><th>When</th><th>IP</th><th>Kind</th><th>Detail</th></tr></thead>
         <tbody id="seclog-body"></tbody>
       </table></div>
+    </div>
+
+    <!-- CONTENT & SEO -->
+    <div class="panel hide" data-panel="content">
+      <div class="chips" id="seo-chips"></div>
+      <h1 style="font-size:1rem;margin:16px 0 8px">Publish a blog article</h1>
+      <form id="art-form" style="display:grid;gap:8px;max-width:560px">
+        <input id="art-title" type="text" placeholder="Article title (required)" maxlength="160" required>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input id="art-category" type="text" placeholder="Category (e.g. STRATEGY)" maxlength="40" style="flex:1;min-width:140px">
+          <input id="art-slug" type="text" placeholder="Slug (optional — derived from title)" maxlength="80" style="flex:1;min-width:140px">
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <select id="art-format" style="padding:9px"><option value="article">article</option><option value="guide">guide</option></select>
+          <button class="btn" type="submit" id="art-btn">Publish</button>
+          <span class="msg" id="art-msg"></span>
+        </div>
+      </form>
+      <h1 style="font-size:1rem;margin:18px 0 8px">Published articles <span class="count" id="art-count"></span> <button class="btn ghost" id="art-refresh">Refresh</button></h1>
+      <div class="tblwrap"><table>
+        <thead><tr><th>Title</th><th>Category</th><th>Slug</th><th>Published</th><th></th></tr></thead>
+        <tbody id="art-body"></tbody>
+      </table></div>
+      <h1 style="font-size:1rem;margin:20px 0 8px">Google Search Console</h1>
+      <div id="gsc-wrap"><div class="empty" id="gsc-status">Loading…</div></div>
+    </div>
+
+    <!-- GROWTH (referrals) -->
+    <div class="panel hide" data-panel="growth">
+      <div class="chips" id="ref-chips"></div>
+      <h1 style="font-size:1rem;margin:14px 0 8px">Growth Partners <button class="btn ghost" id="ref-refresh">Refresh</button></h1>
+      <div class="tblwrap"><table>
+        <thead><tr><th>Partner</th><th>Code</th><th class="bal">Referrals</th><th class="bal">Qualified</th><th class="bal">ACU earned</th><th class="bal">£ commission</th></tr></thead>
+        <tbody id="ref-body"></tbody>
+      </table></div>
+    </div>
+
+    <!-- COMMS (test email) -->
+    <div class="panel hide" data-panel="comms">
+      <h1 style="font-size:1rem;margin:4px 0 8px">Send a test notification</h1>
+      <p style="color:var(--muted);font-size:.85rem;margin-bottom:12px">Delivers to <b data-admin-email></b> (your admin email) via the gateway SMTP relay — a quick way to confirm email delivery works.</p>
+      <form id="mail-form" style="display:grid;gap:8px;max-width:560px">
+        <input id="mail-subject" type="text" placeholder="Subject" maxlength="200" value="Niche Finder — test notification">
+        <textarea id="mail-html" rows="4" placeholder="HTML body (optional)" style="font-family:inherit;padding:9px"></textarea>
+        <div style="display:flex;gap:10px;align-items:center"><button class="btn" type="submit" id="mail-btn">Send test email</button> <span class="msg" id="mail-msg"></span></div>
+      </form>
     </div>
   </section>
 </div>
@@ -306,6 +355,8 @@
       document.querySelectorAll('.panel').forEach(function (p) { p.classList.toggle('hide', p.getAttribute('data-panel') !== name); });
       if (name === 'revenue') loadRevenue();
       if (name === 'leads') loadLeads();
+      if (name === 'content') loadContent();
+      if (name === 'growth') loadGrowth();
       if (name === 'security') loadSecurity();
     });
   });
@@ -487,6 +538,96 @@
     api('/v1/admin/maintenance', { method: 'POST', headers: hdr(true), body: JSON.stringify({ on: on }) })
       .then(function (res) { if (res.ok) { el('maint-toggle').checked = !!res.data.maintenance; loadOverview(); } else el('maint-toggle').checked = !on; })
       .catch(function () { el('maint-toggle').checked = !on; });
+  });
+
+  /* ---------- content & SEO ---------- */
+  function loadContent() { loadArticleStats(); loadArticles(); loadGSC(); }
+  function loadArticleStats() {
+    api('/v1/admin/articles/stats', { headers: hdr() }).then(function (res) {
+      if (!res.ok) return; var d = res.data;
+      el('seo-chips').innerHTML =
+        '<div class="chip">Published <b>' + fmt(d.published) + '</b></div>' +
+        '<div class="chip">Total views <b>' + fmt(d.totalViews) + '</b></div>' +
+        '<div class="chip">Avg SEO score <b>' + fmt(d.avgSeo) + '</b></div>';
+    }).catch(function () {});
+  }
+  function loadArticles() {
+    api('/v1/articles', { headers: hdr() }).then(function (res) {
+      if (!res.ok) return; var arts = (res.data && res.data.articles) || [];
+      el('art-count').textContent = '(' + arts.length + ')';
+      el('art-body').innerHTML = arts.length ? arts.map(function (a) {
+        return '<tr><td>' + esc(a.title) + '</td><td>' + esc(a.category || '') + '</td><td class="uid">' + esc(a.slug) +
+          '</td><td>' + when(a.publishedAt) + '</td><td><button class="btn ghost danger" data-unpub="' + esc(a.slug) + '">Unpublish</button></td></tr>';
+      }).join('') : '<tr><td colspan="5"><div class="empty">No server-published articles yet. (The built-in feature guides are always live.)</div></td></tr>';
+    }).catch(function () {});
+  }
+  function loadGSC() {
+    api('/v1/admin/search-console', { headers: hdr() }).then(function (res) {
+      if (!res.ok) return; var d = res.data || {};
+      if (!d.configured) { el('gsc-wrap').innerHTML = '<div class="empty">Google Search Console is not configured on this deployment (set the GSC env vars to see impressions, clicks and position).</div>'; return; }
+      if (d.error) { el('gsc-wrap').innerHTML = '<div class="empty">Search Console error: ' + esc(d.error) + '</div>'; return; }
+      var t = d.totals || {}; var by = d.bySlug || {};
+      var chips = '<div class="chips">' +
+        '<div class="chip">Impressions <b>' + fmt(t.impressions) + '</b></div>' +
+        '<div class="chip">Clicks <b>' + fmt(t.clicks) + '</b></div>' +
+        '<div class="chip">CTR <b>' + (t.ctr != null ? t.ctr + '%' : '—') + '</b></div>' +
+        '<div class="chip">Avg position <b>' + (t.avgPosition || '—') + '</b></div></div>';
+      var slugs = Object.keys(by).sort(function (a, b) { return (by[b].impressions || 0) - (by[a].impressions || 0); });
+      var rows = slugs.length ? slugs.map(function (s) { var e = by[s];
+        return '<tr><td class="uid">' + esc(s) + '</td><td class="bal">' + fmt(e.impressions) + '</td><td class="bal">' + fmt(e.clicks) + '</td><td class="bal">' + (e.ctr != null ? e.ctr + '%' : '—') + '</td><td class="bal">' + (e.position || '—') + '</td></tr>';
+      }).join('') : '<tr><td colspan="5"><div class="empty">No Search Console rows in range yet.</div></td></tr>';
+      el('gsc-wrap').innerHTML = chips + '<div class="tblwrap" style="margin-top:10px"><table><thead><tr><th>Page</th><th class="bal">Impr.</th><th class="bal">Clicks</th><th class="bal">CTR</th><th class="bal">Pos.</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+    }).catch(function () {});
+  }
+  el('art-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var title = el('art-title').value.trim(); if (!title) return;
+    var btn = el('art-btn'); btn.disabled = true; btn.textContent = 'Publishing…'; setMsg(el('art-msg'), '', '');
+    api('/v1/admin/articles', { method: 'POST', headers: hdr(true), body: JSON.stringify({ title: title, category: el('art-category').value.trim(), format: el('art-format').value, slug: el('art-slug').value.trim() }) })
+      .then(function (res) {
+        btn.disabled = false; btn.textContent = 'Publish';
+        if (!res.ok) { setMsg(el('art-msg'), (res.data && (res.data.message || res.data.error)) || 'Publish failed.', 'err'); return; }
+        setMsg(el('art-msg'), 'Published “' + (res.data.title || title) + '”.', 'ok');
+        el('art-form').reset(); loadArticleStats(); loadArticles();
+      }).catch(function () { btn.disabled = false; btn.textContent = 'Publish'; setMsg(el('art-msg'), 'Network error.', 'err'); });
+  });
+  el('art-refresh').addEventListener('click', function () { loadArticleStats(); loadArticles(); });
+  el('art-body').addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('[data-unpub]') : null; if (!b) return;
+    var slug = b.getAttribute('data-unpub');
+    if (!confirm('Unpublish “' + slug + '”? It will disappear from the public blog.')) return;
+    api('/v1/admin/articles/unpublish', { method: 'POST', headers: hdr(true), body: JSON.stringify({ slug: slug }) })
+      .then(function (res) { if (res.ok) { loadArticleStats(); loadArticles(); } }).catch(function () {});
+  });
+
+  /* ---------- growth (referrals) ---------- */
+  function loadGrowth() {
+    api('/v1/admin/referrals', { headers: hdr() }).then(function (res) {
+      if (!res.ok) return; var t = res.data.totals || {}; var rows = res.data.rows || [];
+      el('ref-chips').innerHTML =
+        '<div class="chip">Partners <b>' + fmt(t.partners) + '</b></div>' +
+        '<div class="chip">Referrals <b>' + fmt(t.referrals) + '</b></div>' +
+        '<div class="chip">Qualified <b>' + fmt(t.qualified) + '</b></div>' +
+        '<div class="chip">ACU paid <b>' + fmt(t.acuPaid) + '</b></div>' +
+        '<div class="chip">Commission <b>' + gbp(t.gbpCommission) + '</b></div>' +
+        '<div class="chip">Rate <b>' + (res.data.ratePct != null ? res.data.ratePct + '%' : '—') + '</b></div>';
+      el('ref-body').innerHTML = rows.length ? rows.map(function (r) {
+        return '<tr><td>' + esc(r.email || r.userId) + '</td><td class="uid">' + esc(r.code || '') + '</td><td class="bal">' + fmt(r.totalReferrals) + '</td><td class="bal">' + fmt(r.qualifiedReferrals) + '</td><td class="bal">' + fmt(r.acuEarned) + '</td><td class="bal">' + gbp(r.gbpEarned) + '</td></tr>';
+      }).join('') : '<tr><td colspan="6"><div class="empty">No Growth Partners with activity yet.</div></td></tr>';
+    }).catch(function () {});
+  }
+  el('ref-refresh').addEventListener('click', loadGrowth);
+
+  /* ---------- comms (test email) ---------- */
+  el('mail-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var btn = el('mail-btn'); btn.disabled = true; btn.textContent = 'Sending…'; setMsg(el('mail-msg'), '', '');
+    api('/v1/admin/test-email', { method: 'POST', headers: hdr(true), body: JSON.stringify({ subject: el('mail-subject').value.trim(), html: el('mail-html').value.trim() }) })
+      .then(function (res) {
+        btn.disabled = false; btn.textContent = 'Send test email';
+        if (!res.ok) { setMsg(el('mail-msg'), (res.data && (res.data.message || res.data.error)) || 'Send failed.', 'err'); return; }
+        setMsg(el('mail-msg'), 'Sent to ' + (res.data.to || 'your admin email') + '.', 'ok');
+      }).catch(function () { btn.disabled = false; btn.textContent = 'Send test email'; setMsg(el('mail-msg'), 'Network error.', 'err'); });
   });
 
   /* ---------- boot ---------- */

@@ -1,0 +1,11 @@
+PASS admin login succeeds with admin role  — role=admin status=200
+PASS admin console loads (session recognised, no login redirect)  — url=http://127.0.0.1:8701/admin-console.html
+PASS no JS parse/runtime errors on load
+PASS Content tab: SEO stat chips render  — chips=3
+PASS Content tab: GSC shows a status (not configured handled)  — Google Search Console is not configured on this deployment (
+PASS Content tab: article publishes + appears in list  — msg=Published “Test: Why Niche Discipline Wi rows=1
+PASS Growth tab: referral totals render  — chips=6
+PASS Comms tab: test email handles no-SMTP gracefully (clear message)  — SMTP is not configured on this deployment.
+PASS no JS errors across admin panels
+
+ADMIN WALKTHROUGH: 9 pass, 0 fail
