@@ -1,8 +1,6 @@
 User-agent: *
 Allow: /
-Disallow: /admin.html
 Disallow: /admin-console.html
-Disallow: /comms.html
 Disallow: /dashboard.html
 Disallow: /project.html
 Disallow: /asset.html

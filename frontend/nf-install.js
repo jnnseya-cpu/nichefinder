@@ -24,7 +24,7 @@
 
   // 2) Install prompt — kept off internal surfaces and off already-installed app.
   var page = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
-  var SKIP = { 'admin.html': 1, 'admin-console.html': 1, 'comms.html': 1, 'reset.html': 1 };
+  var SKIP = { 'admin-console.html': 1, 'reset.html': 1 };
   if (SKIP[page]) return;
 
   var standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||

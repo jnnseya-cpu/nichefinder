@@ -157,8 +157,8 @@ res = await fetch(`${BASE}/v1/generate`, {
 check('prompt-injection blocked (non_human_instruction)', res.status === 400 && (await res.json()).error === 'non_human_instruction');
 res = await fetch(`${BASE}/v1/health?q=<script>alert(1)</script>`);
 check('attack-pattern URL refused by Sentinel', res.status === 403);
-res = await fetch(`${BASE}/frontend/admin.html`);
-check('admin cockpit hidden on public deploy by default', res.status === 404);
+res = await fetch(`${BASE}/admin.html`);
+check('admin prototype removed (admin.html 404; real ops live at admin-console.html)', res.status === 404);
 
 // in-house human verification (no third-party vendor): PoW challenge roundtrip
 const cryptoH = await import('node:crypto');

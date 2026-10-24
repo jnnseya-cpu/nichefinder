@@ -29,11 +29,11 @@ P2 high · P3 medium · P4 low.
   search's pillar + confidence scores are produced by the AI model against a fixed rubric
   (not a separate pure function), so they are calibrated + data-grounded but not
   bit-reproducible.
-- Fix path: EITHER soften the copy for the paid path ("scored against a fixed, published
-  rubric, grounded in real country data") OR implement a server-side pure re-derivation of
-  `confidence` from the three pillars. **Owner decision required** (do not want to rewrite
-  approved marketing unilaterally).
-- Status: **OPEN (P3)** — flagged to owner.
+- Fix applied: paid-path copy softened across all 6 spots in `nf-articles.js` to "scored
+  against a fixed, published three-pillar rubric, grounded in real country data"; the
+  genuine determinism claim is retained only where true (the free homepage score is a pure
+  function). No false reproducibility claim remains for the paid search.
+- Status: **FIXED**.
 
 ---
 ### D-03 — KODA webhook has no timestamp / replay-window check (Stripe does)
