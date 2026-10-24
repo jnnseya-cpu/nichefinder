@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Saturday readiness check. Run from repo root: node scripts/preflight.mjs
 // Verifies deploy artifacts, runs both gateway test suites, and prints GO/NO-GO.
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 
 let ok = true;
@@ -23,10 +23,13 @@ try {
   line(Number(cfg) > 0, 'deploy switch NF_GATEWAY_URL present in nf-config.js');
 } catch { line(false, 'deploy switch missing'); }
 
-// free acquisition hook present
+// free acquisition hook present — assert the ACTUAL interactive widget, not a
+// marketing sentence (copy changes; the hook's wiring is what must exist): the
+// #freeScore container, the idea input, and the score button must all be there.
 try {
-  const hook = execSync('grep -c "Score your business idea free" frontend/index.html').toString().trim();
-  line(Number(hook) > 0, 'free Niche Score acquisition hook on homepage');
+  const idx = readFileSync('frontend/index.html', 'utf8');
+  const wired = /id="freeScore"/.test(idx) && /id="fsIdea"/.test(idx) && /id="fsGo"/.test(idx);
+  line(wired, 'free Niche Score acquisition hook wired on homepage (#freeScore/#fsIdea/#fsGo)');
 } catch { line(false, 'free score hook missing'); }
 
 // run the suites

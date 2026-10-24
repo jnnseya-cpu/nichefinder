@@ -1219,8 +1219,10 @@
         thinking.classList.remove('on'); gen.disabled = false; gen.textContent = 'Generate Niche Report';
         // With a real backend configured, never show canned demo results — that
         // masks failures. Insufficient paid ACU → prompt to top up; anything
-        // else → honest error. Demo data only in the fully offline demo.
-        if (window.NF_GATEWAY_URL) {
+        // else → honest error. Demo data (MOCKS) renders ONLY in the genuine
+        // offline demo (local host, no gateway); on a real host it is suppressed
+        // so a mis-set NF_GATEWAY_URL can never show fabricated niches as live.
+        if (window.NF_GATEWAY_URL || !window.NF_DEMO_ALLOWED) {
           var msg = String((err && err.message) || '');
           if (/\b402\b/.test(msg)) { NF.openTopup(searchCost, 'Niche discovery'); }
           // The analysis came back incomplete — the server released the hold, so

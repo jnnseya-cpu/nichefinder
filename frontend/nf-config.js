@@ -10,6 +10,22 @@
    wallet syncs to the server-side ACU ledger (P0 of the AI-OS roadmap). */
 window.NF_GATEWAY_URL = '';
 
+/* Production safety guard. The offline DEMO (built-in sample niches + a fake
+   localStorage wallet) must NEVER render on a real public host — if a deploy
+   forgets to set PUBLIC_ORIGIN (which injects NF_GATEWAY_URL above), real users
+   would otherwise see fabricated results and a fake balance presented as live.
+   Demo data is therefore allowed ONLY on a local/dev host with no gateway. On a
+   real host with no gateway, pages show honest "unavailable" states instead. */
+window.NF_IS_LOCAL_HOST = (function () {
+  try {
+    if (location.protocol === 'file:') return true;
+    var h = location.hostname || '';
+    return h === 'localhost' || h === '0.0.0.0' || h === '::1' || h === '[::1]' ||
+      /^127\./.test(h) || /^192\.168\./.test(h) || /^10\./.test(h) || /\.local$/i.test(h);
+  } catch (e) { return false; }
+})();
+window.NF_DEMO_ALLOWED = !window.NF_GATEWAY_URL && window.NF_IS_LOCAL_HOST;
+
 /* Wallet identity sent to the gateway. Replaced by real auth (JWT) in P1;
    until then a stable per-browser id keeps server balances consistent. */
 window.NF_WALLET_USER = (function () {

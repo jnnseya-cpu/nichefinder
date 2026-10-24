@@ -521,7 +521,7 @@ const server = http.createServer(async (req, res) => {
           : 'We couldn’t process this unsubscribe request. Please use the link from a recent email, or update your preferences in your account.'}</p>
         <p><a href="/settings.html" style="color:#8A6300;font-weight:700;text-decoration:none">Go to your account &rsaquo;</a></p>
       </div>`;
-    res.writeHead(ok ? 200 : 400, { 'content-type': 'text/html; charset=utf-8', 'access-control-allow-origin': '*' });
+    res.writeHead(ok ? 200 : 400, { ...SEC_HEADERS, 'content-type': 'text/html; charset=utf-8', 'access-control-allow-origin': '*' });
     return res.end(page);
   }
 
@@ -529,7 +529,10 @@ const server = http.createServer(async (req, res) => {
   if (method === 'GET' && url.pathname === '/v1/referrals/summary') {
     try {
       const user = url.searchParams.get('user');
-      requireCapabilityId(user);
+      // Ownership-gated: a referral summary exposes earnings (ACU/GBP). With
+      // session binding on, an account's summary needs that account's session;
+      // guest ids (no account) remain readable, as before.
+      requireOwner(req, user);
       return json(res, 200, referralSummary(user));
     } catch (err) { return handleError(res, err); }
   }
@@ -799,7 +802,7 @@ const server = http.createServer(async (req, res) => {
     if (!f || !abs.startsWith(AVATAR_DIR + path.sep)) return json(res, 404, { error: 'not_found' });
     try {
       const buf = fs.readFileSync(abs);
-      res.writeHead(200, { 'content-type': EXT_MIME[path.extname(f).slice(1).toLowerCase()] || 'application/octet-stream', 'cache-control': 'public, max-age=60' });
+      res.writeHead(200, { ...SEC_HEADERS, 'content-type': EXT_MIME[path.extname(f).slice(1).toLowerCase()] || 'application/octet-stream', 'cache-control': 'public, max-age=60' });
       return res.end(buf);
     } catch { return json(res, 404, { error: 'not_found' }); }
   }
@@ -1506,4 +1509,19 @@ server.listen(config.port, () => {
   // A production box that takes money but has no admin key can neither grant ACU
   // nor run admin ops (all such routes now 403). Warn loudly — it is a launch gap.
   if (billingEnforced() && !process.env.ADMIN_API_KEY) alertOps('started with NO ADMIN_API_KEY while billing is enforced — admin/credit/grant endpoints are CLOSED. Set ADMIN_API_KEY.');
+  // Account wallets are only locked to their owner's session when
+  // REQUIRE_WALLET_SESSION=1. With billing live and it OFF, the high-entropy op_
+  // id alone can read/spend an account's wallet (IDOR if an id leaks via logs or
+  // a shared link). The frontend already sends the bearer on every billed call,
+  // so enabling it is safe once the current frontend is deployed everywhere.
+  if (billingEnforced() && process.env.REQUIRE_WALLET_SESSION !== '1') {
+    alertOps('started with REQUIRE_WALLET_SESSION off while billing is enforced — account wallets are NOT bound to their owner session (a leaked op_ id can read/spend a balance). Set REQUIRE_WALLET_SESSION=1 once the token-sending frontend is live.');
+  }
+  // Predictable signing secrets: the human-challenge (anti-bot) and newsletter
+  // token secrets fall back to a committed dev string only if BOTH their own env
+  // and WALLET_STORE_KEY are unset. In production that makes anti-bot/unsubscribe
+  // tokens forgeable — WALLET_STORE_KEY is mandatory anyway, so flag its absence.
+  if (billingEnforced() && !process.env.WALLET_STORE_KEY) {
+    alertOps('started with NO WALLET_STORE_KEY while billing is enforced — money data is NOT encrypted at rest and anti-bot/newsletter signing falls back to a public dev secret. Set WALLET_STORE_KEY (openssl rand -hex 32).');
+  }
 });

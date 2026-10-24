@@ -37,7 +37,11 @@ function requireCap(user) {
   if (!CAP_RE.test(String(user || ''))) throw new GatewayError('A valid account id is required.', { status: 403, code: 'invalid_user_id' });
 }
 const key = (user, project, type) => `${user}|${project}|${type}`;
-const clean = (s) => String(s || '').slice(0, 80);
+// Strip the key delimiter so a crafted project/type containing "|" can't shift
+// namespace boundaries (e.g. project "a|b" + type "c" colliding with "a" + "b|c").
+// user is CAP_RE-validated (no "|"); project/type are app slugs, so this is a
+// defensive no-op in normal use.
+const clean = (s) => String(s || '').replace(/\|/g, '_').slice(0, 80);
 
 export function saveDoc({ user, project, type, content, version, title }) {
   requireCap(user);

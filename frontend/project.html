@@ -794,9 +794,17 @@
     if (btn) btn.classList.add('working');
     setBtn('GENERATING…');
 
-    if (!base){ // offline demo (no gateway): keep the flow working without AI
-      if (!NF.charge(cost, label, null)) { render(); return; }
-      finishDoc(a, cost, null, isRegen); return;
+    if (!base){
+      // Genuine offline demo (local/dev host only): keep the flow working with no
+      // AI. On a real host a missing gateway is a misconfiguration — never
+      // fabricate a document and present it as real; show an honest error.
+      if (window.NF_DEMO_ALLOWED){
+        if (!NF.charge(cost, label, null)) { render(); return; }
+        finishDoc(a, cost, null, isRegen); return;
+      }
+      restore(cost + ' ACU');
+      showToast('<b>Document generation is temporarily unavailable.</b> Please try again in a moment — you were not charged.');
+      return;
     }
 
     var sys = 'You are the Document Studio of Niche Finder, a venture-intelligence operating system. ' + DOC_SPECS[a.id] +

@@ -150,7 +150,8 @@ check('a frozen wallet is refused at spend time (402 wallet_frozen)', res.status
 console.log('— F3e/F5: referral commission reverses on refund, and is capped —');
 res = await post('/v1/auth/signup', { email: 'refr@leak.test', password: 'partnerpass1', ...(await humanProof()) });
 let sj = await res.json(); const REFERRER = sj.user.userId; const REFERRER_TOKEN = sj.token;
-const scode = await (await fetch(`${BASE}/v1/referrals/summary?user=${REFERRER}`)).json();
+// referral summary is ownership-gated (an account's earnings), so send the owner session
+const scode = await (await fetch(`${BASE}/v1/referrals/summary?user=${REFERRER}`, { headers: { authorization: 'Bearer ' + REFERRER_TOKEN } })).json();
 res = await post('/v1/auth/signup', { email: 'refe@leak.test', password: 'refereepass1', ref: scode.code, ...(await humanProof()) });
 const REFEREE = (await res.json()).user.userId;
 await signedWebhook({ id: 'evt_ref_buy', type: 'checkout.session.completed',

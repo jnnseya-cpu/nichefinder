@@ -528,7 +528,7 @@
     var user = window.NF_WALLET_USER;
     function set(id, v){ var el = document.getElementById(id); if (el) el.textContent = v; }
     if (base && user && typeof fetch === 'function'){
-      fetch(base + '/v1/referrals/summary?user=' + encodeURIComponent(user))
+      fetch(base + '/v1/referrals/summary?user=' + encodeURIComponent(user), { headers: (window.NF_AUTH ? NF_AUTH.authHeader() : {}) })
         .then(function(r){ return r.ok ? r.json() : null; })
         .then(function(s){
           if (!s) return;
