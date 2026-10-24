@@ -171,6 +171,7 @@
       <button class="tab" data-tab="content">Content &amp; SEO</button>
       <button class="tab" data-tab="growth">Growth</button>
       <button class="tab" data-tab="comms">Comms</button>
+      <button class="tab" data-tab="keys">API Keys</button>
       <button class="tab" data-tab="security">Security &amp; System</button>
     </div>
 
@@ -271,6 +272,17 @@
         <div style="display:flex;gap:10px;align-items:center"><button class="btn" type="submit" id="mail-btn">Send test email</button> <span class="msg" id="mail-msg"></span></div>
       </form>
     </div>
+
+    <!-- API KEYS -->
+    <div class="panel hide" data-panel="keys">
+      <p style="color:var(--muted);font-size:.85rem;margin:2px 0 4px;max-width:70ch">Set the platform's integration keys here instead of editing the server env file. Values are <b>encrypted at rest</b> and never shown back in full. A key set in the server's env file always takes precedence (shown as <b>locked</b>). AI-provider keys apply immediately; payment/email/SEO keys apply after a restart.</p>
+      <div style="display:flex;gap:10px;align-items:center;margin:8px 0 4px">
+        <button class="btn ghost" id="keys-refresh">Refresh</button>
+        <button class="btn ghost danger" id="keys-restart">Restart gateway to apply</button>
+        <span class="msg" id="keys-msg"></span>
+      </div>
+      <div id="keys-wrap"><div class="empty">Loading…</div></div>
+    </div>
   </section>
 </div>
 
@@ -357,6 +369,7 @@
       if (name === 'leads') loadLeads();
       if (name === 'content') loadContent();
       if (name === 'growth') loadGrowth();
+      if (name === 'keys') loadKeys();
       if (name === 'security') loadSecurity();
     });
   });
@@ -628,6 +641,57 @@
         if (!res.ok) { setMsg(el('mail-msg'), (res.data && (res.data.message || res.data.error)) || 'Send failed.', 'err'); return; }
         setMsg(el('mail-msg'), 'Sent to ' + (res.data.to || 'your admin email') + '.', 'ok');
       }).catch(function () { btn.disabled = false; btn.textContent = 'Send test email'; setMsg(el('mail-msg'), 'Network error.', 'err'); });
+  });
+
+  /* ---------- API keys ---------- */
+  function keyRow(k) {
+    var badge = k.source === 'env' ? '<span class="count" style="color:var(--gold)">server env (locked)</span>'
+      : k.source === 'admin' ? '<span class="count" style="color:#a7ded6">set here</span>'
+      : '<span class="count">not set</span>';
+    var preview = k.set ? '<span class="uid">' + esc(k.preview) + '</span>' : '';
+    var live = k.live ? ' · <span class="count">applies live</span>' : ' · <span class="count">restart to apply</span>';
+    var controls = k.locked
+      ? '<span class="count" style="font-size:.78rem">Managed in the server env file — edit it there to change this key.</span>'
+      : '<input type="' + (k.sensitive ? 'password' : 'text') + '" data-key="' + esc(k.name) + '" placeholder="' + (k.set ? 'Replace value…' : 'Enter value…') + '" style="flex:1;min-width:180px">' +
+        '<button class="btn" data-setkey="' + esc(k.name) + '">Save</button>' +
+        (k.set ? '<button class="btn ghost danger" data-clearkey="' + esc(k.name) + '">Clear</button>' : '');
+    return '<div style="border:1px solid var(--line-soft);border-radius:8px;padding:10px 12px;margin-bottom:8px">' +
+      '<div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap"><b style="font-size:.9rem">' + esc(k.label) + '</b><span>' + badge + preview + live + '</span></div>' +
+      '<div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">' + controls + '</div></div>';
+  }
+  function loadKeys() {
+    api('/v1/admin/keys', { headers: hdr() }).then(function (res) {
+      if (!res.ok) return; var d = res.data; var groups = {};
+      (d.keys || []).forEach(function (k) { (groups[k.group] = groups[k.group] || []).push(k); });
+      var html = '';
+      if (!d.encryptionAvailable) html += '<div class="msg err" style="display:block;margin-bottom:12px">' + esc(d.note) + '</div>';
+      Object.keys(groups).forEach(function (g) {
+        html += '<h1 style="font-size:.95rem;margin:14px 0 8px">' + esc(g) + '</h1>' + groups[g].map(keyRow).join('');
+      });
+      el('keys-wrap').innerHTML = html || '<div class="empty">No managed keys.</div>';
+    }).catch(function () {});
+  }
+  function saveKey(name, value) {
+    setMsg(el('keys-msg'), '', '');
+    api('/v1/admin/keys', { method: 'POST', headers: hdr(true), body: JSON.stringify({ name: name, value: value }) })
+      .then(function (res) {
+        if (!res.ok) { setMsg(el('keys-msg'), (res.data && (res.data.message || res.data.error)) || 'Save failed.', 'err'); return; }
+        setMsg(el('keys-msg'), (value ? 'Saved ' : 'Cleared ') + name + (res.data.key && res.data.key.live && value ? ' — applied immediately.' : value ? ' — restart to apply.' : '.'), 'ok');
+        loadKeys();
+      }).catch(function () { setMsg(el('keys-msg'), 'Network error.', 'err'); });
+  }
+  el('keys-wrap').addEventListener('click', function (e) {
+    var sb = e.target.closest ? e.target.closest('[data-setkey]') : null;
+    var cb = e.target.closest ? e.target.closest('[data-clearkey]') : null;
+    if (sb) { var name = sb.getAttribute('data-setkey'); var inp = el('keys-wrap').querySelector('[data-key="' + name + '"]'); var v = inp ? inp.value.trim() : ''; if (!v) { setMsg(el('keys-msg'), 'Enter a value first.', 'err'); return; } saveKey(name, v); }
+    else if (cb) { var cn = cb.getAttribute('data-clearkey'); if (confirm('Clear ' + cn + '? The integration will stop working until a new value is set (or the env file provides one).')) saveKey(cn, ''); }
+  });
+  el('keys-refresh').addEventListener('click', loadKeys);
+  el('keys-restart').addEventListener('click', function () {
+    if (!confirm('Restart the gateway now to apply payment/email/SEO key changes? It will be back in a few seconds; in-flight requests may drop.')) return;
+    api('/v1/admin/restart', { method: 'POST', headers: hdr(true), body: '{}' })
+      .then(function (res) { setMsg(el('keys-msg'), res.ok ? 'Restarting… refresh in ~5s.' : 'Restart failed.', res.ok ? 'ok' : 'err'); })
+      .catch(function () { setMsg(el('keys-msg'), 'Restarting… refresh in ~5s.', 'ok'); });
   });
 
   /* ---------- boot ---------- */

@@ -1,3 +1,6 @@
+// FIRST import: hydrates process.env from the encrypted admin secret store
+// before any module below reads its keys at load time (see secrets.js).
+import { statusList as secretStatusList, setSecret, clearSecret, encryptionAvailable } from './secrets.js';
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -976,6 +979,47 @@ const server = http.createServer(async (req, res) => {
       const body = JSON.parse((await readBody(req)) || '{}');
       return json(res, 200, unpublishArticle(body.slug));
     } catch (err) { return handleError(res, err); }
+  }
+
+  // ---- Admin: integration API keys (encrypted store; see secrets.js) ----
+  // Secrets are NEVER returned — only masked status. Env always overrides.
+  if (method === 'GET' && url.pathname === '/v1/admin/keys') {
+    const s = adminOf();
+    if (!s) return json(res, 403, { error: 'admin_required' });
+    return json(res, 200, {
+      keys: secretStatusList(),
+      encryptionAvailable: encryptionAvailable(),
+      note: encryptionAvailable()
+        ? 'Keys are encrypted at rest with WALLET_STORE_KEY. A key set in the server env file always overrides the value here.'
+        : 'Set WALLET_STORE_KEY (64 hex) in the server env before managing keys — without it secrets cannot be encrypted and this store is disabled.',
+    });
+  }
+  if (req.method === 'POST' && url.pathname === '/v1/admin/keys') {
+    try {
+      const s = adminOf();
+      if (!s) return json(res, 403, { error: 'admin_required' });
+      const body = JSON.parse((await readBody(req)) || '{}');
+      const name = String(body.name || '');
+      const st = (body.value == null || String(body.value).trim() === '')
+        ? clearSecret(name)
+        : setSecret(name, body.value);
+      console.log(`[admin] ${s.email} ${body.value ? 'set' : 'cleared'} integration key ${name}`);
+      return json(res, 200, { ok: true, key: st });
+    } catch (err) {
+      if (err && err.code === 'unknown_key') return json(res, 400, { error: 'unknown_key', message: 'That key is not admin-managed.' });
+      if (err && err.code === 'encryption_unavailable') return json(res, 503, { error: 'encryption_unavailable', message: 'WALLET_STORE_KEY is not set, so secrets cannot be encrypted. Set it in the server env first.' });
+      return handleError(res, err);
+    }
+  }
+  // Apply key changes that are cached at boot (payments/email/etc.): a deliberate,
+  // admin-triggered graceful restart. systemd (Restart=always) brings it back in
+  // seconds. AI-provider keys already apply live and do NOT need this.
+  if (req.method === 'POST' && url.pathname === '/v1/admin/restart') {
+    const s = adminOf();
+    if (!s) return json(res, 403, { error: 'admin_required' });
+    console.log(`[admin] ${s.email} requested a gateway restart to apply config`);
+    setTimeout(() => process.exit(0), 400); // respond first, then exit; supervisor restarts us
+    return json(res, 200, { restarting: true, message: 'Gateway is restarting to apply changes; it will be back in a few seconds.' });
   }
 
   if (req.method === 'POST' && url.pathname === '/v1/admin/grant') {

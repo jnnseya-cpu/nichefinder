@@ -1,0 +1,9 @@
+PASS admin login  — status 200
+PASS API Keys tab renders grouped keys  — groups=6 inputs=32
+PASS env-provided STRIPE_SECRET_KEY shown as locked (no editable input)
+PASS saving an AI key confirms it applied immediately  — Saved ANTHROPIC_API_KEY — applied immediately.
+PASS key now shows "set here" + masked, raw value NOT in DOM  — leak=false
+PASS claude is a LIVE provider after UI save (no restart)  — ["claude"]
+PASS no JS errors on API Keys tab
+
+KEYS UI: 7 pass, 0 fail

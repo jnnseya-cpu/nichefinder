@@ -102,6 +102,28 @@ sudo chmod 600 /etc/nichefinder.env   # readable only by root
 sudo mkdir -p /opt/nichefinder/backend/gateway/data
 ```
 
+### Setting the other API keys from the admin console (no SSH needed)
+
+Only four things **must** live in this env file, because they bootstrap
+everything else and so cannot be stored in the app: `WALLET_STORE_KEY` (the
+master encryption key), `ADMIN_EMAIL` + `ADMIN_PASSWORD` (the admin login), and
+`PUBLIC_ORIGIN`. Everything else — the **AI provider keys** (Anthropic / Gemini /
+OpenAI), **Stripe**, **KODA**, **SMTP**, **Search Console** and **Meta** — can be
+set from **Admin Console → API Keys** once the gateway is running, and you never
+have to touch the env file again for them.
+
+How it works: values entered there are **encrypted at rest** (AES-256-GCM under
+`WALLET_STORE_KEY`) in `data/secrets.json`, and loaded into the environment on
+each start. They are never shown back in full — only a masked preview.
+**A key set in this env file always wins** (the console shows it as *locked*), so
+env stays authoritative wherever you prefer it. **AI-provider keys apply
+immediately**; payment/email/SEO keys are read at boot, so after setting them use
+the console's **"Restart gateway to apply"** button (systemd restarts it in
+seconds). Security note: this keeps provider secrets encrypted, but a stored
+secret is reachable by anyone who holds BOTH the admin login and the box's
+`WALLET_STORE_KEY` + data dir — so protect the admin account and keep
+`WALLET_STORE_KEY` only in the env file.
+
 ## 4. Run it as a service (systemd — auto-restart, survives reboot)
 
 ```bash
