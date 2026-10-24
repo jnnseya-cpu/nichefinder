@@ -1,0 +1,11 @@
+PASS J1 free score renders a number + verdict  — 6.3CONDITIONAL GODirectional read for solar phone charging kiosks in Nigeria — f
+PASS J1 no JS errors on landing
+PASS J2 signup creates a session (PoW solved in-browser)  — wallet=op_zbal9qghjyatddp7
+PASS J2 no JS errors during signup
+PASS SETUP credit 500 ACU to account  — status 200
+PASS J3a wallet synced the credited balance  — paid=500
+PASS J3 full search renders ranked niche cards (mock AI)  — cards=3 topupModal=false msg=Mock Venture Opportunity AlphaMOCK SECTOR · MOCK C
+PASS J3 no JS errors during search
+PASS J4 dashboard loads clean
+
+WALKTHROUGH: 9 pass, 0 fail

@@ -1,0 +1,6 @@
+PASS TOCTOU: ≤3 of 12 concurrent charges succeed  — ok=3 refused=9
+PASS TOCTOU: no free rides (ok+refused=12)  — ok=3 refused=9
+PASS TOCTOU: balance never negative, reconciles (3-ok)  — bal=0 ok=3
+PASS ledger debits reconcile with spend  — debits=0 ok=3 entries=5
+
+FINANCIAL: 4 pass, 0 fail

@@ -1,0 +1,18 @@
+PASS A1 admin credit WITHOUT key → 403  — got 403
+PASS A1b admin credit WRONG key → 403  — got 403
+PASS SETUP signup A ok  — status 200
+PASS IDOR read A wallet w/o token → 403  — got 403
+PASS IDOR spend A wallet w/o token → 403  — got 403
+PASS IDOR read A wallet with B session → 403  — got 403
+PASS owner A reads own wallet → 200, 500 paid  — paid 500
+PASS malformed JSON → 400 invalid_json  — got 400
+PASS oversized body (>2MB) → rejected (socket closed at cap)  — UND_ERR_SOCKET
+PASS stripe webhook BAD signature → rejected (4xx)  — got 400
+PASS stripe valid webhook credits 500  — {"received":true,"credited":500,"replayed":false,"user":"op_m4qor1xhpnze8lry"}
+PASS stripe webhook REPLAY is idempotent (not double-credited)  — {"received":true,"credited":500,"replayed":true,"user":"op_m4qor1xhpnze8lry"}
+PASS security headers present (HSTS/nosniff/frame/referrer/CSP)  — csp=frame-ancestors 'self'; base-uri 'self'; object-src 'none'
+PASS CORS wildcard with NO allow-credentials (safe)
+PASS media path traversal blocked (403/404)  — got 403
+PASS global rate limit kicks in (429 after ~120/min)  — 429count=33
+
+ADVERSARIAL: 16 pass, 0 fail
