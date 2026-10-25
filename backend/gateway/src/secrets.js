@@ -36,6 +36,8 @@ export const MANAGED = [
   { name: 'STRIPE_WEBHOOK_SECRET', label: 'Stripe webhook signing secret', group: 'Payments — cards (Stripe)', sensitive: true, live: false },
   { name: 'KODA_SECRET_KEY', label: 'KODA secret key', group: 'Payments — mobile money (KODA)', sensitive: true, live: false },
   { name: 'KODA_WEBHOOK_SECRET', label: 'KODA webhook secret', group: 'Payments — mobile money (KODA)', sensitive: true, live: false },
+  { name: 'BITRIPAY_SECRET_KEY', label: 'BitriPay secret key', group: 'Payments — BitriPay', sensitive: true, live: false },
+  { name: 'BITRIPAY_WEBHOOK_SECRET', label: 'BitriPay webhook secret', group: 'Payments — BitriPay', sensitive: true, live: false },
   { name: 'SMTP_HOST', label: 'SMTP host', group: 'Email (SMTP)', sensitive: false, live: false },
   { name: 'SMTP_PORT', label: 'SMTP port', group: 'Email (SMTP)', sensitive: false, live: false },
   { name: 'SMTP_USER', label: 'SMTP username / address', group: 'Email (SMTP)', sensitive: false, live: false },

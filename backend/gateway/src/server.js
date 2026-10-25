@@ -1,6 +1,8 @@
 // FIRST import: hydrates process.env from the encrypted admin secret store
 // before any module below reads its keys at load time (see secrets.js).
 import { statusList as secretStatusList, setSecret, clearSecret, encryptionAvailable } from './secrets.js';
+import { AGENTS, registrySummary } from './agents.manifest.js';
+import { connectorHealth } from './connector.js';
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -12,6 +14,7 @@ import { route, availableProviders, meterAcu } from './router.js';
 import { getWallet, getLedger, charge, credit, grant, summary, deleteWallet, migratePaid, PACKAGES, isFrozen, reserve, settleHold, releaseHold } from './wallet.js';
 import { createCheckout, createSubscriptionCheckout, handleWebhook, paymentsConfigured } from './payments.js';
 import { createKodaIntent, handleKodaWebhook, kodaConfigured } from './koda.js';
+import { createBitriPayIntent, handleBitriPayWebhook, bitriPayConfigured } from './bitripay.js';
 import { summaryFor as referralSummary, listPartners, deleteUserData as deleteReferralData } from './referrals.js';
 import { saveDoc, getDoc, listDocs, deleteUserDocs } from './docstore.js';
 import { issueChallenge, verifyChallenge } from './human.js';
@@ -459,6 +462,7 @@ const server = http.createServer(async (req, res) => {
       providers: availableProviders(),
       payments: paymentsConfigured(),
       koda: kodaConfigured(),
+      bitripay: bitriPayConfigured(),
       fallbackChain: config.fallbackChain,
       maintenance: maintenanceOn,
     });
@@ -505,6 +509,24 @@ const server = http.createServer(async (req, res) => {
     try {
       const raw = await readBody(req);
       return json(res, 200, handleKodaWebhook(raw, req.headers['x-koda-signature']));
+    } catch (err) { metrics.webhookFailures += 1; return handleError(res, err); }
+  }
+
+  // ---- payments: BitriPay door (hosted checkout intent + settlement webhook) ----
+  if (req.method === 'POST' && url.pathname === '/v1/payments/bitripay-intent') {
+    try {
+      const body = JSON.parse((await readBody(req)) || '{}');
+      const origin = process.env.PUBLIC_ORIGIN || `${req.headers['x-forwarded-proto'] || 'http'}://${req.headers.host}`;
+      return json(res, 200, await createBitriPayIntent({ user: body.user, packageId: body.packageId, origin }));
+    } catch (err) {
+      console.error(`[bitripay-intent] failed: code=${err?.code || '?'} status=${err?.status ?? '?'} :: ${err?.message || err}`);
+      return handleError(res, err);
+    }
+  }
+  if (req.method === 'POST' && url.pathname === '/v1/payments/bitripay-webhook') {
+    try {
+      const raw = await readBody(req);
+      return json(res, 200, handleBitriPayWebhook(raw, req.headers['bitripay-signature']));
     } catch (err) { metrics.webhookFailures += 1; return handleError(res, err); }
   }
 
@@ -981,6 +1003,13 @@ const server = http.createServer(async (req, res) => {
     } catch (err) { return handleError(res, err); }
   }
 
+  // ---- Admin: agent registry (governance board) + connector health ----
+  if (method === 'GET' && url.pathname === '/v1/admin/agents') {
+    const s = adminOf();
+    if (!s) return json(res, 403, { error: 'admin_required' });
+    return json(res, 200, { agents: AGENTS, summary: registrySummary(), connectors: connectorHealth() });
+  }
+
   // ---- Admin: integration API keys (encrypted store; see secrets.js) ----
   // Secrets are NEVER returned — only masked status. Env always overrides.
   if (method === 'GET' && url.pathname === '/v1/admin/keys') {
@@ -1086,6 +1115,7 @@ const server = http.createServer(async (req, res) => {
       ...metricsView(),
       payments: paymentsConfigured(),
       koda: kodaConfigured(),
+      bitripay: bitriPayConfigured(),
       providers: availableProviders(),
       maintenance: maintenanceOn,
       walletCount: sum.walletCount,

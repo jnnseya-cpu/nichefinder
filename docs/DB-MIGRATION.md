@@ -7,6 +7,17 @@ invariants. Remaining before a production flip: the operational cutover (Node 22
 upgrade, backfill, dual-run) and migrating auth/referrals (phase 3).
 **Owner:** platform/eng. **Blocker addressed:** B2 (money on unbacked, non-transactional flat files).
 
+> **Verified (2026-10-25):** the `sqlite` backend boots and serves money operations
+> live (credit → durable read-back; `wallets.db`/`auth.db`/`referrals.db` created),
+> and the `wallet-sqlite`, `auth-referrals-sqlite`, `dbmigrate` and `docmigrate`
+> suites pass in CI. **Honest caveat:** `node:sqlite` is still flagged
+> *experimental* in Node 22 (the runtime prints an `ExperimentalWarning`). It is
+> production-usable and ACID, but because of that flag the **file backend remains
+> the conservative default** and the cutover is a deliberate, reversible operator
+> opt-in (`STORE_BACKEND=sqlite`), not an automatic change. Move to Postgres when
+> HA/concurrency demand it; the adapter seam makes that a backend swap, not a
+> rewrite.
+
 ## Why
 
 The system of record is flat JSON (`wallet.js`, `auth.js`, `referrals.js`, …), each
