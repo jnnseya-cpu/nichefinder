@@ -1,0 +1,8 @@
+PASS Agents tab: summary chips render  — chips=4
+PASS Agents tab: registry rows render with statuses  — rows=18
+PASS Agents tab: connector-health section present
+PASS Agents tab: no JS errors
+PASS top-up modal shows Card + Mobile money + BitriPay  — ["stripe","koda","bitripay"]
+PASS BitriPay method selectable, no JS error
+
+UI2: 6 pass, 0 fail

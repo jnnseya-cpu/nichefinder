@@ -203,9 +203,10 @@
     // gateway is present; offline demo credits locally with no method choice.
     var payMethod = 'stripe';
     var methodToggle = gatewayBase() ?
-      '<div style="display:flex;gap:8px;margin-top:16px" data-methods>' +
-        '<button data-method="stripe" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(232,166,26,.5);background:rgba(232,166,26,.08);color:#E8ECF4;cursor:pointer;font-size:.85rem">Card</button>' +
-        '<button data-method="koda" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);color:#E8ECF4;cursor:pointer;font-size:.85rem">Mobile money</button>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:16px" data-methods>' +
+        '<button data-method="stripe" style="flex:1;min-width:92px;padding:10px;border-radius:10px;border:1px solid rgba(232,166,26,.5);background:rgba(232,166,26,.08);color:#E8ECF4;cursor:pointer;font-size:.85rem">Card</button>' +
+        '<button data-method="koda" style="flex:1;min-width:92px;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);color:#E8ECF4;cursor:pointer;font-size:.85rem">Mobile money</button>' +
+        '<button data-method="bitripay" style="flex:1;min-width:92px;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);color:#E8ECF4;cursor:pointer;font-size:.85rem">BitriPay</button>' +
       '</div>' : '';
     overlay.innerHTML =
       '<div style="max-width:520px;width:100%;background:#0E1626;border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:26px">' +
@@ -216,7 +217,7 @@
         '</div>' + note + methodToggle +
         '<div style="display:grid;gap:10px;margin-top:12px">' + cards + '</div>' +
         '<p data-buyerr style="color:#C4604F;font-size:.82rem;margin:12px 0 0"></p>' +
-        '<p style="font-size:.7rem;color:#8B93A5;margin:10px 0 0">' + (gatewayBase() ? 'Secure payment — choose Card (Stripe) or Mobile money (KODA), then select a package. You\'ll be redirected to complete payment; ACUs are credited once payment is confirmed.' : 'Offline demo — selecting a package credits your local wallet instantly.') + '</p>' +
+        '<p style="font-size:.7rem;color:#8B93A5;margin:10px 0 0">' + (gatewayBase() ? 'Secure payment — choose Card (Stripe), Mobile money (KODA) or BitriPay, then select a package. You\'ll be redirected to complete payment; ACUs are credited once payment is confirmed.' : 'Offline demo — selecting a package credits your local wallet instantly.') + '</p>' +
       '</div>';
     overlay.addEventListener('click', function (e) {
       if (e.target === overlay || e.target.closest('[data-close]')) { closeTopup(); return; }
@@ -244,7 +245,9 @@
         btn.style.opacity = '.6'; if (errEl) errEl.textContent = '';
         // Conversion event (consent-gated via nf-tags.js): InitiateCheckout.
         try { if (window.NF_TRACK) NF_TRACK.startCheckout({ value: pkg.priceGBP, currency: 'GBP', packageId: pkg.id, method: payMethod }); } catch (e) {}
-        var endpoint = payMethod === 'koda' ? '/v1/payments/koda-intent' : '/v1/payments/checkout';
+        var endpoint = payMethod === 'koda' ? '/v1/payments/koda-intent'
+          : payMethod === 'bitripay' ? '/v1/payments/bitripay-intent'
+          : '/v1/payments/checkout';
         fetch(base + endpoint, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
