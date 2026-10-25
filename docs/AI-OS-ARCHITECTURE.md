@@ -1,6 +1,11 @@
 # Niche Finder AI-OS — Production Architecture & Developer Document
 
-**Version 1.0 · July 2026 · Status: Build-ready specification**
+**Version 1.0 · July 2026 · Status: Build-ready specification (target architecture)**
+
+> For an honest map of **what is shipped and running today vs. what is still on
+> paper** — and the sequencing to get from here to the target below — see
+> **`docs/AI-OS-BLUEPRINT-v2.md`** (current-state reconciliation). This v1.0 file
+> remains the target-architecture source of truth; nothing here is removed.
 
 This document turns the Niche Finder prototype (static multi-page front-end + zero-framework AI gateway) into a production-grade **AI Infrastructure Operating System for venture creation**. Nothing in the existing concept is removed: the country-first search, the ≤ £10k/$10k/€10k capital cap, the deterministic PRS/CS/PSS/BPS scoring, the ACU prepaid economy (£1 = 100 ACU), the Build Hub asset factory, the Super Admin OS, and the multi-provider AI gateway are all preserved and are the foundation every section below builds on.
 
