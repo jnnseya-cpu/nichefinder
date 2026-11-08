@@ -1,7 +1,8 @@
 # Stable State — locked snapshot
 
 **Locked:** 2026-11-08 · branch `claude/niche-finder-overview-mj1rmw`
-**Tag:** `stable-2026-11-08` · **commit:** `c2cbc9e`
+**Durable marker:** remote branch `stable-2026-11-08-lock` · **commit:** `c2cbc9e`
+**Local annotated tag:** `stable-2026-11-08` (also at `c2cbc9e`; this session's GitHub App denies tag-ref pushes, so the remote marker is a branch — same immutable snapshot)
 
 This file records a verified, stable point so nothing silently changes or drops.
 Everything below was committed, pushed, and green at the moment of locking.
@@ -55,6 +56,6 @@ See `launch-audit/human-actions.md`: deploy + rollback drill; prod env incl. `RE
 
 ## To restore this exact state later
 ```
-git fetch origin && git checkout stable-2026-11-08    # or: git checkout c2cbc9e
+git fetch origin && git checkout stable-2026-11-08-lock    # or: git checkout c2cbc9e
 ```
-Any follow-up work branches forward from here; this tag does not move.
+Any follow-up work branches forward from here; this marker does not move.
