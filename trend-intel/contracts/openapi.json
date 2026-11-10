@@ -1,0 +1,496 @@
+{
+  "components": {
+    "schemas": {
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "Observation": {
+        "properties": {
+          "metric": {
+            "title": "Metric",
+            "type": "string"
+          },
+          "observed_at": {
+            "title": "Observed At",
+            "type": "string"
+          },
+          "revision": {
+            "default": 1,
+            "title": "Revision",
+            "type": "integer"
+          },
+          "source_family": {
+            "title": "Source Family",
+            "type": "string"
+          },
+          "source_id": {
+            "title": "Source Id",
+            "type": "string"
+          },
+          "source_record_id": {
+            "title": "Source Record Id",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "number"
+          }
+        },
+        "required": [
+          "source_id",
+          "source_record_id",
+          "source_family",
+          "observed_at",
+          "metric",
+          "value"
+        ],
+        "title": "Observation",
+        "type": "object"
+      },
+      "ObservationBatch": {
+        "properties": {
+          "observations": {
+            "items": {
+              "$ref": "#/components/schemas/Observation"
+            },
+            "maxItems": 500,
+            "title": "Observations",
+            "type": "array"
+          }
+        },
+        "required": [
+          "observations"
+        ],
+        "title": "ObservationBatch",
+        "type": "object"
+      },
+      "ScoreRequest": {
+        "properties": {
+          "coverage": {
+            "title": "Coverage",
+            "type": "number"
+          },
+          "demand": {
+            "title": "Demand",
+            "type": "number"
+          },
+          "freshness": {
+            "title": "Freshness",
+            "type": "number"
+          },
+          "readiness": {
+            "title": "Readiness",
+            "type": "number"
+          },
+          "source_quality": {
+            "title": "Source Quality",
+            "type": "number"
+          },
+          "source_record_ids": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Source Record Ids",
+            "type": "array"
+          },
+          "timing": {
+            "title": "Timing",
+            "type": "number"
+          },
+          "topic": {
+            "title": "Topic",
+            "type": "string"
+          },
+          "vetoes": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Vetoes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "topic",
+          "demand",
+          "timing",
+          "readiness",
+          "source_quality",
+          "coverage",
+          "freshness"
+        ],
+        "title": "ScoreRequest",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "Reference API (spec \u00a716). Keyless core workflow.",
+    "title": "Trend Intelligence AI",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/healthz": {
+      "get": {
+        "operationId": "healthz_healthz_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Healthz"
+      }
+    },
+    "/v1/briefs:effective": {
+      "get": {
+        "operationId": "effective_brief_v1_briefs_effective_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "market",
+            "required": true,
+            "schema": {
+              "title": "Market",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "locale",
+            "required": true,
+            "schema": {
+              "title": "Locale",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "topic_id",
+            "required": true,
+            "schema": {
+              "title": "Topic Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-installation",
+            "required": false,
+            "schema": {
+              "title": "X-Installation",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Effective Brief"
+      }
+    },
+    "/v1/entitlement": {
+      "get": {
+        "operationId": "get_entitlement_v1_entitlement_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-installation",
+            "required": false,
+            "schema": {
+              "title": "X-Installation",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Entitlement"
+      }
+    },
+    "/v1/experiments/{experiment_id}": {
+      "get": {
+        "operationId": "experiment_v1_experiments__experiment_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "experiment_id",
+            "required": true,
+            "schema": {
+              "title": "Experiment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-installation",
+            "required": false,
+            "schema": {
+              "title": "X-Installation",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Experiment"
+      }
+    },
+    "/v1/fixtures": {
+      "get": {
+        "operationId": "fixtures_v1_fixtures_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Fixtures"
+      }
+    },
+    "/v1/observations:batch": {
+      "post": {
+        "operationId": "observations_batch_v1_observations_batch_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-installation",
+            "required": false,
+            "schema": {
+              "title": "X-Installation",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ObservationBatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Observations Batch"
+      }
+    },
+    "/v1/score": {
+      "post": {
+        "operationId": "score_v1_score_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-installation",
+            "required": false,
+            "schema": {
+              "title": "X-Installation",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScoreRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Score"
+      }
+    },
+    "/v1/sources": {
+      "get": {
+        "operationId": "sources_v1_sources_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-installation",
+            "required": false,
+            "schema": {
+              "title": "X-Installation",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Sources"
+      }
+    }
+  }
+}
