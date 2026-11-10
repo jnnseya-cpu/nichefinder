@@ -26,6 +26,7 @@ import { getSearchConsole, gscConfigured } from './search-console.js';
 import { marketGrounding, marketDataStatus, probe as marketProbe } from './marketdata.js';
 import { getShowcase, setShowcase, clearShowcase } from './showcase.js';
 import { startNewsletterScheduler, sendNewsletterOnce, handleUnsubscribe } from './newsletter.js';
+import * as trends from './trends.js';
 
 const MAX_BODY_BYTES = 2 * 1024 * 1024;
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -1010,6 +1011,107 @@ const server = http.createServer(async (req, res) => {
     return json(res, 200, { agents: AGENTS, summary: registrySummary(), connectors: connectorHealth() });
   }
 
+  // ---- Admin: Trend Intelligence (embedded, invisible to end users) ----
+  // Operator-only governance over the background control layer. No user-facing
+  // surface: these endpoints are admin-gated and the engine otherwise runs
+  // silently (detection/scoring/shadow drafts) via trends.startTrendsScheduler.
+  if (method === 'GET' && url.pathname === '/v1/admin/trends') {
+    if (!adminOf()) return json(res, 403, { error: 'admin_required' });
+    return json(res, 200, trends.trendsDashboard());
+  }
+  if (req.method === 'POST' && url.pathname === '/v1/admin/trends/profile') {
+    try {
+      if (!adminOf()) return json(res, 403, { error: 'admin_required' });
+      const body = JSON.parse((await readBody(req)) || '{}');
+      return json(res, 200, trends.setProfile(body));
+    } catch (err) { return handleError(res, err); }
+  }
+  if (req.method === 'POST' && url.pathname === '/v1/admin/trends/source') {
+    try {
+      if (!adminOf()) return json(res, 403, { error: 'admin_required' });
+      const b = JSON.parse((await readBody(req)) || '{}');
+      return json(res, 200, trends.registerSource(b.id, { access_path: b.access_path, family: b.family, available: b.available }));
+    } catch (err) { return handleError(res, err); }
+  }
+  if (req.method === 'POST' && url.pathname === '/v1/admin/trends/observations') {
+    try {
+      if (!adminOf()) return json(res, 403, { error: 'admin_required' });
+      const b = JSON.parse((await readBody(req)) || '{}');
+      return json(res, 200, trends.ingestObservations(b.observations || b));
+    } catch (err) { return handleError(res, err); }
+  }
+  if (req.method === 'POST' && url.pathname === '/v1/admin/trends/score') {
+    try {
+      if (!adminOf()) return json(res, 403, { error: 'admin_required' });
+      const b = JSON.parse((await readBody(req)) || '{}');
+      return json(res, 200, trends.scoreTopic(b));
+    } catch (err) { return handleError(res, err); }
+  }
+  if (req.method === 'POST' && url.pathname === '/v1/admin/trends/brief') {
+    try {
+      if (!adminOf()) return json(res, 403, { error: 'admin_required' });
+      const b = JSON.parse((await readBody(req)) || '{}');
+      return json(res, 200, trends.createBrief(b.brief || b, { status: b.status || 'approved' }));
+    } catch (err) { return handleError(res, err); }
+  }
+  if (req.method === 'POST' && url.pathname === '/v1/admin/trends/detect') {
+    if (!adminOf()) return json(res, 403, { error: 'admin_required' });
+    return json(res, 200, trends.runDetectionCycle());
+  }
+  if (req.method === 'POST' && url.pathname === '/v1/admin/trends/freeze') {
+    try {
+      if (!adminOf()) return json(res, 403, { error: 'admin_required' });
+      const b = JSON.parse((await readBody(req)) || '{}');
+      return json(res, 200, { frozen: trends.setFreeze(b.on !== false) });
+    } catch (err) { return handleError(res, err); }
+  }
+  // Owned-surface activation (approval-gated): propose -> approve -> execute -> rollback.
+  if (req.method === 'POST' && url.pathname === '/v1/admin/trends/page') {
+    try {
+      const s = adminOf();
+      if (!s) return json(res, 403, { error: 'admin_required' });
+      const b = JSON.parse((await readBody(req)) || '{}');
+      const page = trends.createPage(b.asset_id, b.fields, { approved: b.approved });
+      if (b.approved) trends.approvePage(b.asset_id);
+      return json(res, 200, page);
+    } catch (err) { return handleError(res, err); }
+  }
+  if (req.method === 'POST' && url.pathname === '/v1/admin/trends/action') {
+    try {
+      const s = adminOf();
+      if (!s) return json(res, 403, { error: 'admin_required' });
+      const b = JSON.parse((await readBody(req)) || '{}');
+      const briefDoc = trends.effectiveBrief({ market: b.market, locale: b.locale, topic_id: b.topic_id });
+      if (!briefDoc) return json(res, 409, { error: 'no_effective_brief', message: 'No fresh approved brief for that scope.' });
+      return json(res, 200, trends.proposeAction({ briefDoc, channel: b.channel, action_kind: b.action_kind, target_id: b.target_id, expected_revision: b.expected_revision, patch: b.patch, author: s.email }));
+    } catch (err) { return handleError(res, err); }
+  }
+  if (req.method === 'POST' && url.pathname === '/v1/admin/trends/action/approve') {
+    try {
+      const s = adminOf();
+      if (!s) return json(res, 403, { error: 'admin_required' });
+      const b = JSON.parse((await readBody(req)) || '{}');
+      return json(res, 200, trends.approveAction(b.action_id, { approver: s.email, payload_hash: b.payload_hash }));
+    } catch (err) { return handleError(res, err); }
+  }
+  if (req.method === 'POST' && url.pathname === '/v1/admin/trends/action/execute') {
+    try {
+      const s = adminOf();
+      if (!s) return json(res, 403, { error: 'admin_required' });
+      const b = JSON.parse((await readBody(req)) || '{}');
+      // The brief is resolved server-side from the action's own brief_id.
+      return json(res, 200, trends.executeAction(b.action_id));
+    } catch (err) { return handleError(res, err); }
+  }
+  if (req.method === 'POST' && url.pathname === '/v1/admin/trends/action/rollback') {
+    try {
+      const s = adminOf();
+      if (!s) return json(res, 403, { error: 'admin_required' });
+      const b = JSON.parse((await readBody(req)) || '{}');
+      return json(res, 200, trends.rollbackAction(b.action_id, { approver: s.email }));
+    } catch (err) { return handleError(res, err); }
+  }
+
   // ---- Admin: integration API keys (encrypted store; see secrets.js) ----
   // Secrets are NEVER returned — only masked status. Env always overrides.
   if (method === 'GET' && url.pathname === '/v1/admin/keys') {
@@ -1576,6 +1678,10 @@ process.on('unhandledRejection', (reason) => {
 
 server.listen(config.port, () => {
   console.log(`[gateway] listening on :${config.port} (mock=${config.mock}) providers=${availableProviders().join(',') || 'none'}`);
+  // Embedded Trend Intelligence runs invisibly in the background: detection and
+  // scoring produce shadow (draft) briefs only; no live write happens without
+  // operator approval. Opt out with TRENDS_AUTOPILOT=0.
+  trends.startTrendsScheduler();
   startNewsletterScheduler();
   // A startup ping after a restart is a useful "it's back" signal (and confirms
   // the webhook works). Quiet if generation has no provider — that's alert-worthy.

@@ -49,6 +49,52 @@ export const AGENTS = [
     acuPolicy: { billedTo: 'platform' }, escalation: { to: 'none', when: 'never' },
     impl: 'frontend/index.html (free, pure) + search.html NICHE_SCHEMA (paid)' },
 
+  // ── Trend Intelligence control layer (embedded, invisible background) ────────
+  // Reads demand signals -> scores -> versioned Growth Brief -> gated owned-surface
+  // activation -> measures -> rolls back. 100% keyless core; no agent holds a
+  // provider key; no live write without human approval. Backed by src/trends.js.
+  { id: 'trend-collector', tier: 'intelligence', status: 'live', autonomy: 'autonomous_safe',
+    purpose: 'Normalise first-party and permitted keyless signals into scoped observations with provenance; idempotent by source version.',
+    inputs: ['first-party events', 'permitted public feeds', 'imports'], outputs: ['normalised observations'],
+    permissions: ['trends:ingest'], triggers: ['POST /v1/admin/trends/observations', 'background cycle'], providers: ['deterministic'],
+    acuPolicy: { billedTo: 'platform' }, escalation: { to: 'none', when: 'never' },
+    impl: 'trends.js ingestObservations (read-only; no model)' },
+
+  { id: 'trend-reader', tier: 'intelligence', status: 'live', autonomy: 'autonomous_safe',
+    purpose: 'Deterministic detection + scoring (log-lift, robust-z, opportunity & confidence) against a fixed published rubric. No model required.',
+    inputs: ['observations', 'seasonality'], outputs: ['clusters', 'opportunity & confidence scores', 'trend class'],
+    permissions: [], triggers: ['background detection cycle'], providers: ['deterministic'],
+    acuPolicy: { billedTo: 'platform' }, escalation: { to: 'none', when: 'never' },
+    impl: 'trends.js scoreTopic / opportunityScore / confidenceScore / decide' },
+
+  { id: 'opportunity-strategist', tier: 'intelligence', status: 'live', autonomy: 'recommend_only',
+    purpose: 'Rank scored topics against the platform profile (fit, intent, readiness) and recommend action. Cannot authorise any action.',
+    inputs: ['scored clusters', 'platform profile'], outputs: ['ranked decision + score breakdown'],
+    permissions: [], triggers: ['background detection cycle'], providers: ['deterministic'],
+    acuPolicy: { billedTo: 'platform' }, escalation: { to: 'operator', when: 'eligible opportunity detected' },
+    impl: 'trends.js scoreTopic + decide (recommend only)' },
+
+  { id: 'brief-coordinator', tier: 'intelligence', status: 'live', autonomy: 'approval_gated',
+    purpose: 'Issue a single versioned, time-limited Growth Brief per (market, locale, topic); autopilot creates SHADOW drafts only — a live brief needs operator approval.',
+    inputs: ['eligible decision', 'platform policy'], outputs: ['Growth Brief v1 (draft or approved)'],
+    permissions: ['trends:brief'], triggers: ['background cycle', 'POST /v1/admin/trends/brief'], providers: ['deterministic'],
+    acuPolicy: { billedTo: 'platform' }, escalation: { to: 'operator', when: 'brief ready for approval' },
+    impl: 'trends.js runDetectionCycle / createBrief / effectiveBrief' },
+
+  { id: 'growth-activation', tier: 'product', status: 'live', autonomy: 'approval_gated',
+    purpose: 'Apply approved SEO/content changes to an owned page invisibly (compare-and-set, idempotent receipt, rollback). Author != approver; every live write is operator-approved.',
+    inputs: ['approved Growth Brief', 'owned asset'], outputs: ['applied owned-surface revision', 'receipt', 'rollback'],
+    permissions: ['trends:activate'], triggers: ['POST /v1/admin/trends/action/*'], providers: ['deterministic'],
+    acuPolicy: { billedTo: 'platform' }, escalation: { to: 'operator', when: 'approval required / target conflict' },
+    impl: 'trends.js proposeAction / approveAction / executeAction / rollbackAction + owned surface' },
+
+  { id: 'trend-measurement', tier: 'intelligence', status: 'live', autonomy: 'autonomous_safe',
+    purpose: 'Capture first-party eligible visits and configured conversions on the owned surface; report rate, sample status and a continue/revise/rollback signal.',
+    inputs: ['first-party outcomes'], outputs: ['measurement report', 'guardrail signal'],
+    permissions: ['trends:measure'], triggers: ['owned-surface outcome events'], providers: ['deterministic'],
+    acuPolicy: { billedTo: 'platform' }, escalation: { to: 'operator', when: 'guardrail breach' },
+    impl: 'trends.js recordOutcome / measurementReport' },
+
   { id: 'document-studio', tier: 'product', status: 'live', autonomy: 'approval_gated',
     purpose: 'Investor-grade asset generation (validation, forecast, P&L, risk heatmap, business plan, pitch deck, GTM, investor pack) from one evidence base.',
     inputs: ['project context', 'docType'], outputs: ['structured document', 'generated_asset'],
