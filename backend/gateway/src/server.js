@@ -423,7 +423,18 @@ function deliverReset(email, link) {
 }
 
 const server = http.createServer(async (req, res) => {
-  const url = new URL(req.url, `http://${req.headers.host}`);
+  // A request can arrive with a missing/empty Host header or a malformed
+  // target (bare uptime probes, port scanners, misconfigured proxies). Parsing
+  // it must never throw: an uncaught throw here rejects the async handler
+  // (unhandled rejection) AND leaves the socket with no response — which a
+  // shared reverse proxy turns into a 502 for this vhost. Fall back to a safe
+  // base and answer malformed requests with a clean 400.
+  let url;
+  try {
+    url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+  } catch {
+    return json(res, 400, { error: 'bad_request', message: 'Malformed request URL or Host header.' });
+  }
 
   if (req.method === 'OPTIONS') return json(res, 204, {});
   if (url.pathname.startsWith('/v1/')) metrics.requests += 1;
