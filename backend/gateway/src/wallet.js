@@ -114,6 +114,32 @@ function spendableWith(wallet, allowFree) {
   return spendable(wallet) + (allowFree ? (wallet.free || 0) : 0);
 }
 
+// Stranded-hold guard. A hold is placed synchronously before generation and
+// released on completion or failure — every generate path releases. But if the
+// process is killed mid-request (a restart/outage during the call), the hold is
+// never released: it silently locks paid ACU so `spendable` falls below the gate
+// while the dashboard still shows the gross "paid", and the next search is
+// refused ("needs 125, you have 161"). This releases any hold older than the max
+// age (far longer than any real request) or with no recorded time (stranded by a
+// kill before this guard existed). Returns the count released.
+const HOLD_MAX_AGE_MS = Math.max(60 * 1000, Number(process.env.HOLD_MAX_AGE_MS) || 15 * 60 * 1000);
+function sweepStaleHolds(wallet, now = Date.now()) {
+  if (!wallet || !wallet.holds) return 0;
+  wallet.holdAt = wallet.holdAt || {};
+  let released = 0, freed = 0;
+  for (const key of Object.keys(wallet.holds)) {
+    const at = wallet.holdAt[key];
+    if (at == null || (now - at) > HOLD_MAX_AGE_MS) {
+      freed += wallet.holds[key];
+      delete wallet.holds[key];
+      delete wallet.holdAt[key];
+      released += 1;
+    }
+  }
+  if (released) wallet.held = Math.max(0, (wallet.held || 0) - freed);
+  return released;
+}
+
 function view(wallet) {
   return {
     paid: wallet.paid, free: wallet.free, total: wallet.paid + wallet.free,
@@ -151,7 +177,9 @@ function idempotent(key, fn) {
 }
 
 export function getWallet(userId) {
-  return view(requireUser(userId));
+  const wallet = requireUser(userId);
+  if (sweepStaleHolds(wallet)) saveWallet(userId); // self-heal stranded holds on read
+  return view(wallet);
 }
 
 // Remove a wallet entirely (account deletion). Money records are the user's own
@@ -247,6 +275,7 @@ export function charge({ user, amount, label, idempotencyKey, action, bracketFac
    is never billed for work it didn't deliver. */
 export function reserve({ user, amount, key, allowFree = false }) {
   const wallet = requireUser(user);
+  sweepStaleHolds(wallet); // free any stranded hold before checking spendable
   const hold = Math.ceil(Number(amount));
   if (!Number.isFinite(hold) || hold <= 0) {
     throw new GatewayError('"amount" must be a positive integer of ACUs.', { status: 400, code: 'invalid_amount' });
@@ -265,6 +294,8 @@ export function reserve({ user, amount, key, allowFree = false }) {
   }
   wallet.held = (wallet.held || 0) + hold;
   wallet.holds[key] = hold;
+  wallet.holdAt = wallet.holdAt || {};
+  wallet.holdAt[key] = Date.now();
   saveWallet(user);
   return { held: hold, key };
 }
@@ -280,6 +311,7 @@ export function settleHold({ user, key, actual, label, action, bracketFactor, re
   const bf = Number.isFinite(Number(bracketFactor)) && Number(bracketFactor) >= 1 ? Number(bracketFactor) : 1;
   wallet.held -= hold;
   delete wallet.holds[key];
+  if (wallet.holdAt) delete wallet.holdAt[key];
   // Preview settlements (allowFree) draw welcome ACU first, then paid; everything
   // else is paid-only. Welcome ACU stay read-only for real generation.
   let fromFree = 0;
@@ -302,6 +334,7 @@ export function releaseHold({ user, key }) {
   const hold = wallet.holds[key];
   wallet.held -= hold;
   delete wallet.holds[key];
+  if (wallet.holdAt) delete wallet.holdAt[key];
   saveWallet(user);
   return { released: hold, wallet: view(wallet) };
 }
