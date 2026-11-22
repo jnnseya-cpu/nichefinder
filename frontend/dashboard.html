@@ -463,11 +463,32 @@
       '<div class="side"><span class="score10">' + (s.s / 10).toFixed(1) + '/10</span><br><span class="rank">RANK #' + rank + '</span></div>');
   }, 'No saved niches yet — run a search and Save to Portfolio.');
 
-  document.getElementById('histCount').textContent = history.length + ' RUNS';
-  fill(document.getElementById('histList'), history, function(h){
-    return rowEl('<div class="tx"><b>' + esc(h.country) + ' · ' + esc(String(h.routing).toLowerCase().replace(/ /g, '_')) + '</b><p>Generated ' + h.count + ' niche ideas.' + (h.live ? ' (LIVE AI)' : ' (demo)') + '</p></div>' +
-      '<div class="side">' + ago(h.ts) + '</div>');
-  }, 'No engine runs yet.');
+  function renderHist(hist){
+    document.getElementById('histCount').textContent = hist.length + ' RUNS';
+    fill(document.getElementById('histList'), hist, function(h){
+      var side = h.id
+        ? '<div class="side"><a href="search.html?run=' + encodeURIComponent(h.id) + '" style="color:var(--gold-bright)">View results →</a><br>' + ago(h.ts) + '</div>'
+        : '<div class="side">' + ago(h.ts) + '</div>';
+      return rowEl('<div class="tx"><b>' + esc(h.country) + ' · ' + esc(String(h.routing).toLowerCase().replace(/ /g, '_')) + '</b><p>Generated ' + h.count + ' niche ideas.' + (h.live ? ' (LIVE AI)' : ' (demo)') + '</p></div>' + side);
+    }, 'No engine runs yet.');
+  }
+  renderHist(history);
+  // Durable search history from the server — so past runs (and their results)
+  // show on any device, not just the browser that ran them.
+  (function(){
+    var b = (window.NF_GATEWAY_URL || '').replace(/\/$/, ''), u = window.NF_WALLET_USER;
+    if (!b || !u) return;
+    fetch(b + '/v1/searches?user=' + encodeURIComponent(u), { headers: (window.NF_AUTH ? NF_AUTH.authHeader() : {}) })
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(d){
+        if (!d || !Array.isArray(d.runs)) return;
+        var seen = {}, merged = [];
+        d.runs.concat(history).forEach(function(h){ var k = h.id || (h.country + '|' + h.ts); if (!seen[k]){ seen[k] = 1; merged.push(h); } });
+        merged.sort(function(a, b){ return (b.ts || 0) - (a.ts || 0); });
+        try { localStorage.setItem('nf_history', JSON.stringify(merged.slice(0, 100))); } catch(e){}
+        renderHist(merged);
+      }).catch(function(){});
+  })();
 
   var REP_COLORS = { validation: 'var(--teal)', forecast: 'var(--gold)', pnl: 'var(--gold-bright)', bizplan: 'var(--violet)', pitch: 'var(--blue)', riskmap: 'var(--red)', export: 'var(--muted)' };
   var REP_NAMES = { validation: 'Market Validation', forecast: '3-Year Forecast', pnl: '3-Year P&L', bizplan: 'Business Plan', pitch: 'Pitch Deck', riskmap: 'Risk Heatmap', export: 'Export Pack' };

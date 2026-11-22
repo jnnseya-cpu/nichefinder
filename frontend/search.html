@@ -1150,25 +1150,51 @@
     // autosave: history entry + cache the actual result list so a paid search
     // survives a reload or leaving the page — restored on load (see below).
     if (record) {
+      var runMeta = {
+        id: 'run_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
+        country: document.getElementById('country').value,
+        routing: (document.querySelector('#routeGrid [aria-pressed="true"] .t') || {}).textContent || 'balanced',
+        budget: +budget.value,
+        risk: (document.getElementById('risk') || {}).value || 'Balanced',
+        count: list.length, live: !!live, ts: Date.now()
+      };
       try {
         var hist = JSON.parse(localStorage.getItem('nf_history') || '[]');
-        hist.unshift({
-          country: document.getElementById('country').value,
-          routing: (document.querySelector('#routeGrid [aria-pressed="true"] .t') || {}).textContent || 'balanced',
-          budget: +budget.value,
-          risk: (document.getElementById('risk') || {}).value || 'Balanced',
-          count: list.length, live: !!live, ts: Date.now()
-        });
+        hist.unshift(runMeta);
         localStorage.setItem('nf_history', JSON.stringify(hist.slice(0, 100)));
       } catch (e) {}
       try {
-        localStorage.setItem('nf_last_results', JSON.stringify({
-          niches: list, live: !!live,
-          country: document.getElementById('country').value, ts: Date.now()
-        }));
+        localStorage.setItem('nf_last_results', JSON.stringify(Object.assign({}, runMeta, { niches: list })));
+      } catch (e) {}
+      // Durable, account-scoped save: a paid search's results must survive a
+      // cache clear / new device and be re-openable from Search History.
+      try {
+        var _b = (window.NF_GATEWAY_URL || '').replace(/\/$/, '');
+        if (_b && window.NF_WALLET_USER) {
+          fetch(_b + '/v1/searches', {
+            method: 'POST',
+            headers: Object.assign({ 'content-type': 'application/json' }, (window.NF_AUTH ? NF_AUTH.authHeader() : {})),
+            body: JSON.stringify({ user: window.NF_WALLET_USER, run: Object.assign({}, runMeta, { niches: list }) })
+          }).catch(function () {});
+        }
       } catch (e) {}
       renderHistory();
     }
+  }
+
+  // Fetch one saved run from the server and paint its results (no re-charge).
+  function openSavedRun(id){
+    var b = (window.NF_GATEWAY_URL || '').replace(/\/$/, '');
+    if (!id || !b || !window.NF_WALLET_USER) return;
+    fetch(b + '/v1/search?user=' + encodeURIComponent(window.NF_WALLET_USER) + '&id=' + encodeURIComponent(id),
+      { headers: (window.NF_AUTH ? NF_AUTH.authHeader() : {}) })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (run) {
+        if (run && run.niches && run.niches.length) {
+          renderNiches(run.niches, !!run.live, false);
+          document.getElementById('results').scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' });
+        }
+      }).catch(function () {});
   }
 
   // Recent searches: last 10 runs, one-click parameter restore (spec §6.1).
@@ -1194,7 +1220,9 @@
         if (h.risk && document.getElementById('risk')) document.getElementById('risk').value = h.risk;
         sel.dispatchEvent(new Event('change'));
         updAcu();
-        window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
+        // Re-open the saved results for this run (free) — not just the parameters.
+        if (h.id) openSavedRun(h.id);
+        else window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
       });
       listEl.appendChild(b);
     });
@@ -1206,6 +1234,34 @@
   try {
     var _lastR = JSON.parse(localStorage.getItem('nf_last_results') || 'null');
     if (_lastR && _lastR.niches && _lastR.niches.length) renderNiches(_lastR.niches, !!_lastR.live, false);
+  } catch (e) {}
+
+  // Open a specific saved run when linked from the Dashboard (search.html?run=<id>).
+  try {
+    var _runId = new URLSearchParams(location.search).get('run');
+    if (_runId) openSavedRun(_runId);
+  } catch (e) {}
+
+  // Merge durable run history from the server so a new device / cleared cache
+  // still shows past searches (deduped by id, newest first).
+  try {
+    var _hb = (window.NF_GATEWAY_URL || '').replace(/\/$/, '');
+    if (_hb && window.NF_WALLET_USER) {
+      fetch(_hb + '/v1/searches?user=' + encodeURIComponent(window.NF_WALLET_USER), { headers: (window.NF_AUTH ? NF_AUTH.authHeader() : {}) })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          if (!d || !Array.isArray(d.runs)) return;
+          var local = []; try { local = JSON.parse(localStorage.getItem('nf_history') || '[]'); } catch (e) {}
+          var seen = {}, merged = [];
+          d.runs.concat(local).forEach(function (h) {
+            var k = h.id || (h.country + '|' + h.ts);
+            if (!seen[k]) { seen[k] = 1; merged.push(h); }
+          });
+          merged.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
+          try { localStorage.setItem('nf_history', JSON.stringify(merged.slice(0, 100))); } catch (e) {}
+          renderHistory();
+        }).catch(function () {});
+    }
   } catch (e) {}
 
   gen.addEventListener('click', function(){

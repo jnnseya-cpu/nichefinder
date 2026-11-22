@@ -17,6 +17,7 @@ import { createKodaIntent, handleKodaWebhook, kodaConfigured } from './koda.js';
 import { createBitriPayIntent, handleBitriPayWebhook, bitriPayConfigured } from './bitripay.js';
 import { summaryFor as referralSummary, listPartners, deleteUserData as deleteReferralData } from './referrals.js';
 import { saveDoc, getDoc, listDocs, deleteUserDocs } from './docstore.js';
+import { saveSearchRun, listSearchRuns, getSearchRun, deleteUserSearches } from './searchstore.js';
 import { issueChallenge, verifyChallenge } from './human.js';
 import { signup, login, logout, sessionFor, requestReset, resetPassword, listUsers, resolveUserId, emailForUserId, setRole, setDisabled, userByEmail, updateProfile, setMedia, changePassword, deleteAccount } from './auth.js';
 import { sendMail, mailConfigured } from './mailer.js';
@@ -592,6 +593,33 @@ const server = http.createServer(async (req, res) => {
     } catch (err) { return handleError(res, err); }
   }
 
+  // ---- search runs: durable, account-scoped result storage (survives cache
+  // clears / new devices). A paid search's results are saved here so the user
+  // can always re-open what they paid for. ----
+  if (req.method === 'POST' && url.pathname === '/v1/searches') {
+    try {
+      const body = JSON.parse((await readBody(req)) || '{}');
+      requireOwner(req, body.user);
+      return json(res, 200, saveSearchRun({ user: body.user, run: body.run }));
+    } catch (err) { return handleError(res, err); }
+  }
+  if (method === 'GET' && url.pathname === '/v1/searches') {
+    try {
+      const user = url.searchParams.get('user');
+      requireOwner(req, user);
+      return json(res, 200, { runs: listSearchRuns({ user }) });
+    } catch (err) { return handleError(res, err); }
+  }
+  if (method === 'GET' && url.pathname === '/v1/search') {
+    try {
+      const user = url.searchParams.get('user');
+      requireOwner(req, user);
+      const run = getSearchRun({ user, id: url.searchParams.get('id') });
+      if (!run) return json(res, 404, { error: 'not_found' });
+      return json(res, 200, run);
+    } catch (err) { return handleError(res, err); }
+  }
+
   // ---- documents: fixed-price, deep AI generation of an investor-grade asset ----
   // Unlike /v1/generate (metered by tokens), a document is charged the canonical
   // catalogue price (shared/nf-economy.js), adjusted for capital bracket and
@@ -894,6 +922,7 @@ const server = http.createServer(async (req, res) => {
       // account removes them there too.)
       try { deleteWallet(r.userId); } catch (e) { console.error('[delete] wallet:', e.message); }
       try { deleteUserDocs(r.userId); } catch (e) { console.error('[delete] docs:', e.message); }
+      try { deleteUserSearches(r.userId); } catch (e) { console.error('[delete] searches:', e.message); }
       try { deleteReferralData(r.userId); } catch (e) { console.error('[delete] referrals:', e.message); }
       return json(res, 200, { ok: true });
     } catch (err) { return handleError(res, err); }
