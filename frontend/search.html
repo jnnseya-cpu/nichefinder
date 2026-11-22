@@ -1086,9 +1086,11 @@
     }).join('');
   }
 
-  function renderNiches(list, live){
+  function renderNiches(list, live, record){
+    record = record !== false; // true = new search (record + cache); false = silent restore
     thinking.classList.remove('on');
     gen.disabled = false; gen.textContent = 'Generate Niche Ideas';
+    nichesEl.innerHTML = ''; // clear prior cards so a restore / re-run repaints cleanly
     var priority = (document.querySelector('#routeGrid [aria-pressed="true"] .t') || {}).textContent || 'Balanced Results';
     var fallbackNote = '';
     if (priority === 'Breakthrough Concepts'){
@@ -1145,19 +1147,28 @@
       nichesEl.appendChild(el);
       setTimeout(function(){ el.classList.add('in'); }, reduced ? 0 : 90 * i);
     });
-    // autosave: search history entry
-    try {
-      var hist = JSON.parse(localStorage.getItem('nf_history') || '[]');
-      hist.unshift({
-        country: document.getElementById('country').value,
-        routing: (document.querySelector('#routeGrid [aria-pressed="true"] .t') || {}).textContent || 'balanced',
-        budget: +budget.value,
-        risk: (document.getElementById('risk') || {}).value || 'Balanced',
-        count: list.length, live: !!live, ts: Date.now()
-      });
-      localStorage.setItem('nf_history', JSON.stringify(hist.slice(0, 100)));
-    } catch (e) {}
-    renderHistory();
+    // autosave: history entry + cache the actual result list so a paid search
+    // survives a reload or leaving the page — restored on load (see below).
+    if (record) {
+      try {
+        var hist = JSON.parse(localStorage.getItem('nf_history') || '[]');
+        hist.unshift({
+          country: document.getElementById('country').value,
+          routing: (document.querySelector('#routeGrid [aria-pressed="true"] .t') || {}).textContent || 'balanced',
+          budget: +budget.value,
+          risk: (document.getElementById('risk') || {}).value || 'Balanced',
+          count: list.length, live: !!live, ts: Date.now()
+        });
+        localStorage.setItem('nf_history', JSON.stringify(hist.slice(0, 100)));
+      } catch (e) {}
+      try {
+        localStorage.setItem('nf_last_results', JSON.stringify({
+          niches: list, live: !!live,
+          country: document.getElementById('country').value, ts: Date.now()
+        }));
+      } catch (e) {}
+      renderHistory();
+    }
   }
 
   // Recent searches: last 10 runs, one-click parameter restore (spec §6.1).
@@ -1189,6 +1200,13 @@
     });
   }
   renderHistory();
+
+  // Restore the last search's results so returning to the canvas (or a reload)
+  // shows what you already paid for, instead of a blank Opportunities panel.
+  try {
+    var _lastR = JSON.parse(localStorage.getItem('nf_last_results') || 'null');
+    if (_lastR && _lastR.niches && _lastR.niches.length) renderNiches(_lastR.niches, !!_lastR.live, false);
+  } catch (e) {}
 
   gen.addEventListener('click', function(){
     if (!sel.value){
