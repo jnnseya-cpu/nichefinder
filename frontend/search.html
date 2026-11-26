@@ -949,7 +949,7 @@
     // can legitimately take a couple of minutes. A short abort would kill every
     // genuine deep search, so allow real thinking time (covers a slow provider
     // plus a fail-over to the next one).
-    var timer = setTimeout(function(){ controller.abort(); }, 210000);
+    var timer = setTimeout(function(){ controller.abort(); }, 290000); // deep discovery can run several minutes; the server streams keepalive so the connection never idles
     var isScale = cfg.intent === 'scaleup';
     var sysNew = 'You are the Opportunity Discovery Agent of Niche Finder, a venture intelligence OS. Act as a world-class venture analyst. Before answering, reason deeply about the local economy, demand evidence, realistic pricing, capacity constraints, and cost structures — every number you output must be defensible and internally consistent (revenue ramps must respect capacity, costs must reconcile with the gross margin, break-even must follow from the cashflow). Never output round guesses.';
     var sysScale = 'You are the Scale-Up Strategist of Niche Finder, a venture intelligence OS. Act as a world-class growth and operating partner for an EXISTING business. Reason deeply about the business\'s current position, assets, customers, channels, team, cashflow and its stated constraint, and about realistic adjacent expansion vectors. Every number must be defensible, INCREMENTAL (added on top of the current business) and internally consistent. Never output round guesses, and never propose a play the business clearly cannot resource.';
@@ -992,6 +992,9 @@
       }
       return r.json();
     }).then(function(data){
+      // A failure AFTER the server committed its 200 keepalive arrives as a 200
+      // body carrying _failed:true — surface it as a real error, not empty data.
+      if (data && data._failed) throw new Error((data.message || data.error || 'The analysis did not finish — you were not charged.'));
       // Adopt the server's authoritative balance after its metered charge, so the
       // on-screen ACU reflects the real deduction (the client no longer self-bills).
       if (data && data.wallet) { try { NF.syncWallet(data.wallet); } catch (e) {} }

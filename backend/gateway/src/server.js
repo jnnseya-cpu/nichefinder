@@ -10,7 +10,7 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { config } from './config.js';
 import { GatewayError } from './errors.js';
-import { route, availableProviders, meterAcu } from './router.js';
+import { route, preflight, availableProviders, meterAcu } from './router.js';
 import { getWallet, getLedger, charge, credit, grant, summary, deleteWallet, migratePaid, PACKAGES, isFrozen, reserve, settleHold, releaseHold } from './wallet.js';
 import { createCheckout, createSubscriptionCheckout, handleWebhook, paymentsConfigured } from './payments.js';
 import { createKodaIntent, handleKodaWebhook, kodaConfigured } from './koda.js';
@@ -376,6 +376,44 @@ function json(res, status, body) {
   res.end(payload);
 }
 
+// Keepalive for long generations. Deep documents can take minutes, during which
+// the gateway writes NOTHING to the client — an idle connection a browser abort
+// or an intermediary proxy will cut, which is exactly what kills a live demo.
+// This commits a 200 and streams harmless whitespace every few seconds so the
+// connection never idles; the final body is whitespace + JSON, which is still
+// valid JSON (leading whitespace is legal), so the existing `r.json()` client
+// parses it unchanged. Because the status is already sent, a failure AFTER this
+// starts is delivered as a 200 body carrying `_failed:true` (the client treats
+// that as an error), never a broken/empty document.
+const HEARTBEAT_MS = Number(process.env.GEN_HEARTBEAT_MS || 12000);
+function beginHeartbeat(res) {
+  res.writeHead(200, {
+    ...SEC_HEADERS,
+    'content-type': 'application/json; charset=utf-8',
+    'access-control-allow-origin': '*',
+    'access-control-allow-headers': 'content-type, authorization',
+    'access-control-allow-methods': 'GET, POST, OPTIONS',
+    'cache-control': 'no-store',
+    'x-accel-buffering': 'no', // tell nginx/Caddy not to buffer the stream
+  });
+  try { res.write(' '); } catch { /* client already gone */ }
+  let ended = false;
+  const iv = setInterval(() => { if (!ended) { try { res.write(' '); } catch { /* gone */ } } }, HEARTBEAT_MS);
+  if (iv.unref) iv.unref();
+  const finish = (obj) => {
+    if (ended) return;
+    ended = true;
+    clearInterval(iv);
+    try { res.end(JSON.stringify(obj)); } catch { /* gone */ }
+  };
+  return {
+    end: finish,                               // success body
+    fail: (obj) => finish({ ...obj, _failed: true }), // error body on an already-sent 200
+    stop: () => { if (!ended) { ended = true; clearInterval(iv); try { res.end('{}'); } catch {} } },
+    get ended() { return ended; },
+  };
+}
+
 function readBody(req) {
   return new Promise((resolve, reject) => {
     let size = 0;
@@ -628,6 +666,7 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'POST' && url.pathname === '/v1/document') {
     let hold = null; // outstanding ACU reservation — released on any failure path (catch-visible)
     let bundleRefund = null; // a consumed Lender Pack credit to restore if generation fails (catch-visible)
+    let hb = null; // keepalive stream, started once we commit to the long generation (catch-visible)
     try {
       if (maintenanceOn) {
         return json(res, 503, { error: 'maintenance', message: 'Niche Finder is briefly paused for maintenance. Please try again shortly.' });
@@ -724,6 +763,11 @@ const server = http.createServer(async (req, res) => {
         hold = { user: debit.user, price: debit.price, key: holdKey };
       }
       console.log(`[document] start type=${body.docType} price=${price} effort=${body.effort || 'high'} billed=${!!hold}`);
+      // Validate the request while we can still return a real error status, THEN
+      // commit a 200 and start the keepalive BEFORE the slow model call, so the
+      // connection never idles (no browser-abort / proxy cut mid-generation).
+      preflight(genBody);
+      hb = beginHeartbeat(res);
       let result = await route(genBody);
       // Don't bill for a document that came back truncated or as an empty shell.
       // A document is FIXED-price, so a single retry costs the user nothing — it
@@ -736,13 +780,14 @@ const server = http.createServer(async (req, res) => {
       const content = structuredUsable(result.text) ? parseStructured(result.text) : null;
       if (!content) {
         if (hold) releaseHold({ user: hold.user, key: hold.key }); // malformed/empty → not charged
-        throw new GatewayError('The document engine did not return a complete document — you were not charged. Please try again.', { status: 502, code: 'bad_document' });
+        return hb.fail({ error: 'The document engine did not return a complete document — you were not charged. Please try again.', code: 'bad_document', retryable: true });
       }
       console.log(`[document] ok type=${body.docType} provider=${result.provider} latencyMs=${Date.now() - started} sections=${(content.sections || []).length}`);
       if (clientGone) {
         if (hold) releaseHold({ user: hold.user, key: hold.key });
         if (bundleRefund) { refundBundleComponent(bundleRefund); bundleRefund = null; }
         console.log('[document] client disconnected before result — hold released, no bill');
+        hb.stop();
         return;
       }
       // Persist the generated document server-side so it survives cache clears /
@@ -756,13 +801,18 @@ const server = http.createServer(async (req, res) => {
           user: hold.user, key: hold.key, actual: hold.price,
           label: `document · ${body.docType}`, action: 'generation', bracketFactor: result.bracketFactor || 1,
         });
-        return json(res, 200, { docType: body.docType, content, charged: s.charged, wallet: s.wallet, provider: result.provider, latencyMs: Date.now() - started });
+        return hb.end({ docType: body.docType, content, charged: s.charged, wallet: s.wallet, provider: result.provider, latencyMs: Date.now() - started });
       }
-      return json(res, 200, { docType: body.docType, content, charged: 0, bundled, provider: result.provider, latencyMs: Date.now() - started });
+      return hb.end({ docType: body.docType, content, charged: 0, bundled, provider: result.provider, latencyMs: Date.now() - started });
     } catch (err) {
       if (hold) { try { releaseHold({ user: hold.user, key: hold.key }); } catch {} } // never strand a reservation
       if (bundleRefund) { try { refundBundleComponent(bundleRefund); } catch {} } // restore the prepaid credit on a failed generation
       console.error(`[document] failed: code=${err?.code || '?'} status=${err?.status ?? '?'} :: ${err?.message || err}`);
+      // If the keepalive already committed a 200, we can't change the status —
+      // deliver the error as a 200 body the client detects (_failed); otherwise
+      // the failure happened before generation, so send a normal error status.
+      if (hb && !hb.ended) return hb.fail({ error: err?.message || 'Generation failed — you were not charged.', code: err?.code || 'generation_failed', retryable: err?.retryable === true });
+      if (hb && hb.ended) return;
       return handleError(res, err);
     }
   }
@@ -1546,6 +1596,7 @@ const server = http.createServer(async (req, res) => {
 
   if (req.method === 'POST' && url.pathname === '/v1/generate') {
     let hold = null; // outstanding ACU reservation — released on any failure path (catch-visible)
+    let hb = null; // keepalive stream, started once we commit to the long generation (catch-visible)
     try {
       // If the browser gives up (its request timeout) before the model returns,
       // don't bill the wallet for a result the user never received.
@@ -1641,6 +1692,10 @@ const server = http.createServer(async (req, res) => {
         hold = { user: body.user, estimate: est, key: holdKey };
       }
       console.log(`[generate] start effort=${body.effort || 'default'} schema=${body.jsonSchema ? 'yes' : 'no'} maxOut=${reservedOut} billed=${!!hold}`);
+      // Validate while we can still return a real error status, THEN commit a 200
+      // and keep the connection alive through the slow model call.
+      preflight(genBody);
+      hb = beginHeartbeat(res);
       let result = await route(genBody);
       console.log(`[generate] ok provider=${result.provider} latencyMs=${Date.now() - started} acu=${result.acu ?? 0} textLen=${(result.text || '').length}`);
 
@@ -1670,6 +1725,7 @@ const server = http.createServer(async (req, res) => {
       if (clientGone) {
         if (hold) releaseHold({ user: hold.user, key: hold.key });
         console.log('[generate] client disconnected before result — hold released, no bill');
+        if (hb) hb.stop();
         return; // socket already closed; do not bill undelivered work
       }
       if (hold) {
@@ -1683,9 +1739,9 @@ const server = http.createServer(async (req, res) => {
         if ((result.acu || 0) > hold.estimate) {
           console.warn(`[generate] cost overrun capped: metered ${result.acu} > reserved ${hold.estimate} user=${hold.user.slice(-8)} — collected ${s.charged}`);
         }
-        return json(res, 200, { ...result, latencyMs: Date.now() - started, charged: s.charged, wallet: s.wallet });
+        return hb.end({ ...result, latencyMs: Date.now() - started, charged: s.charged, wallet: s.wallet });
       }
-      return json(res, 200, { ...result, latencyMs: Date.now() - started });
+      return hb.end({ ...result, latencyMs: Date.now() - started });
     } catch (err) {
       if (hold) { try { releaseHold({ user: hold.user, key: hold.key }); } catch {} } // never strand a reservation
 
@@ -1698,6 +1754,10 @@ const server = http.createServer(async (req, res) => {
       // real breakage the watchdog should alert on.
       if (!(err instanceof GatewayError) || (err.status ?? 500) >= 500) metrics.generationFailures += 1;
       console.error(`[generate] failed: code=${err?.code || err?.name || '?'} status=${err?.status ?? '?'} :: ${err?.message || err} ${attempts}`);
+      // Keepalive already committed a 200 → deliver the error as a _failed body;
+      // otherwise (failure before generation) send a normal error status.
+      if (hb && !hb.ended) return hb.fail({ error: err?.message || 'The analysis did not finish. Please try again — you were not charged.', code: err?.code || 'generation_failed', retryable: err?.retryable === true });
+      if (hb && hb.ended) return;
       return handleError(res, err);
     }
   }

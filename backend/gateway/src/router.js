@@ -64,6 +64,15 @@ export function meterAcu(provider, usage, investorMode = false, capitalGBP = 0) 
   return Math.max(config.acu.minimumCharge, Math.ceil(acu));
 }
 
+// Cheap, synchronous request validation — run this BEFORE committing a streamed
+// keepalive 200, so malformed input (empty messages, unknown provider, no
+// provider configured, bad maxTokens) still returns a proper 4xx/5xx status
+// rather than being masked as a 200 error envelope.
+export function preflight(req) {
+  validate(req);
+  resolveChain(req.provider);
+}
+
 export async function route(req) {
   validate(req);
   const chain = resolveChain(req.provider);

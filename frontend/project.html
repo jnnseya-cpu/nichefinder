@@ -864,7 +864,7 @@
     var usr = 'Produce the ' + a.t + ' for this venture, using every relevant detail. Full project context as JSON:\n' + JSON.stringify(projectContext(), null, 2);
 
     var controller = new AbortController();
-    var timer = setTimeout(function(){ controller.abort(); }, 210000); // deep docs run ~2 min; never hang
+    var timer = setTimeout(function(){ controller.abort(); }, 290000); // deep docs can run several minutes; the server streams keepalive so the connection never idles
     fetch(base + '/v1/document', {
       method: 'POST', headers: Object.assign({ 'content-type': 'application/json' }, (window.NF_AUTH ? NF_AUTH.authHeader() : {})), signal: controller.signal,
       body: JSON.stringify({
@@ -881,7 +881,9 @@
       })
     }).then(function(r){ clearTimeout(timer); return r.json().then(function(d){ return { ok: r.ok, status: r.status, d: d }; }); })
     .then(function(res){
-      if (!res.ok){
+      // A failure AFTER the server committed its 200 keepalive arrives as a 200
+      // body carrying _failed:true — treat it exactly like an HTTP error.
+      if (!res.ok || (res.d && res.d._failed)){
         if (res.status === 402){ restore(cost + ' ACU'); NF.openTopup(cost, label, render); return; }
         restore(cost + ' ACU');
         showToast('<b>Generation failed.</b> ' + esc((res.d && (res.d.message || res.d.error)) || 'Please try again in a moment.'));
@@ -979,7 +981,7 @@
       ' Audience: a demanding founder and professional investors. Be EXTREMELY detailed, specific, quantified and punchy — no generic filler, no hedging, no repetition. Every claim must be concrete to THIS exact venture, market and location. Make it visual with section stats, bullets, callouts and tables. Keep all figures internally consistent with the anchored financials provided.';
     var usr = 'Produce the ' + a.t + ' for this venture, using every relevant detail. Full project context as JSON:\n' + JSON.stringify(projectContext(), null, 2);
     var controller = new AbortController();
-    var timer = setTimeout(function(){ controller.abort(); }, 210000);
+    var timer = setTimeout(function(){ controller.abort(); }, 290000);
     return fetch(base + '/v1/document', {
       method: 'POST', headers: Object.assign({ 'content-type': 'application/json' }, (window.NF_AUTH ? NF_AUTH.authHeader() : {})), signal: controller.signal,
       body: JSON.stringify({
@@ -990,7 +992,7 @@
       })
     }).then(function(r){ clearTimeout(timer); return r.json().then(function(d){ return { ok: r.ok, status: r.status, d: d }; }); })
     .then(function(res){
-      if (!res.ok) return { ok: false, status: res.status, message: (res.d && (res.d.message || res.d.error)) || 'Generation failed.' };
+      if (!res.ok || (res.d && res.d._failed)) return { ok: false, status: res.status, message: (res.d && (res.d.message || res.d.error)) || 'Generation failed.' };
       try { localStorage.setItem('nf_doc_' + P.id + '_' + a.id, JSON.stringify({ content: res.d.content, ts: Date.now(), version: 1 })); } catch(e){}
       if (res.d.wallet) NF.syncWallet(res.d.wallet);
       finishDoc(a, res.d.charged || 0, res.d.content, false, true); // silent — the Pack shows its own progress

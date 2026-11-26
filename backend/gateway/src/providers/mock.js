@@ -3,6 +3,10 @@
 // shaped like a real one so downstream ACU metering and routing are testable.
 
 export async function generate(req) {
+  // Test/dev hook: simulate a slow model so the gateway's keepalive stream can be
+  // exercised. `req.mockDelayMs` or MOCK_DELAY_MS only; inert with a real key.
+  const delayMs = Number(req.mockDelayMs ?? process.env.MOCK_DELAY_MS ?? 0);
+  if (delayMs > 0) await new Promise((r) => setTimeout(r, Math.min(delayMs, 60000)));
   const lastUser = [...req.messages].reverse().find((m) => m.role === 'user');
   const prompt = typeof lastUser?.content === 'string' ? lastUser.content : JSON.stringify(lastUser?.content ?? '');
 

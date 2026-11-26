@@ -5,7 +5,9 @@
 //   G2  a truncated first attempt is RETRIED at the full budget and, if the retry
 //       is usable, billed exactly once (the user gets their result)
 //   G3  an output that stays unusable even after the retry is NOT charged —
-//       the hold is released and the call returns 503 generation_incomplete
+//       the hold is released. Because generation streams a keepalive 200 before
+//       the slow model call, a post-commit failure is delivered in-band as a
+//       200 body carrying _failed:true + code generation_incomplete (+ retryable)
 //   G4  the regression itself: a complete structured result still bills normally
 // Run: node test/generate-output-guard.js   (exits non-zero on any failure)
 import fs from 'node:fs';
@@ -89,7 +91,7 @@ const before2 = (await wallet(U2)).paid;
 res = await post('/v1/generate', { user: U2, jsonSchema: SCHEMA, mockText: '{"niches":[{"title":"half', messages: [{ role: 'user', content: 'discover niches' }] });
 body = await res.json();
 const after2 = (await wallet(U2)).paid;
-check('an unusable result is refused with 503 generation_incomplete', res.status === 503 && body.error === 'generation_incomplete', `status=${res.status} ${JSON.stringify(body)}`);
+check('an unusable result is refused in-band (200 + _failed, code generation_incomplete)', res.status === 200 && body._failed === true && body.code === 'generation_incomplete', `status=${res.status} ${JSON.stringify(body)}`);
 check('the error is marked retryable so the client can offer "try again"', body.retryable === true, JSON.stringify(body));
 check('the wallet was NOT debited for the unusable result (hold released)', after2 === before2, `before=${before2} after=${after2}`);
 
