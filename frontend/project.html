@@ -154,6 +154,8 @@
   .action[disabled]{opacity:.45;cursor:not-allowed}
   .action.working{border-color:var(--gold);pointer-events:none}
   .rail-note{font-size:.72rem;color:var(--muted);margin-top:14px;line-height:1.55}
+  .fflist{margin:8px 0 0;padding-left:18px}
+  .fflist li{font-size:.85rem;color:var(--text);margin:5px 0;line-height:1.5}
 
   /* Lender Pack — the one-click bundle of every document a lender asks for */
   .lpack{
@@ -368,6 +370,23 @@
         <div class="f"><div class="k">Confidence</div><div class="v" id="briefConf">HIGH CERTAINTY</div></div>
         <div class="f"><div class="k">Recommendation</div><div class="v">UNLOCKED</div></div>
       </div>
+      <div id="founderFitPanel" style="display:none;margin-top:28px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <h2 style="font-family:var(--serif);font-weight:400;font-size:1.2rem;margin:0">Founder Fit <span style="font-size:.82rem;color:var(--muted)">— does this venture suit you, not only the market?</span></h2>
+          <span class="brief-score" id="ffVerdict" style="font-size:1rem"></span>
+        </div>
+        <div class="bcard" style="--bc:var(--gold);margin-top:14px"><span class="bk">Fit Verdict</span><p id="ffRationale"></p></div>
+        <div class="brief-grid">
+          <div class="bcard" style="--bc:var(--teal)"><span class="bk">Your Strengths for This</span><ul class="fflist" id="ffStrengths"></ul></div>
+          <div class="bcard" style="--bc:var(--red)"><span class="bk">Gaps to Close</span><ul class="fflist" id="ffGaps"></ul></div>
+        </div>
+        <div class="bcard" style="--bc:#6B5CA5"><span class="bk">How to Bridge the Gaps</span><ul class="fflist" id="ffBridge"></ul></div>
+        <div class="next-action" id="ffDealbreaker" style="display:none">
+          <span class="req" style="background:var(--red)">DEALBREAKER</span>
+          <span class="tx" id="ffDealbreakerTx"></span>
+        </div>
+      </div>
+
       <h2 style="font-family:var(--serif);font-weight:400;font-size:1.2rem;margin-top:28px">Decision Intelligence Matrix</h2>
       <div class="brief-grid">
         <div class="bcard" style="--bc:var(--teal)"><span class="bk">Optimal Route</span><p id="dimOptimal"></p></div>
@@ -518,7 +537,8 @@
     risks: [],
     roadmap: [],
     bps: null,
-    brief: null
+    brief: null,
+    founderFit: null
   };
 
   var project;
@@ -1118,6 +1138,37 @@
     var invMatch = (project.meta || '').match(/US?\$[\d,]+/i);
     if (invMatch) setTxt('briefInvest', invMatch[0].toUpperCase());
   }
+
+  /* ---------- Founder Fit: the PERSON axis (shown only when assessed) ---------- */
+  (function renderFounderFit(){
+    var ff = project.founderFit;
+    var panel = document.getElementById('founderFitPanel');
+    if (!panel) return;
+    if (!ff || typeof ff.score !== 'number'){ panel.style.display = 'none'; return; }
+    var v = Math.max(0, Math.min(100, ff.score)) / 10;
+    var color = NF.band(v);
+    var verdict = String(ff.verdict || NF.decision(v));
+    var vEl = document.getElementById('ffVerdict');
+    vEl.textContent = verdict + ' · ' + v.toFixed(1) + '/10';
+    vEl.style.color = color;
+    setTxt('ffRationale', ff.rationale || '');
+    function fill(id, arr){
+      var ul = document.getElementById(id); if (!ul) return;
+      ul.innerHTML = '';
+      (Array.isArray(arr) ? arr : []).forEach(function(item){
+        var li = document.createElement('li'); li.textContent = String(item); ul.appendChild(li);
+      });
+      if (!ul.children.length){ var li = document.createElement('li'); li.textContent = '—'; ul.appendChild(li); }
+    }
+    fill('ffStrengths', ff.strengths);
+    fill('ffGaps', ff.gaps);
+    fill('ffBridge', ff.bridge);
+    var db = ff.dealbreaker && !/^\s*none\.?\s*$/i.test(ff.dealbreaker);
+    var dbEl = document.getElementById('ffDealbreaker');
+    if (db){ setTxt('ffDealbreakerTx', ff.dealbreaker); dbEl.style.display = ''; }
+    else { dbEl.style.display = 'none'; }
+    panel.style.display = '';
+  })();
 
   /* ---------- tabs ---------- */
   document.querySelectorAll('.tab').forEach(function(t){

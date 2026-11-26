@@ -509,6 +509,10 @@
           <input type="range" id="budget" min="500" max="100000" step="500" value="10000">
           <p class="rule"><b>Parity Rule:</b> GBP &amp; EUR zones use a flat £10k / €10k cap. Dollarized economies (e.g. DRC) use US$10k. All other markets use the local-currency equivalent of US$10,000.</p>
 
+          <label class="lab" for="skills">Your skills, background &amp; resources <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">— powers the Founder-Fit check</span></label>
+          <textarea id="skills" maxlength="320" placeholder="e.g., '8 years as a chef, no coding, £6k saved, ~20 hrs/week, a co-founder who can build the app' — the more honest, the sharper the fit score"></textarea>
+          <p class="char"><span id="skillsCount">0</span> / 320</p>
+
           <label class="lab" for="ctx">Additional Context &amp; Keywords</label>
           <textarea id="ctx" maxlength="260" placeholder="e.g., 'focus on sustainable solutions' or 'target young professionals'"></textarea>
           <p class="char"><span id="ctxCount">0</span> / 260</p>
@@ -713,6 +717,10 @@
   ctx.addEventListener('input', function(){
     document.getElementById('ctxCount').textContent = ctx.value.length;
   });
+  var skillsEl = document.getElementById('skills');
+  if (skillsEl) skillsEl.addEventListener('input', function(){
+    document.getElementById('skillsCount').textContent = skillsEl.value.length;
+  });
 
   /* ---------- investor mode + ACU ---------- */
   var inv = document.getElementById('invMode');
@@ -752,6 +760,7 @@
       areaType: area ? area.textContent : null,
       sectors: picked.slice(),
       experience: document.getElementById('exp').value,
+      founderSkills: (document.getElementById('skills') || {}).value ? document.getElementById('skills').value.trim() : null,
       fundingGoal: document.getElementById('fund').value,
       timeline: document.getElementById('time').value,
       modelPreference: document.getElementById('model').value,
@@ -816,6 +825,21 @@
                 additionalProperties: false
               }
             },
+            founderFit: {
+              type: 'object',
+              description: 'FOUNDER-FIT: how well THIS specific founder fits THIS venture — the PERSON, not the market. Judge the founder\'s stated experience, skills/background, risk tolerance, timeline and capital against what this exact venture genuinely demands to execute. Be honest and calibrated: a strong market can still be a weak personal fit, and a mismatch here is as important as a weak market. If the founder gave little profile detail, infer conservatively from experience level and risk tolerance and say the fit is provisional.',
+              properties: {
+                score: { type: 'integer', description: 'Founder-fit 0-100: how well the founder\'s skills, experience, resources, risk appetite and available time match what THIS venture demands. Calibrated — only a genuinely well-matched founder exceeds 80.' },
+                verdict: { type: 'string', enum: ['STRONG FIT', 'WORKABLE', 'STRETCH', 'MISMATCH'], description: 'Overall personal-fit verdict for this founder and this venture' },
+                rationale: { type: 'string', description: 'One concrete sentence: why this score, grounded in the founder\'s stated profile vs this venture\'s real demands' },
+                strengths: { type: 'array', items: { type: 'string' }, description: '2-4 concrete things the founder already brings that this venture needs' },
+                gaps: { type: 'array', items: { type: 'string' }, description: '2-4 specific skills, resources, credentials or experience this venture needs that the founder lacks' },
+                bridge: { type: 'array', items: { type: 'string' }, description: '2-4 concrete ways to close the gaps: a skill to learn, a role to hire, a co-founder/partner to bring in, or a smaller first step that de-risks the gap' },
+                dealbreaker: { type: 'string', description: 'Any hard personal blocker (e.g. a required licence/qualification the founder lacks, capital far beyond their budget, or a time commitment incompatible with their timeline) — or "None" if there is no hard blocker' }
+              },
+              required: ['score', 'verdict', 'rationale', 'strengths', 'gaps', 'bridge', 'dealbreaker'],
+              additionalProperties: false
+            },
             brief: {
               type: 'object',
               description: 'Deep operating brief for THIS specific niche. Every field must be concrete to this exact opportunity, market, and location — never generic, never reusable for another niche.',
@@ -839,7 +863,7 @@
           required: ['title', 'tagline', 'summary', 'confidence', 'marketReadiness', 'competitiveGap', 'prospectOfSuccess',
                      'breakthroughPotential', 'marketSizePotential', 'profitabilityPotential',
                      'addressableMarketUsd', 'breakEvenMonths', 'grossMarginPct', 'startupCapitalUsd',
-                     'revenueY1', 'revenueY2', 'revenueY3', 'costsY1', 'costsY2', 'costsY3', 'risks', 'roadmap', 'brief'],
+                     'revenueY1', 'revenueY2', 'revenueY3', 'costsY1', 'costsY2', 'costsY3', 'risks', 'roadmap', 'founderFit', 'brief'],
           additionalProperties: false
         }
       }
@@ -863,7 +887,7 @@
       signal: controller.signal,
       body: JSON.stringify({
         system: 'You are the Opportunity Discovery Agent of Niche Finder, a venture intelligence OS. Act as a world-class venture analyst. Before answering, reason deeply about the local economy, demand evidence, realistic pricing, capacity constraints, and cost structures — every number you output must be defensible and internally consistent (revenue ramps must respect capacity, costs must reconcile with the gross margin, break-even must follow from the cashflow). Never output round guesses.',
-        messages: [{ role: 'user', content: 'Generate exactly 3 distinct, hyper-specific niche venture opportunities for these constraints. Every financial figure must be derived from explicit reasoning about this specific market. For each niche also produce a complete operating brief (rationale, situation, insight, risk alert, recommendation, confidence, optimal route, pivot, risk of inaction, commercial value, next action) — every sentence must be concrete to that exact opportunity and location, consistent with its scores and financials, and never generic or interchangeable with another niche:\n' + JSON.stringify(cfg, null, 2) }],
+        messages: [{ role: 'user', content: 'Generate exactly 3 distinct, hyper-specific niche venture opportunities for these constraints. Every financial figure must be derived from explicit reasoning about this specific market. For each niche also produce (a) a complete operating brief (rationale, situation, insight, risk alert, recommendation, confidence, optimal route, pivot, risk of inaction, commercial value, next action) and (b) a FOUNDER-FIT assessment that judges how well THIS founder — their stated experience ("' + (cfg.experience || 'unspecified') + '"), skills/background ("' + (cfg.founderSkills || 'not provided') + '"), risk tolerance ("' + (cfg.riskTolerance || 'unspecified') + '"), timeline ("' + (cfg.timeline || 'unspecified') + '") and capital (max US$' + (cfg.maxInvestmentUsd || 0) + ') — personally fits THIS venture, with honest strengths, gaps, concrete ways to bridge the gaps, and any hard dealbreaker. The founder-fit is about the PERSON, not the market: a strong market can still be a weak personal fit. Every sentence must be concrete to that exact opportunity, founder and location, consistent with its scores and financials, and never generic or interchangeable with another niche:\n' + JSON.stringify(cfg, null, 2) }],
         jsonSchema: NICHE_SCHEMA,
         // 'high' is deep, multi-step reasoning (Anthropic's quality tier). The
         // extreme tiers (xhigh/max) can generate for 5-10 minutes — too long for
@@ -942,6 +966,7 @@
           },
           risks: n.risks,
           roadmap: n.roadmap,
+          founderFit: n.founderFit,
           brief: n.brief
         };
       });
@@ -1064,6 +1089,7 @@
     // Real, niche-specific operating brief + breakthrough score from the AI —
     // so the unlocked view never falls back to the demo template in project.html.
     if (m.brief) proj.brief = m.brief;
+    if (m.founderFit) proj.founderFit = m.founderFit; // the PERSON axis, carried into the project brief
     if (m.scores && m.scores.bps != null) proj.bps = Math.round(m.scores.bps) / 10; // 0-100 → 0-10 scale
     proj.bracketFactor = NF.bracket(+budget.value).factor; // Build Hub prices inherit the capital bracket
     proj.investmentUsd = +budget.value || null; // the operator's actual max-investment input, for the brief
@@ -1084,6 +1110,40 @@
       var v = score10(d[1]);
       return '<span style="font-family:var(--mono);font-size:.66rem;letter-spacing:.08em;padding:3px 8px;border-radius:20px;border:1px solid ' + NF.band(v) + '55;color:' + NF.band(v) + '">' + d[0] + ' ' + v.toFixed(1) + '</span>';
     }).join('');
+  }
+  // Founder-fit = the PERSON axis (how well this founder fits this venture),
+  // distinct from the market/confidence scores. Returns null when absent
+  // (older cached runs / demo rows) so the panel is simply omitted.
+  function fitMeta(ff){
+    if (!ff || typeof ff.score !== 'number') return null;
+    var v = Math.max(0, Math.min(100, ff.score)) / 10;
+    return { v: v, color: NF.band(v), verdict: String(ff.verdict || NF.decision(v)) };
+  }
+  // XSS-safe founder-fit panel for a discovery card (verdict + rationale +
+  // any hard dealbreaker). Full strengths/gaps/bridge show on the project page.
+  function fitPanel(ff){
+    var fm = fitMeta(ff); if (!fm) return null;
+    var box = document.createElement('div');
+    box.className = 'fitpanel';
+    box.style.cssText = 'margin:11px 0 2px;padding:10px 12px;border:1px solid ' + fm.color + '44;background:' + fm.color + '12;border-radius:8px';
+    var head = document.createElement('div');
+    head.style.cssText = 'font-family:var(--mono);font-size:.6rem;letter-spacing:.14em;color:' + fm.color;
+    head.textContent = 'FOUNDER FIT · ' + fm.verdict + ' · ' + fm.v.toFixed(1) + '/10';
+    box.appendChild(head);
+    if (ff.rationale){
+      var r = document.createElement('div');
+      r.style.cssText = 'font-size:.8rem;color:var(--text);margin-top:5px;line-height:1.5';
+      r.textContent = ff.rationale;
+      box.appendChild(r);
+    }
+    var db = ff.dealbreaker && !/^\s*none\.?\s*$/i.test(ff.dealbreaker);
+    if (db){
+      var d = document.createElement('div');
+      d.style.cssText = 'font-size:.74rem;color:#C4604F;margin-top:6px;line-height:1.45';
+      d.textContent = '⚠ Dealbreaker: ' + ff.dealbreaker;
+      box.appendChild(d);
+    }
+    return box;
   }
 
   function renderNiches(list, live, record){
@@ -1119,7 +1179,7 @@
       var el = document.createElement('article'); el.className = 'niche';
       el.innerHTML =
         '<div><h3></h3><div class="meta"></div>' +
-          '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">' + scoreChips(sc) +
+          '<div class="chiprow" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">' + scoreChips(sc) +
             '<span style="font-family:var(--mono);font-size:.66rem;letter-spacing:.1em;padding:3px 8px;border-radius:20px;background:' + NF.band(ov) + '22;border:1px solid ' + NF.band(ov) + ';color:' + NF.band(ov) + '">' + verdict + ' · ' + ov.toFixed(1) + '/10</span>' +
           '</div></div>' +
         '<div class="score"><div class="n"></div><div class="l">Confidence</div></div>' +
@@ -1133,6 +1193,17 @@
       el.querySelector('.meta').textContent = m.m;
       el.querySelector('.score .n').textContent = m.s;
       el.querySelector('p').textContent = m.p;
+      // Founder-fit: a FIT chip in the score row + a panel above the summary.
+      var fm = fitMeta(m.founderFit);
+      if (fm){
+        var chip = document.createElement('span');
+        chip.style.cssText = 'font-family:var(--mono);font-size:.66rem;letter-spacing:.08em;padding:3px 8px;border-radius:20px;border:1px solid ' + fm.color + ';color:' + fm.color + ';background:' + fm.color + '18';
+        chip.textContent = 'FIT ' + fm.v.toFixed(1);
+        var cr = el.querySelector('.chiprow'); if (cr) cr.appendChild(chip);
+        var panel = fitPanel(m.founderFit);
+        var pEl = el.querySelector('p');
+        if (panel && pEl && pEl.parentNode) pEl.parentNode.insertBefore(panel, pEl);
+      }
       el.querySelector('.a.primary').addEventListener('click', function(){ unlockProject(m); });
       el.querySelector('.a:not(.primary)').addEventListener('click', function(ev){
         ev.target.textContent = 'Saved ✓';
