@@ -78,6 +78,17 @@
     investor_multiplier: 1.4
   };
 
+  /* Lender Pack — every document a lender asks for, generated together for 10%
+     less than buying them one by one. The bundle is charged once; each component
+     then generates free (prepaid credit). Component doc types (the 'export'
+     component is priced as the excel_model). Price is COMPUTED (0.9 × the sum of
+     the component prices) so it always tracks the catalogue — today 2763 ACU
+     (3070 − 10%). */
+  var LENDER_PACK = ['gtm', 'validation', 'forecast', 'pnl', 'riskmap', 'bizplan', 'pitch', 'export'];
+  var LENDER_PACK_DISCOUNT = 0.10;
+  var _lpCostKey = function (c) { return c === 'export' ? 'excel_model' : c; };
+  COSTS.lender_pack = Math.round((1 - LENDER_PACK_DISCOUNT) * LENDER_PACK.reduce(function (t, c) { return t + COSTS[_lpCostKey(c)]; }, 0));
+
   /* Capital-bracket margin law: prices anchor 3–10× above provider cost in
      bracket 1 (≤ £10k); every further £10k bracket doubles the band and every
      price. Factor caps at ×1024 (bracket 11+). */
@@ -152,6 +163,8 @@
     PACKAGES: PACKAGES,
     PLANS: PLANS,
     COSTS: COSTS,
+    LENDER_PACK: LENDER_PACK,
+    LENDER_PACK_DISCOUNT: LENDER_PACK_DISCOUNT,
     bracketFor: bracketFor,
     costFor: costFor,
     UNIT_ECONOMICS: UNIT_ECONOMICS,

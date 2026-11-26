@@ -155,6 +155,34 @@
   .action.working{border-color:var(--gold);pointer-events:none}
   .rail-note{font-size:.72rem;color:var(--muted);margin-top:14px;line-height:1.55}
 
+  /* Lender Pack — the one-click bundle of every document a lender asks for */
+  .lpack{
+    display:block;width:100%;text-align:left;cursor:pointer;margin-bottom:14px;
+    background:linear-gradient(135deg,rgba(232,166,26,.14),rgba(107,92,165,.12));
+    border:1px solid var(--gold-dim);border-radius:9px;padding:15px 16px;color:var(--text);
+    font-family:var(--sans);transition:border-color .18s,transform .18s;
+  }
+  .lpack:hover:not([disabled]){border-color:var(--gold-bright);transform:translateY(-1px)}
+  .lpack[disabled]{cursor:default}
+  .lpack .lp-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .lpack .lp-badge{font-family:var(--mono);font-size:.56rem;letter-spacing:.18em;color:var(--gold-bright);text-transform:uppercase}
+  .lpack .lp-save{font-family:var(--mono);font-size:.56rem;letter-spacing:.1em;color:var(--teal);border:1px solid rgba(63,167,155,.4);border-radius:20px;padding:2px 8px}
+  .lpack .lp-title{font-size:.95rem;font-weight:700;margin:7px 0 3px}
+  .lpack .lp-sub{font-size:.72rem;color:var(--muted);line-height:1.5}
+  .lpack .lp-price{display:flex;align-items:baseline;gap:8px;margin-top:10px}
+  .lpack .lp-now{font-family:var(--mono);font-size:.82rem;color:var(--gold-bright);letter-spacing:.06em}
+  .lpack .lp-was{font-family:var(--mono);font-size:.66rem;color:var(--muted);text-decoration:line-through}
+  .lpack .lp-prog{margin-top:11px;font-size:.72rem;color:var(--text);display:none}
+  .lpack.running .lp-prog{display:block}
+  .lpack .lp-bar{height:5px;border-radius:4px;background:rgba(255,255,255,.08);margin-top:7px;overflow:hidden}
+  .lpack .lp-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--gold-bright));transition:width .4s}
+  .lpack .lp-steps{margin-top:9px;display:flex;flex-direction:column;gap:3px}
+  .lpack .lp-step{font-size:.68rem;color:var(--muted);display:flex;align-items:center;gap:7px}
+  .lpack .lp-step b{font-family:var(--mono);font-size:.6rem;width:14px;flex:none;text-align:center}
+  .lpack .lp-step.ok{color:var(--teal)} .lpack .lp-step.ok b{color:var(--teal)}
+  .lpack .lp-step.now{color:var(--gold-bright)} .lpack .lp-step.now b{color:var(--gold-bright)}
+  .lpack .lp-step.err{color:var(--rust,#C4604F)} .lpack .lp-step.err b{color:var(--rust,#C4604F)}
+
   /* repository strip + breakthrough badge */
   .repo-strip{display:flex;gap:20px;align-items:center;font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--teal);margin-bottom:12px}
   .repo-strip i{width:6px;height:6px;border-radius:50%;background:var(--teal);display:inline-block;animation:pulse 2.2s infinite}
@@ -405,6 +433,7 @@
           <span style="font-size:.78rem;color:var(--muted)"><b style="color:var(--gold-bright);font-family:var(--mono);font-size:.62rem;letter-spacing:.14em">INVESTOR MODE</b><br>Deal-ready outputs · +40% ACU</span>
           <input type="checkbox" id="invModeToggle" style="accent-color:#E8A61A;width:18px;height:18px">
         </label>
+        <div id="lenderPackWrap"></div>
         <div class="actions" id="actions"></div>
         <p class="rail-note" id="railNote">Each action consumes ACUs, generates a saved asset, and progresses your project status. Costs are shown before you commit.</p>
       </div>
@@ -705,6 +734,7 @@
       else btn.addEventListener('click', function(){ runAction(a, btn); });
       actionsEl.appendChild(btn);
     });
+    try { renderLenderPack(); } catch(e){}
   }
 
   /* ---------- real AI document generation ----------
@@ -850,7 +880,7 @@
     });
   }
 
-  function finishDoc(a, charged, content, isRegen){
+  function finishDoc(a, charged, content, isRegen, silent){
     try { if (window.NF_TRACK) NF_TRACK.generateDoc({ docType: a.id, name: a.t, value: charged, currency: 'ACU', regenerated: !!isRegen }); } catch (e) {} // conversion (consent-gated)
     if (state.doneActions.indexOf(a.id) < 0) state.doneActions.push(a.id);
     if (a.advances && STAGES.indexOf(a.advances) > STAGES.indexOf(state.status)) state.status = a.advances;
@@ -859,11 +889,175 @@
     saveAll();
     render();
     try { renderHub(); } catch(e){}
+    if (silent) return;
     showToast('<b>' + a.t + '</b> ' + (isRegen ? 'regenerated' : 'generated') + ' · ' + charged + ' ACU · <a href="asset.html?type=' + a.id + '" style="color:var(--gold-bright)">Open document ↗</a>');
     toast.style.pointerEvents = 'auto';
   }
 
   function runAction(a, btn){ generateDocument(a, btn, false); }
+
+  /* ======================= LENDER PACK (bundle) =======================
+     One click buys every document a lender asks for — 10% less than one by
+     one. The purchase charges once and grants a prepaid credit per component;
+     each component then generates FREE (the server bills 0 and refunds the
+     credit if any single generation fails). The ACU price per individual
+     action is unchanged — the Pack is an additive, discounted way to buy them
+     all together, never a change to the existing per-action charges. */
+  var LPACK_IDS = (globalThis.NF_ECONOMY && NF_ECONOMY.LENDER_PACK) || ['gtm','validation','forecast','pnl','riskmap','bizplan','pitch','export'];
+  function lpackActions(){
+    return LPACK_IDS.map(function(id){ return ACTIONS.filter(function(a){ return a.id === id; })[0]; }).filter(Boolean);
+  }
+  function lpackPrice(){
+    var mult = bFactor * (invMode ? NF.COSTS.investor_multiplier : 1);
+    var now = Math.round((NF.COSTS.lender_pack || 0) * mult);
+    var was = Math.round(lpackActions().reduce(function(t, a){ return t + a.cost; }, 0) * mult);
+    return { now: now, was: was, save: Math.max(0, was - now) };
+  }
+  var lpackRunning = false;
+
+  function renderLenderPack(){
+    var wrap = document.getElementById('lenderPackWrap');
+    if (!wrap) return;
+    if (lpackRunning) return; // mid-run: leave the live progress card untouched
+    var acts = lpackActions();
+    if (!acts.length || !NF.COSTS.lender_pack) { wrap.innerHTML = ''; return; }
+    var p = lpackPrice();
+    var doneCount = acts.filter(function(a){ return state.doneActions.indexOf(a.id) > -1; }).length;
+    var allDone = doneCount === acts.length;
+    var card = document.createElement('button');
+    card.className = 'lpack';
+    card.innerHTML =
+      '<div class="lp-top"><span class="lp-badge">★ Lender Pack</span>' +
+      (allDone ? '<span class="lp-save">COMPLETE</span>' : '<span class="lp-save">SAVE ' + p.save.toLocaleString('en-US') + ' ACU · 10%</span>') + '</div>' +
+      '<div class="lp-title">' + (allDone ? 'Lender Pack ready' : 'Generate the full Lender Pack') + '</div>' +
+      '<div class="lp-sub">' + (allDone
+        ? 'All ' + acts.length + ' lender documents are generated. Open the Build Hub to review and export them.'
+        : 'Every document a lender or investor asks for — Go-To-Market Blueprint, Market Validation, 3-Year Cashflow, 3-Year P&amp;L, Risk Heatmap, Business Plan, Investor Pitch Deck and the Excel + PDF export — generated together, in order, for 10% less than buying them one by one.') + '</div>' +
+      (allDone ? '' :
+        '<div class="lp-price"><span class="lp-now">' + p.now.toLocaleString('en-US') + ' ACU</span><span class="lp-was">' + p.was.toLocaleString('en-US') + ' ACU</span></div>') +
+      '<div class="lp-prog"><span class="lp-prog-txt"></span><div class="lp-bar"><i></i></div><div class="lp-steps"></div></div>';
+    if (allDone) {
+      card.addEventListener('click', function(){
+        var hubTab = document.querySelector('.tab[data-pane="hub"]');
+        if (hubTab) hubTab.click();
+      });
+    } else {
+      card.addEventListener('click', function(){ startLenderPack(card); });
+    }
+    wrap.innerHTML = '';
+    wrap.appendChild(card);
+  }
+
+  // Generate ONE component under the prepaid bundle credit (server bills 0).
+  // Resolves { ok, status, message } — never rejects, so the loop continues.
+  function requestComponent(a){
+    var base = (window.NF_GATEWAY_URL || '').replace(/\/$/, '');
+    if (!base) return Promise.resolve({ ok: false, status: 0, message: 'Generation is temporarily unavailable.' });
+    var sys = 'You are the Document Studio of Niche Finder, a venture-intelligence operating system. ' + DOC_SPECS[a.id] +
+      ' Audience: a demanding founder and professional investors. Be EXTREMELY detailed, specific, quantified and punchy — no generic filler, no hedging, no repetition. Every claim must be concrete to THIS exact venture, market and location. Make it visual with section stats, bullets, callouts and tables. Keep all figures internally consistent with the anchored financials provided.';
+    var usr = 'Produce the ' + a.t + ' for this venture, using every relevant detail. Full project context as JSON:\n' + JSON.stringify(projectContext(), null, 2);
+    var controller = new AbortController();
+    var timer = setTimeout(function(){ controller.abort(); }, 210000);
+    return fetch(base + '/v1/document', {
+      method: 'POST', headers: Object.assign({ 'content-type': 'application/json' }, (window.NF_AUTH ? NF_AUTH.authHeader() : {})), signal: controller.signal,
+      body: JSON.stringify({
+        user: window.NF_WALLET_USER, docType: a.id, project: P.id, system: sys,
+        messages: [{ role: 'user', content: usr }], jsonSchema: (a.id === 'gtm' ? GTM_SCHEMA : DOC_SCHEMA), effort: 'high', maxTokens: (a.id === 'gtm' ? 22000 : 14000),
+        investorMode: invMode, capitalGBP: P.investmentUsd || 0, country: (P && P.country) || '',
+        idempotencyKey: 'doc_' + P.id + '_' + a.id + '_' + Date.now()
+      })
+    }).then(function(r){ clearTimeout(timer); return r.json().then(function(d){ return { ok: r.ok, status: r.status, d: d }; }); })
+    .then(function(res){
+      if (!res.ok) return { ok: false, status: res.status, message: (res.d && (res.d.message || res.d.error)) || 'Generation failed.' };
+      try { localStorage.setItem('nf_doc_' + P.id + '_' + a.id, JSON.stringify({ content: res.d.content, ts: Date.now(), version: 1 })); } catch(e){}
+      if (res.d.wallet) NF.syncWallet(res.d.wallet);
+      finishDoc(a, res.d.charged || 0, res.d.content, false, true); // silent — the Pack shows its own progress
+      return { ok: true, status: 200 };
+    }).catch(function(err){
+      clearTimeout(timer);
+      return { ok: false, status: 0, message: (err && err.name === 'AbortError') ? 'Timed out — you were not charged for this one.' : 'Network error — you were not charged for this one.' };
+    });
+  }
+
+  function startLenderPack(card){
+    if (lpackRunning) return;
+    var acts = lpackActions();
+    if (!acts.length) return;
+    var p = lpackPrice();
+    var label = 'Lender Pack';
+    if (NF.wallet().paid < p.now) { NF.openTopup(p.now, label, render); return; }
+    var base = (window.NF_GATEWAY_URL || '').replace(/\/$/, '');
+    if (!base){ showToast('<b>The Lender Pack is temporarily unavailable.</b> Please try again in a moment — you were not charged.'); return; }
+    if (!window.confirm('Generate the full Lender Pack?\n\nThis charges ' + p.now.toLocaleString('en-US') + ' ACU once (you save ' + p.save.toLocaleString('en-US') + ' ACU vs buying the ' + acts.length + ' documents separately), then generates all ' + acts.length + ' documents in order. Each one is free under the Pack.')) return;
+
+    lpackRunning = true;
+    card.classList.add('running');
+    card.disabled = true;
+    var progTxt = card.querySelector('.lp-prog-txt');
+    var bar = card.querySelector('.lp-bar i');
+    var stepsEl = card.querySelector('.lp-steps');
+    stepsEl.innerHTML = '';
+    var stepEls = acts.map(function(a){
+      var s = document.createElement('div');
+      s.className = 'lp-step';
+      s.innerHTML = '<b>•</b><span>' + esc(a.t) + '</span>';
+      stepsEl.appendChild(s);
+      return s;
+    });
+    function setStep(i, cls, mark){ stepEls[i].className = 'lp-step ' + cls; stepEls[i].querySelector('b').textContent = mark; }
+    function setProg(done, total){ progTxt.textContent = 'Generating ' + Math.min(done + 1, total) + ' of ' + total + '…'; bar.style.width = Math.round(done / total * 100) + '%'; }
+
+    // 1) Buy the bundle (charges once, grants one free credit per component).
+    progTxt.textContent = 'Purchasing the Lender Pack…';
+    fetch(base + '/v1/document', {
+      method: 'POST', headers: Object.assign({ 'content-type': 'application/json' }, (window.NF_AUTH ? NF_AUTH.authHeader() : {})),
+      body: JSON.stringify({ user: window.NF_WALLET_USER, docType: 'lender_pack', project: P.id, investorMode: invMode, capitalGBP: P.investmentUsd || 0, country: (P && P.country) || '' })
+    }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, status: r.status, d: d }; }); })
+    .then(function(res){
+      if (!res.ok){
+        lpackRunning = false;
+        if (res.status === 402){ renderLenderPack(); NF.openTopup(p.now, label, render); return null; }
+        card.classList.remove('running'); card.disabled = false;
+        showToast('<b>Lender Pack purchase failed.</b> ' + esc((res.d && (res.d.message || res.d.error)) || 'Please try again — you were not charged.'));
+        renderLenderPack();
+        return null;
+      }
+      if (res.d.wallet) NF.syncWallet(res.d.wallet);
+      logLedger('Lender Pack · ' + acts.length + ' documents', -(res.d.charged || p.now));
+      render(); // refresh balance (renderLenderPack early-returns while running)
+      // 2) Generate each component in order under the credit.
+      var ok = 0, failed = [];
+      var chain = Promise.resolve();
+      acts.forEach(function(a, i){
+        chain = chain.then(function(){
+          setStep(i, 'now', '⟳'); setProg(i, acts.length);
+          return requestComponent(a).then(function(rr){
+            if (rr.ok){ ok++; setStep(i, 'ok', '✓'); }
+            else { failed.push({ a: a, msg: rr.message }); setStep(i, 'err', '✗'); }
+          });
+        });
+      });
+      return chain.then(function(){
+        bar.style.width = '100%';
+        lpackRunning = false;
+        card.classList.remove('running'); card.disabled = false;
+        if (!failed.length){
+          progTxt.innerHTML = 'All ' + acts.length + ' documents generated. <a href="#" class="lp-hub" style="color:var(--gold-bright)">Open the Build Hub ↗</a>';
+          showToast('<b>Lender Pack complete</b> · ' + acts.length + ' documents generated · ' + (res.d.charged || p.now).toLocaleString('en-US') + ' ACU');
+        } else {
+          progTxt.innerHTML = ok + ' of ' + acts.length + ' generated · ' + failed.length + ' to retry. The credit for each unfinished document was refunded — open it from the list to generate it free.';
+          showToast('<b>Lender Pack: ' + ok + '/' + acts.length + ' generated.</b> ' + esc(failed[0].msg || '') + ' The rest were refunded — retry them from the list (free).');
+        }
+        var hub = card.querySelector('.lp-hub');
+        if (hub) hub.addEventListener('click', function(ev){ ev.preventDefault(); var t = document.querySelector('.tab[data-pane="hub"]'); if (t) t.click(); });
+      });
+    }).catch(function(err){
+      lpackRunning = false;
+      card.classList.remove('running'); card.disabled = false;
+      showToast('<b>Network error.</b> The Lender Pack could not be purchased — you were not charged. Please try again.');
+      renderLenderPack();
+    });
+  }
 
   if (bFactor > 1){
     var rn = document.getElementById('railNote');

@@ -18,6 +18,7 @@ import { createBitriPayIntent, handleBitriPayWebhook, bitriPayConfigured } from 
 import { summaryFor as referralSummary, listPartners, deleteUserData as deleteReferralData } from './referrals.js';
 import { saveDoc, getDoc, listDocs, deleteUserDocs } from './docstore.js';
 import { saveSearchRun, listSearchRuns, getSearchRun, deleteUserSearches } from './searchstore.js';
+import { grantBundle, consumeBundleComponent, refundBundleComponent, deleteUserBundles } from './bundlestore.js';
 import { issueChallenge, verifyChallenge } from './human.js';
 import { signup, login, logout, sessionFor, requestReset, resetPassword, listUsers, resolveUserId, emailForUserId, setRole, setDisabled, userByEmail, updateProfile, setMedia, changePassword, deleteAccount } from './auth.js';
 import { sendMail, mailConfigured } from './mailer.js';
@@ -626,6 +627,7 @@ const server = http.createServer(async (req, res) => {
   // Investor Mode. Price is resolved server-side so the client can never set it.
   if (req.method === 'POST' && url.pathname === '/v1/document') {
     let hold = null; // outstanding ACU reservation — released on any failure path (catch-visible)
+    let bundleRefund = null; // a consumed Lender Pack credit to restore if generation fails (catch-visible)
     try {
       if (maintenanceOn) {
         return json(res, 503, { error: 'maintenance', message: 'Niche Finder is briefly paused for maintenance. Please try again shortly.' });
@@ -639,18 +641,46 @@ const server = http.createServer(async (req, res) => {
       if (inj) { strike(ip, 'prompt_injection', inj); throw new GatewayError('Instruction blocked by the platform security agent.', { status: 400, code: 'non_human_instruction' }); }
 
       const ECO = globalThis.NF_ECONOMY;
+
+      // ---- Lender Pack: buy all 8 lender documents together for 10% less than
+      // one by one. No AI here — it charges once and grants a prepaid credit so
+      // each component then generates FREE (see the bundle check below). ----
+      if (body.docType === 'lender_pack') {
+        if (!body.project) throw new GatewayError('A project is required for the Lender Pack.', { status: 400, code: 'project_required' });
+        const bundlePrice = Math.round(ECO.COSTS.lender_pack * ECO.bracketFor(body.capitalGBP).factor * (body.investorMode === true ? ECO.COSTS.investor_multiplier : 1));
+        if (billingEnforced()) {
+          requireOwner(req, body.user);
+          if (isFrozen(body.user)) throw new GatewayError('This wallet is temporarily frozen pending a payment dispute. Contact support.', { status: 402, code: 'wallet_frozen', platformCode: 4002 });
+          const charged = charge({ user: body.user, amount: bundlePrice, label: 'bundle · lender_pack', action: 'bundle_purchase', bracketFactor: 1, idempotencyKey: `bundle_lender_${Date.now()}_${crypto.randomUUID()}` });
+          grantBundle({ user: body.user, project: body.project, components: ECO.LENDER_PACK });
+          console.log(`[document] lender_pack purchased price=${bundlePrice} user=${String(body.user).slice(-8)}`);
+          return json(res, 200, { docType: 'lender_pack', bundle: 'lender_pack', components: ECO.LENDER_PACK, price: bundlePrice, charged: charged.charged, wallet: charged.wallet });
+        }
+        if (body.user && body.project) grantBundle({ user: body.user, project: body.project, components: ECO.LENDER_PACK });
+        return json(res, 200, { docType: 'lender_pack', bundle: 'lender_pack', components: ECO.LENDER_PACK, price: bundlePrice, charged: 0 });
+      }
+
       const PRICE_KEY = { validation: 'validation', forecast: 'forecast', pnl: 'pnl', riskmap: 'riskmap', bizplan: 'bizplan', pitch: 'pitch', export: 'excel_model', gtm: 'gtm' };
       const key = PRICE_KEY[body.docType];
       if (!key || !ECO.COSTS[key]) throw new GatewayError(`Unknown document type "${body.docType}".`, { status: 400, code: 'unknown_document' });
       const price = Math.round(ECO.COSTS[key] * ECO.bracketFor(body.capitalGBP).factor * (body.investorMode === true ? ECO.COSTS.investor_multiplier : 1));
 
+      // Owner check, then: a prepaid Lender Pack credit covers this component once
+      // (generate free). Checked before consuming so a stranger can't drain it.
       let debit = null;
+      let bundled = false;
       if (billingEnforced()) {
         requireOwner(req, body.user);
         if (isFrozen(body.user)) {
           throw new GatewayError('This wallet is temporarily frozen pending a payment dispute. Contact support.', { status: 402, code: 'wallet_frozen', platformCode: 4002 });
         }
-        debit = { user: body.user, price };
+        if (body.user && body.project && consumeBundleComponent({ user: body.user, project: body.project, type: body.docType })) {
+          bundled = true; bundleRefund = { user: body.user, project: body.project, type: body.docType };
+        } else {
+          debit = { user: body.user, price };
+        }
+      } else if (body.user && body.project && consumeBundleComponent({ user: body.user, project: body.project, type: body.docType })) {
+        bundled = true; bundleRefund = { user: body.user, project: body.project, type: body.docType };
       }
       // Token budget is a CEILING, not a target: the model stops at end_turn when
       // the document is complete, so a generous ceiling makes complex documents
@@ -673,7 +703,7 @@ const server = http.createServer(async (req, res) => {
       if (body.docType === 'export') {
         // No AI, no await → a direct charge is already atomic (no TOCTOU). It
         // still checks spendable, so it respects any other in-flight hold.
-        if (clientGone) { console.log('[document] export: client disconnected — no charge'); return; }
+        if (clientGone) { if (bundleRefund) { refundBundleComponent(bundleRefund); bundleRefund = null; } console.log('[document] export: client disconnected — no charge'); return; }
         if (debit) {
           const charged = charge({
             user: debit.user, amount: debit.price, label: 'document · export', action: 'generation',
@@ -682,7 +712,7 @@ const server = http.createServer(async (req, res) => {
           console.log(`[document] export packaged (no AI) price=${price} user=${debit.user.slice(-8)}`);
           return json(res, 200, { docType: 'export', charged: charged.charged, wallet: charged.wallet });
         }
-        return json(res, 200, { docType: 'export', charged: 0 });
+        return json(res, 200, { docType: 'export', charged: 0, bundled });
       }
 
       // RESERVE the fixed price before the provider call (atomic hold → no TOCTOU
@@ -711,6 +741,7 @@ const server = http.createServer(async (req, res) => {
       console.log(`[document] ok type=${body.docType} provider=${result.provider} latencyMs=${Date.now() - started} sections=${(content.sections || []).length}`);
       if (clientGone) {
         if (hold) releaseHold({ user: hold.user, key: hold.key });
+        if (bundleRefund) { refundBundleComponent(bundleRefund); bundleRefund = null; }
         console.log('[document] client disconnected before result — hold released, no bill');
         return;
       }
@@ -727,9 +758,10 @@ const server = http.createServer(async (req, res) => {
         });
         return json(res, 200, { docType: body.docType, content, charged: s.charged, wallet: s.wallet, provider: result.provider, latencyMs: Date.now() - started });
       }
-      return json(res, 200, { docType: body.docType, content, provider: result.provider, latencyMs: Date.now() - started });
+      return json(res, 200, { docType: body.docType, content, charged: 0, bundled, provider: result.provider, latencyMs: Date.now() - started });
     } catch (err) {
       if (hold) { try { releaseHold({ user: hold.user, key: hold.key }); } catch {} } // never strand a reservation
+      if (bundleRefund) { try { refundBundleComponent(bundleRefund); } catch {} } // restore the prepaid credit on a failed generation
       console.error(`[document] failed: code=${err?.code || '?'} status=${err?.status ?? '?'} :: ${err?.message || err}`);
       return handleError(res, err);
     }
@@ -923,6 +955,7 @@ const server = http.createServer(async (req, res) => {
       try { deleteWallet(r.userId); } catch (e) { console.error('[delete] wallet:', e.message); }
       try { deleteUserDocs(r.userId); } catch (e) { console.error('[delete] docs:', e.message); }
       try { deleteUserSearches(r.userId); } catch (e) { console.error('[delete] searches:', e.message); }
+      try { deleteUserBundles(r.userId); } catch (e) { console.error('[delete] bundles:', e.message); }
       try { deleteReferralData(r.userId); } catch (e) { console.error('[delete] referrals:', e.message); }
       return json(res, 200, { ok: true });
     } catch (err) { return handleError(res, err); }
