@@ -368,6 +368,33 @@
   <div class="wrap canvas">
     <div class="col">
 
+      <!-- 0. INTENT: new venture vs scale an existing business -->
+      <section class="block" aria-labelledby="h-intent">
+        <div class="block-head">
+          <span class="n">00</span>
+          <h2 id="h-intent">What are you here to do?</h2>
+        </div>
+        <div class="opt-grid g2" id="intentGrid" role="group" aria-label="Intent">
+          <button class="opt" aria-pressed="true" data-intent="new"><span class="t">Start a new venture</span><span class="d">Discover and validate a brand-new business to launch.</span></button>
+          <button class="opt" aria-pressed="false" data-intent="scaleup"><span class="t">Scale an existing business</span><span class="d">Find the highest-leverage ways to grow a business you already run.</span></button>
+        </div>
+        <div id="scaleFields" style="display:none;margin-top:16px;border:1px solid var(--line);border-radius:12px;padding:16px;background:rgba(232,166,26,.04)">
+          <p style="font-size:.8rem;color:var(--muted);margin:0 0 14px">Tell us about the business you want to scale — the sharper the detail, the more concrete and bankable the growth plays. The same engine (validation, financials, risk, plans) then works on the growth play you unlock.</p>
+          <div class="two">
+            <div><label class="lab" for="bizWhat">What the business does / what you sell</label><input id="bizWhat" maxlength="140" placeholder="e.g., halal meal-prep delivery for gyms"></div>
+            <div><label class="lab" for="bizRev">Current revenue (per month)</label><input id="bizRev" maxlength="40" placeholder="e.g., £12,000/mo or $8k MRR"></div>
+          </div>
+          <label class="lab" for="bizCustomers" style="margin-top:12px">Current customers &amp; channels</label>
+          <input id="bizCustomers" maxlength="160" placeholder="e.g., ~140 local gym-goers, mostly Instagram + word of mouth">
+          <div class="two" style="margin-top:12px">
+            <div><label class="lab" for="bizConstraint">Biggest constraint to growth</label>
+              <select id="bizConstraint"><option>Not sure</option><option>Demand / customer acquisition</option><option>Capacity / fulfilment</option><option>Capital / cashflow</option><option>Team / hiring</option><option>Operations / systems</option><option>Product range</option></select></div>
+            <div><label class="lab" for="bizGoal">Scale-up goal</label>
+              <select id="bizGoal"><option>Grow revenue fast</option><option>Improve margins / profit</option><option>Expand to new locations</option><option>Add products / services</option><option>Raise growth funding</option><option>Build recurring revenue</option></select></div>
+          </div>
+        </div>
+      </section>
+
       <!-- 1. STARTING POINT -->
       <section class="block" aria-labelledby="h-start">
         <div class="block-head">
@@ -503,7 +530,7 @@
           </div>
 
           <div class="slider-row">
-            <label class="lab" for="budget" style="margin:0">Max Startup Investment</label>
+            <label class="lab" for="budget" style="margin:0" id="budgetLabel">Max Startup Investment</label>
             <span class="amt"><span id="budgetVal">US$10,000</span><small id="budgetLocal"></small></span>
           </div>
           <input type="range" id="budget" min="500" max="100000" step="500" value="10000">
@@ -633,6 +660,46 @@
   group('routeGrid','sumRoute');
   group('modeGrid','sumMode');
 
+  /* ---------- intent: new venture vs scale an existing business ----------
+     Scale-up reuses the whole discovery → unlock → build pipeline; it only
+     reframes the inputs and the generation prompt so the engine returns
+     high-leverage GROWTH PLAYS for a business you already run, each with its
+     own incremental financials, risk and plan. */
+  var intentGrid = document.getElementById('intentGrid');
+  var scaleFields = document.getElementById('scaleFields');
+  function currentIntent(){
+    var b = intentGrid && intentGrid.querySelector('[aria-pressed="true"]');
+    return (b && b.getAttribute('data-intent')) || 'new';
+  }
+  function applyIntent(){
+    var sc = currentIntent() === 'scaleup';
+    if (scaleFields) scaleFields.style.display = sc ? '' : 'none';
+    var h = document.getElementById('h-start'); if (h) h.textContent = sc ? 'Growth Starting Point' : 'Discovery Starting Point';
+    var bl = document.getElementById('budgetLabel'); if (bl) bl.textContent = sc ? 'Growth Capital Available' : 'Max Startup Investment';
+    var gb = document.getElementById('generate'); if (gb && !gb.disabled) gb.textContent = 'Run Discovery';
+  }
+  if (intentGrid){
+    intentGrid.addEventListener('click', function(e){
+      var btn = e.target.closest('.opt'); if (!btn) return;
+      intentGrid.querySelectorAll('.opt').forEach(function(b){ b.setAttribute('aria-pressed','false'); });
+      btn.setAttribute('aria-pressed','true');
+      applyIntent();
+    });
+    applyIntent();
+  }
+  // Collect the existing-business profile (only meaningful in scale-up mode).
+  function scaleBusiness(){
+    if (currentIntent() !== 'scaleup') return null;
+    function v(id){ var el = document.getElementById(id); return el && el.value ? String(el.value).trim() : null; }
+    return {
+      sells: v('bizWhat'),
+      currentRevenue: v('bizRev'),
+      customersChannels: v('bizCustomers'),
+      constraint: v('bizConstraint'),
+      goal: v('bizGoal')
+    };
+  }
+
   /* area segmented */
   var seg = document.getElementById('areaSeg');
   seg.addEventListener('click', function(e){
@@ -751,6 +818,8 @@
     function sel(gridId){ var b = document.querySelector('#' + gridId + ' [aria-pressed="true"]'); return b ? b.querySelector('.t').textContent : null; }
     var area = seg.querySelector('[aria-pressed="true"]');
     return {
+      intent: currentIntent(),
+      business: scaleBusiness(),
       startingPoint: sel('startGrid'),
       goal: sel('goalGrid'),
       routing: sel('routeGrid'),
@@ -881,13 +950,19 @@
     // genuine deep search, so allow real thinking time (covers a slow provider
     // plus a fail-over to the next one).
     var timer = setTimeout(function(){ controller.abort(); }, 210000);
+    var isScale = cfg.intent === 'scaleup';
+    var sysNew = 'You are the Opportunity Discovery Agent of Niche Finder, a venture intelligence OS. Act as a world-class venture analyst. Before answering, reason deeply about the local economy, demand evidence, realistic pricing, capacity constraints, and cost structures — every number you output must be defensible and internally consistent (revenue ramps must respect capacity, costs must reconcile with the gross margin, break-even must follow from the cashflow). Never output round guesses.';
+    var sysScale = 'You are the Scale-Up Strategist of Niche Finder, a venture intelligence OS. Act as a world-class growth and operating partner for an EXISTING business. Reason deeply about the business\'s current position, assets, customers, channels, team, cashflow and its stated constraint, and about realistic adjacent expansion vectors. Every number must be defensible, INCREMENTAL (added on top of the current business) and internally consistent. Never output round guesses, and never propose a play the business clearly cannot resource.';
+    var usrNew = 'Generate exactly 3 distinct, hyper-specific niche venture opportunities for these constraints. Every financial figure must be derived from explicit reasoning about this specific market. For each niche also produce (a) a complete operating brief (rationale, situation, insight, risk alert, recommendation, confidence, optimal route, pivot, risk of inaction, commercial value, next action) and (b) a FOUNDER-FIT assessment that judges how well THIS founder — their stated experience ("' + (cfg.experience || 'unspecified') + '"), skills/background ("' + (cfg.founderSkills || 'not provided') + '"), risk tolerance ("' + (cfg.riskTolerance || 'unspecified') + '"), timeline ("' + (cfg.timeline || 'unspecified') + '") and capital (max US$' + (cfg.maxInvestmentUsd || 0) + ') — personally fits THIS venture, with honest strengths, gaps, concrete ways to bridge the gaps, and any hard dealbreaker. The founder-fit is about the PERSON, not the market: a strong market can still be a weak personal fit. Every sentence must be concrete to that exact opportunity, founder and location, consistent with its scores and financials, and never generic or interchangeable with another niche:\n' + JSON.stringify(cfg, null, 2);
+    var biz = cfg.business || {};
+    var usrScale = 'Generate exactly 3 distinct, high-leverage SCALE-UP GROWTH PLAYS for the EXISTING business described below. Each play is ONE concrete expansion vector — a new customer segment, a new product/service line, a new sales channel, a new location/geography, a pricing/packaging move, or a productised or recurring offer — chosen to relieve the business\'s stated constraint ("' + (biz.constraint || 'unspecified') + '") and serve its goal ("' + (biz.goal || 'grow') + '"). Treat each object in the "niches" array as one growth play: "title" names the play, "tagline" is PLAY · the business · location, "summary" is why it is high-leverage now. FINANCIALS ARE INCREMENTAL: revenueY1-Y3 and costsY1-Y3 are the ADDED revenue and cost the play brings ON TOP OF the current business (current revenue: "' + (biz.currentRevenue || 'unspecified') + '"); startupCapitalUsd is the capital to launch the play (must fit within the growth capital available, US$' + (cfg.maxInvestmentUsd || 0) + '); addressableMarketUsd is the realistic reachable market for the play; breakEvenMonths is months for the play itself to pay back. For each play produce (a) a complete operating brief and (b) a BUSINESS-FIT assessment in the founderFit field: how well THIS business\'s current assets, team, channels, customers and capital fit EXECUTING this play — real strengths it already has (e.g. existing customer base, brand, supply chain), gaps it must close, concrete ways to bridge them (hire, partner, pilot small first), and any hard dealbreaker. Every figure must be defensible, incremental and consistent. The existing business: sells "' + (biz.sells || 'unspecified') + '", customers & channels "' + (biz.customersChannels || 'unspecified') + '". Full context as JSON:\n' + JSON.stringify(cfg, null, 2);
     return fetch(GATEWAY + '/v1/generate', {
       method: 'POST',
       headers: Object.assign({ 'content-type': 'application/json' }, (window.NF_AUTH ? NF_AUTH.authHeader() : {})),
       signal: controller.signal,
       body: JSON.stringify({
-        system: 'You are the Opportunity Discovery Agent of Niche Finder, a venture intelligence OS. Act as a world-class venture analyst. Before answering, reason deeply about the local economy, demand evidence, realistic pricing, capacity constraints, and cost structures — every number you output must be defensible and internally consistent (revenue ramps must respect capacity, costs must reconcile with the gross margin, break-even must follow from the cashflow). Never output round guesses.',
-        messages: [{ role: 'user', content: 'Generate exactly 3 distinct, hyper-specific niche venture opportunities for these constraints. Every financial figure must be derived from explicit reasoning about this specific market. For each niche also produce (a) a complete operating brief (rationale, situation, insight, risk alert, recommendation, confidence, optimal route, pivot, risk of inaction, commercial value, next action) and (b) a FOUNDER-FIT assessment that judges how well THIS founder — their stated experience ("' + (cfg.experience || 'unspecified') + '"), skills/background ("' + (cfg.founderSkills || 'not provided') + '"), risk tolerance ("' + (cfg.riskTolerance || 'unspecified') + '"), timeline ("' + (cfg.timeline || 'unspecified') + '") and capital (max US$' + (cfg.maxInvestmentUsd || 0) + ') — personally fits THIS venture, with honest strengths, gaps, concrete ways to bridge the gaps, and any hard dealbreaker. The founder-fit is about the PERSON, not the market: a strong market can still be a weak personal fit. Every sentence must be concrete to that exact opportunity, founder and location, consistent with its scores and financials, and never generic or interchangeable with another niche:\n' + JSON.stringify(cfg, null, 2) }],
+        system: isScale ? sysScale : sysNew,
+        messages: [{ role: 'user', content: isScale ? usrScale : usrNew }],
         jsonSchema: NICHE_SCHEMA,
         // 'high' is deep, multi-step reasoning (Anthropic's quality tier). The
         // extreme tiers (xhigh/max) can generate for 5-10 minutes — too long for
@@ -967,7 +1042,9 @@
           risks: n.risks,
           roadmap: n.roadmap,
           founderFit: n.founderFit,
-          brief: n.brief
+          brief: n.brief,
+          intent: cfg.intent || 'new',
+          business: cfg.business || null
         };
       });
     });
@@ -1012,8 +1089,12 @@
       signal: controller.signal,
       body: JSON.stringify({
         preview: true,
-        system: 'You are the Opportunity Discovery Agent of Niche Finder. Give a fast, honest teaser — one concrete niche with a one-line tagline, a two-sentence rationale, and three 0-100 scores. Be specific to the market; never generic. This is a lightweight preview, not the full report.',
-        messages: [{ role: 'user', content: 'Generate ONE quick niche venture idea for these constraints:\n' + JSON.stringify(cfg, null, 2) }],
+        system: cfg.intent === 'scaleup'
+          ? 'You are the Scale-Up Strategist of Niche Finder. Give a fast, honest teaser — ONE concrete growth play for the existing business, with a one-line tagline, a two-sentence rationale, and three 0-100 scores. Scores and any numbers are INCREMENTAL (added on top of the current business). Be specific; never generic. This is a lightweight preview, not the full report.'
+          : 'You are the Opportunity Discovery Agent of Niche Finder. Give a fast, honest teaser — one concrete niche with a one-line tagline, a two-sentence rationale, and three 0-100 scores. Be specific to the market; never generic. This is a lightweight preview, not the full report.',
+        messages: [{ role: 'user', content: (cfg.intent === 'scaleup'
+          ? 'Generate ONE quick SCALE-UP growth play (new segment, product, channel, location or pricing move) for this existing business — financials incremental:\n'
+          : 'Generate ONE quick niche venture idea for these constraints:\n') + JSON.stringify(cfg, null, 2) }],
         jsonSchema: PREVIEW_SCHEMA,
         user: window.NF_WALLET_USER,
         capitalGBP: cfg.maxInvestmentUsd,
@@ -1089,7 +1170,9 @@
     // Real, niche-specific operating brief + breakthrough score from the AI —
     // so the unlocked view never falls back to the demo template in project.html.
     if (m.brief) proj.brief = m.brief;
-    if (m.founderFit) proj.founderFit = m.founderFit; // the PERSON axis, carried into the project brief
+    if (m.founderFit) proj.founderFit = m.founderFit; // the PERSON (or business, in scale-up) fit axis
+    proj.intent = m.intent || 'new';
+    if (m.business) proj.business = m.business;
     if (m.scores && m.scores.bps != null) proj.bps = Math.round(m.scores.bps) / 10; // 0-100 → 0-10 scale
     proj.bracketFactor = NF.bracket(+budget.value).factor; // Build Hub prices inherit the capital bracket
     proj.investmentUsd = +budget.value || null; // the operator's actual max-investment input, for the brief
@@ -1121,14 +1204,14 @@
   }
   // XSS-safe founder-fit panel for a discovery card (verdict + rationale +
   // any hard dealbreaker). Full strengths/gaps/bridge show on the project page.
-  function fitPanel(ff){
+  function fitPanel(ff, label){
     var fm = fitMeta(ff); if (!fm) return null;
     var box = document.createElement('div');
     box.className = 'fitpanel';
     box.style.cssText = 'margin:11px 0 2px;padding:10px 12px;border:1px solid ' + fm.color + '44;background:' + fm.color + '12;border-radius:8px';
     var head = document.createElement('div');
     head.style.cssText = 'font-family:var(--mono);font-size:.6rem;letter-spacing:.14em;color:' + fm.color;
-    head.textContent = 'FOUNDER FIT · ' + fm.verdict + ' · ' + fm.v.toFixed(1) + '/10';
+    head.textContent = (label || 'FOUNDER FIT') + ' · ' + fm.verdict + ' · ' + fm.v.toFixed(1) + '/10';
     box.appendChild(head);
     if (ff.rationale){
       var r = document.createElement('div');
@@ -1149,7 +1232,7 @@
   function renderNiches(list, live, record){
     record = record !== false; // true = new search (record + cache); false = silent restore
     thinking.classList.remove('on');
-    gen.disabled = false; gen.textContent = 'Generate Niche Ideas';
+    gen.disabled = false; gen.textContent = (currentIntent() === 'scaleup') ? 'Find Growth Plays' : 'Generate Niche Ideas';
     nichesEl.innerHTML = ''; // clear prior cards so a restore / re-run repaints cleanly
     var priority = (document.querySelector('#routeGrid [aria-pressed="true"] .t') || {}).textContent || 'Balanced Results';
     var fallbackNote = '';
@@ -1163,8 +1246,9 @@
         list = list.slice().sort(function(a, b){ return b.s - a.s; });
       }
     }
+    var scaleMode = !!(list.length && list[0] && list[0].intent === 'scaleup');
     document.getElementById('resCount').textContent =
-      'SHOWING ' + list.length + ' OF ' + list.length + ' SAVED NICHES' + (live ? ' · LIVE AI' : ' · DEMO DATA') +
+      'SHOWING ' + list.length + ' OF ' + list.length + (scaleMode ? ' GROWTH PLAYS' : ' SAVED NICHES') + (live ? ' · LIVE AI' : ' · DEMO DATA') +
       (priority === 'Breakthrough Concepts' && !fallbackNote ? ' · BREAKTHROUGH RANKED' : '');
     if (fallbackNote){
       var fb = document.createElement('div');
@@ -1185,7 +1269,7 @@
         '<div class="score"><div class="n"></div><div class="l">Confidence</div></div>' +
         '<p></p>' +
         '<div class="actions">' +
-          '<button class="a primary">Unlock Full Opportunity</button>' +
+          '<button class="a primary">' + (scaleMode ? 'Unlock Growth Play' : 'Unlock Full Opportunity') + '</button>' +
           '<span class="cost">' + unlockCostNow() + ' ACU</span>' +
           '<button class="a">Save to Portfolio</button>' +
         '</div>';
@@ -1200,7 +1284,7 @@
         chip.style.cssText = 'font-family:var(--mono);font-size:.66rem;letter-spacing:.08em;padding:3px 8px;border-radius:20px;border:1px solid ' + fm.color + ';color:' + fm.color + ';background:' + fm.color + '18';
         chip.textContent = 'FIT ' + fm.v.toFixed(1);
         var cr = el.querySelector('.chiprow'); if (cr) cr.appendChild(chip);
-        var panel = fitPanel(m.founderFit);
+        var panel = fitPanel(m.founderFit, scaleMode ? 'BUSINESS FIT' : 'FOUNDER FIT');
         var pEl = el.querySelector('p');
         if (panel && pEl && pEl.parentNode) pEl.parentNode.insertBefore(panel, pEl);
       }

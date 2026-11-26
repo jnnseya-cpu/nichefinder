@@ -538,7 +538,9 @@
     roadmap: [],
     bps: null,
     brief: null,
-    founderFit: null
+    founderFit: null,
+    intent: 'new',
+    business: null
   };
 
   var project;
@@ -1139,12 +1141,36 @@
     if (invMatch) setTxt('briefInvest', invMatch[0].toUpperCase());
   }
 
-  /* ---------- Founder Fit: the PERSON axis (shown only when assessed) ---------- */
+  /* ---------- Scale-up reframing: same engine, existing-business wording ---------- */
+  (function reframeForScaleUp(){
+    if (project.intent !== 'scaleup') return;
+    var bh = document.querySelector('#aiBrief .brief-head h2');
+    if (bh) bh.textContent = 'Scale-Up Brief';
+    // a small SCALE-UP badge next to the status pill
+    try {
+      var pill = document.getElementById('statusPill');
+      if (pill && pill.parentNode){
+        var badge = document.createElement('span');
+        badge.textContent = 'SCALE-UP';
+        badge.style.cssText = 'font-family:var(--mono);font-size:.56rem;letter-spacing:.16em;color:var(--gold-bright);border:1px solid var(--gold-dim);border-radius:20px;padding:2px 8px;margin-left:8px';
+        pill.parentNode.insertBefore(badge, pill.nextSibling);
+      }
+    } catch(e){}
+  })();
+
+  /* ---------- Founder/Business Fit: the fit axis (shown only when assessed) ---------- */
   (function renderFounderFit(){
     var ff = project.founderFit;
     var panel = document.getElementById('founderFitPanel');
     if (!panel) return;
     if (!ff || typeof ff.score !== 'number'){ panel.style.display = 'none'; return; }
+    var isScale = project.intent === 'scaleup';
+    var ph = panel.querySelector('h2');
+    if (ph) ph.innerHTML = isScale
+      ? 'Business Fit <span style="font-size:.82rem;color:var(--muted)">— does this growth play suit your business, not only the market?</span>'
+      : 'Founder Fit <span style="font-size:.82rem;color:var(--muted)">— does this venture suit you, not only the market?</span>';
+    var strLbl = panel.querySelector('#ffStrengths');
+    if (strLbl && strLbl.previousElementSibling && isScale) strLbl.previousElementSibling.textContent = 'What the Business Brings';
     var v = Math.max(0, Math.min(100, ff.score)) / 10;
     var color = NF.band(v);
     var verdict = String(ff.verdict || NF.decision(v));
